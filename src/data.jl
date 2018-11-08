@@ -32,7 +32,7 @@ function data(model::JuMP.Model)
                                    Dict{ConstraintIndex, InclusionConstraint}(),
                                    Dict{ConstraintIndex, String}(), 0, nothing,
                                    nothing, Undecided)
-        model.optimize_hook = optimize!
+        model.optimize_hook = optimize_hook
     end
     return model.ext[:SetProg]
 end

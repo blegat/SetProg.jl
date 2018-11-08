@@ -12,7 +12,7 @@ end
 
 # set as `optimize_hook` to JuMP Model in `data` so it is called at
 # `JuMP.optimize!` if at least one set variable is created
-function optimize!(model::JuMP.AbstractModel)
+function optimize_hook(model::JuMP.AbstractModel)
     d = data(model)
     set_space(d, model)
     load(model, d)

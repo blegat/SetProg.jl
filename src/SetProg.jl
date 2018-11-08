@@ -16,5 +16,6 @@ include("constraints.jl")
 include("objective.jl")
 include("macros.jl")
 include("data.jl")
+include("optimize.jl")
 
 end # module
