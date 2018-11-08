@@ -1,12 +1,37 @@
 module Sets
-struct Ellipsoid{T}
+using LinearAlgebra
+
+abstract type AbstractSet{T} end
+
+abstract type AbstractEllipsoid{T} <: AbstractSet{T} end
+dimension(ell::AbstractEllipsoid) = LinearAlgebra.checksquare(ell)
+struct Ellipsoid{T} <: AbstractEllipsoid{T}
     Q::Matrix{T}
     c::Vector{T}
 end
-using LinearAlgebra
+
+struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
+    Q::Matrix{T}
+end
+function convert(::Type{Ellipsoid{T}}, ell::EllipsoidAtOrigin{T}) where T
+    Ellipsoid(ell.Q, zeros(T, dimension(ell)))
+end
+
+struct PolarEllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
+    Q::Matrix{T}
+end
+function convert(::Type{Ellipsoid{T}}, ell::PolarEllipsoidAtOrigin{T}) where T
+    convert(Ellipsoid{T}, convert(EllipsoidAtOrigin{T}, ell))
+end
+function convert(::Type{EllipsoidAtOrigin{T}},
+                 ell::PolarEllipsoidAtOrigin{T}) where T
+    EllipsoidAtOrigin(inv(ell.Q))
+end
+
 using RecipesBase
-@recipe function f(ell::Ellipsoid)
-    @assert LinearAlgebra.checksquare(ell.Q) == 2
+@recipe function f(aell::AbstractEllipsoid{T}) where T
+    @assert dimension(aell) == 2
+    ell = convert(Ellipsoid{T}, aell)
     αs = range(0, stop=2π, length=1024)
     ps = [[cos(α), sin(α)] for α in αs]
     r = [sqrt(dot(p, ell.Q * p)) for p in ps]

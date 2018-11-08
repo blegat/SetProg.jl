@@ -9,6 +9,8 @@ Reexport.@reexport using Polyhedra
 export Ellipsoid
 export nth_root
 
+@enum Space Undecided PrimalSpace DualSpace
+
 include("variables.jl")
 include("constraints.jl")
 include("objective.jl")

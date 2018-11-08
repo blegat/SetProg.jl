@@ -1,11 +1,30 @@
 abstract type AbstractVariable <: JuMP.AbstractVariable end
 struct Ellipsoid <: AbstractVariable
+    dimension::Int
 end
-struct VariableRef{M <: JuMP.AbstractModel,
-                   S <: AbstractVariable} <: JuMP.AbstractVariableRef
+function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
+    n = ell.dimension
+    Q = @variable(model, [1:n, 1:n], Symmetric)
+    if space == PrimalSpace
+        return Sets.EllipsoidAtOrigin(Q)
+    else
+        @assert space == DualSpace
+        return Sets.PolarEllipsoidAtOrigin(Q)
+    end
+end
+function JuMP.result_value(ell::Sets.EllipsoidAtOrigin)
+    return Sets.EllipsoidAtOrigin(JuMP.result_value.(ell.Q))
+end
+function JuMP.result_value(ell::Sets.PolarEllipsoidAtOrigin)
+    return Sets.PolarEllipsoidAtOrigin(JuMP.result_value.(ell.Q))
+end
+
+mutable struct VariableRef{M <: JuMP.AbstractModel,
+                           S <: AbstractVariable} <: JuMP.AbstractVariableRef
     model::M
     set::S
     name::String
+    variable::Union{Nothing, Sets.AbstractSet{JuMP.VariableRef}}
 end
 JuMP.name(vref::VariableRef) = vref.name
 function JuMP.build_variable(_error, info::JuMP.VariableInfo, ell::Ellipsoid)
@@ -13,5 +32,10 @@ function JuMP.build_variable(_error, info::JuMP.VariableInfo, ell::Ellipsoid)
     return ell
 end
 function JuMP.add_variable(model::JuMP.AbstractModel, ell::Ellipsoid, name::String)
-    return VariableRef(model, ell, name)
+    return VariableRef(model, ell, name, nothing)
 end
+function load(model::JuMP.AbstractModel, ell::VariableRef)
+    d = data(model)
+    ell.variable = variable_set(model, ell.set, d.space)
+end
+JuMP.result_value(vref::VariableRef) = JuMP.result_value(vref.variable)
