@@ -31,22 +31,22 @@ end
 #   For t ≤ det(Q)^(1/n) to be tight we need to maximize `t`
 #   hence we need to maximize the volume
 function set_space(space::Space, ::RootVolume, model::JuMP.Model)
-    if JuMP.objective_sense(model) == MOI.MinSense
+    if JuMP.objective_sense(model) == JuMP.MOI.MinSense
         return set_space(space, PrimalSpace)
     else
         # The sense cannot be FeasibilitySense since the objective function is
         # not nothing
-        @assert JuMP.objective_sense(model) == MOI.MaxSense
+        @assert JuMP.objective_sense(model) == JuMP.MOI.MaxSense
         return set_space(space, DualSpace)
     end
 end
 function root_volume(model::JuMP.Model, ell::Union{Sets.EllipsoidAtOrigin,
                                                    Sets.PolarEllipsoidAtOrigin})
     Q = ell.Q
-    n = dimension(ell)
+    n = Sets.dimension(ell)
     t = @variable(model)
     upper_tri = [Q[i, j] for j in 1:n for i in 1:j]
-    @constraint(model, [t; upper_tri] in MOI.RootDetConeTriangle(n))
+    @constraint(model, [t; upper_tri] in JuMP.MOI.RootDetConeTriangle(n))
     return t
 end
 function load(model::JuMP.Model, rv::RootVolume)

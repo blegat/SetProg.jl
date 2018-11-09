@@ -13,10 +13,10 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
     end
 end
 function JuMP.result_value(ell::Sets.EllipsoidAtOrigin)
-    return Sets.EllipsoidAtOrigin(JuMP.result_value.(ell.Q))
+    return Sets.EllipsoidAtOrigin(Symmetric(JuMP.result_value.(ell.Q)))
 end
 function JuMP.result_value(ell::Sets.PolarEllipsoidAtOrigin)
-    return Sets.PolarEllipsoidAtOrigin(JuMP.result_value.(ell.Q))
+    return Sets.PolarEllipsoidAtOrigin(Symmetric(JuMP.result_value.(ell.Q)))
 end
 
 mutable struct VariableRef{M <: JuMP.AbstractModel,
@@ -32,7 +32,9 @@ function JuMP.build_variable(_error, info::JuMP.VariableInfo, ell::Ellipsoid)
     return ell
 end
 function JuMP.add_variable(model::JuMP.AbstractModel, ell::Ellipsoid, name::String)
-    return VariableRef(model, ell, name, nothing)
+    vref = VariableRef(model, ell, name, nothing)
+    push!(data(model).variables, vref)
+    return vref
 end
 function load(model::JuMP.AbstractModel, ell::VariableRef)
     d = data(model)

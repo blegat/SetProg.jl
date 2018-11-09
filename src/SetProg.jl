@@ -1,5 +1,7 @@
 module SetProg
 
+using LinearAlgebra
+
 include("Sets/Sets.jl")
 
 import Reexport

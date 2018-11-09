@@ -1,9 +1,9 @@
 function load(model::JuMP.Model, d::Data)
     for variable in d.variables
-        load(d, variable)
+        load(model, variable)
     end
     for (index, constraint) in d.constraints
-        load(d, constraint)
+        load(model, constraint)
     end
     if d.objective !== nothing
         load(model, d.objective)
