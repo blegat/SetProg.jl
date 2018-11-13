@@ -30,12 +30,12 @@ The variables can either be
 
 The following operations are allowed
 
-| S + x    | Translation of `S` by `x`     |
-| S1 + S2  | Minkowski sum                 |
-| S1 ∩ S2  | Intersection of `S1` and `S2` |
-| S1 ∪ S2  | Union of `S1` and `S2`        |
-| A*S      | Linear mapping                |
-| polar(S) | Polar of S                    |
+| S + x     | Translation of `S` by `x`     |
+| S1 + S2   | Minkowski sum                 |
+| S1 ∩ S2   | Intersection of `S1` and `S2` |
+| S1 ∪ S2   | Union of `S1` and `S2`        |
+| A\*S      | Linear mapping                |
+| polar(S)  | Polar of S                    |
 
 ## Constraints
 
