@@ -74,33 +74,33 @@ optimizer = CSDPOptimizer()
 To compute the maximal ellipsoid contained in a polytope (i.e. [Löwner-John ellipsoid](https://github.com/rdeits/LoewnerJohnEllipsoids.jl))
 ```julia
 using JuMP
-m = Model(optimizer=optimizer)
-@variable m S Ellipsoid()
-@constraint S ⊆ P
-@objective Max vol(S)
-solve()
+model = Model(optimizer=optimizer)
+@variable model S Ellipsoid()
+@constraint model S ⊆ P
+@objective model Max vol(S)
+JuMP.optimize!(model)
 ```
 
 To compute the maximal invariant set contained in a polytope
 ```julia
 using JuMP
-m = Model(optimizer=optimizer)
-@variable m S Polyhedron()
-@constraint S ⊆ P
-@constraint A*S ⊆ S # Invariance constraint
-@objective Max vol(S)
-solve()
+model = Model(optimizer=optimizer)
+@variable model S Polyhedron()
+@constraint model S ⊆ P
+@constraint model A*S ⊆ S # Invariance constraint
+@objective model Max vol(S)
+JuMP.optimize!(model)
 ```
 
 To compute the maximal invariant ellipsoid contained in a polytope
 ```julia
 using JuMP
-m = Model(optimizer=optimizer)
-@variable m S Ellipsoid()
-@constraint S ⊆ P
-@constraint A*S ⊆ S # Invariance constraint
-@objective Max vol(S)
-solve()
+model = Model(optimizer=optimizer)
+@variable model  S Ellipsoid()
+@constraint model S ⊆ P
+@constraint model A*S ⊆ S # Invariance constraint
+@objective model Max vol(S)
+JuMP.optimize!(model)
 ```
 
 To compute the maximal algebraic-invariant ellipsoid (i.e. `AS ⊆ ES`) contained in a polytope:
