@@ -30,6 +30,8 @@ The variables can either be
 
 The following operations are allowed
 
+| Operation | Description                   |
+|-----------|-------------------------------|
 | S + x     | Translation of `S` by `x`     |
 | S1 + S2   | Minkowski sum                 |
 | S1 ∩ S2   | Intersection of `S1` and `S2` |
@@ -41,10 +43,12 @@ The following operations are allowed
 
 The following constraints are implemented
 
-| x ∈ S    | `x` is contained in `S`  |
-| S1 ⊆ S2  | `S1` is included in `S2` |
-| S1 ⊇ S2  | `S1` is included in `S2` |
-| S1 == S2 | `S1` is equal to `S2`    |
+| Operation | Description              |
+|-----------|--------------------------|
+| x ∈ S     | `x` is contained in `S`  |
+| S1 ⊆ S2   | `S1` is included in `S2` |
+| S1 ⊇ S2   | `S1` is included in `S2` |
+| S1 == S2  | `S1` is equal to `S2`    |
 
 ## Examples
 
