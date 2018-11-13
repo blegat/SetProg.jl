@@ -4,9 +4,17 @@
 
 JuMP extension for Set Programming : optimization with set variables and inclusion/containment constraints. This package allows the formulation of a mathematical programming involving both classical variables and constraints supported by JuMP and set variables and constraints.
 
-Two options exist to solve Set Programming:
+Three options exist to solve Set Programming:
 * [Polyhedral Computation](https://github.com/JuliaPolyhedra/Polyhedra.jl).
 * Automatically reformulation into a semidefinite program using [Sum-Of-Squares Programming](https://github.com/JuliaOpt/SumOfSquares.jl) and the S-procedure.
+* [Dual Dynamic Programming](https://github.com/JuliaStochOpt/StructDualDynProg.jl).
+
+In fact, the option to use can be automatically chosen depending on the variables created and the objective function set:
+
+| Variable/Objective | Volume of set  | Affine of point |
+|--------------------|----------------|-----------------|
+| Polyhedron         | Polyhedral     | Dual Dynamic    |
+| Ellipsoid/PolySet  | Sum-of-Squares | Sum-of-Squares  |
 
 ## Variables
 
