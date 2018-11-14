@@ -1,7 +1,11 @@
+struct PowerSet{S}
+    set::S
+end
+
 abstract type SetConstraint  <: JuMP.AbstractConstraint end
 
 function load(model::JuMP.Model, constraint::SetConstraint)
-    load(model, variablify(constraint))
+    return load(model, variablify(constraint))
 end
 
 variablify(p::Polyhedra.Rep) = p
@@ -30,23 +34,35 @@ end
 function set_space(space::Space, ::InclusionConstraint{<:Polyhedra.Rep, <:VariableRef})
     return set_space(space, PrimalSpace)
 end
+function quad_form(Q::Symmetric, a::AbstractVector)
+    u = Q * a
+    v = dot(a, u)
+    return v
+end
+function JuMP.build_constraint(_error::Function,
+                               ell::Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
+                               h::PowerSet{<:HyperPlane})
+    @assert iszero(h.set.β) # Otherwise it is not symmetric around the origin
+    JuMP.build_constraint(_error, quad_form(ell.Q, h.set.a),
+                          JuMP.MOI.EqualTo(h.set.β^2))
+end
+function JuMP.build_constraint(_error::Function,
+                               ell::Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
+                               h::PowerSet{<:HalfSpace})
+    JuMP.build_constraint(_error, quad_form(ell.Q, h.set.a),
+                          JuMP.MOI.LessThan(h.set.β^2))
+end
 function load(model::JuMP.Model,
-              constraint::InclusionConstraint{<:Sets.PolarEllipsoidAtOrigin,
-                                              <:Polyhedra.Rep})
-    Q = constraint.subset.Q
+              constraint::InclusionConstraint{<:Any, <:Polyhedra.Rep})
     p = constraint.supset
     for h in hyperplanes(p)
-        @assert iszero(h.β) # Otherwise it is not symmetric around the origin
-        @constraint(model, dot(h.a, Q * h.a) == 0.0)
+        @constraint(model, constraint.subset ⊆ h)
     end
     for h in halfspaces(p)
-        @constraint(model, dot(h.a, Q * h.a) ≤ h.β^2)
+        @constraint(model, constraint.subset ⊆ h)
     end
 end
 
-struct PowerSet{S}
-    set::S
-end
 function JuMP.build_constraint(_error::Function, subset,
                                supset_powerset::PowerSet)
     InclusionConstraint(subset, supset_powerset.set)
@@ -71,8 +87,4 @@ function JuMP.name(cref::SetConstraintRef)
 end
 function JuMP.constraint_object(cref::SetConstraintRef)
     return data(cref.model).constraints[cref.index]
-end
-
-function load(model::JuMP.Model, cref::SetConstraintRef)
-    load(model, data(model)[cref.index])
 end

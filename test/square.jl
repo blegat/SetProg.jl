@@ -1,3 +1,6 @@
+using LinearAlgebra
+using Test
+
 using Polyhedra
 using SetProg
 

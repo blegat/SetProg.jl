@@ -14,9 +14,9 @@ export nth_root
 @enum Space Undecided PrimalSpace DualSpace
 
 include("variables.jl")
+include("macros.jl") # need to be before constraint as it uses ⊆ in @constraint
 include("constraints.jl")
 include("objective.jl")
-include("macros.jl")
 include("data.jl")
 include("optimize.jl")
 
