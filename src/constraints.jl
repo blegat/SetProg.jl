@@ -1,21 +1,11 @@
 abstract type SetConstraint  <: JuMP.AbstractConstraint end
 
-function load(model::JuMP.Model, constraint::SetConstraint)
-    return JuMP.add_constraint(model, variablify(constraint))
-end
-
-variablify(p::Polyhedra.Rep) = p
-variablify(v::VariableRef) = v.variable
-
 struct InclusionConstraint{SubSetType, SupSetType} <: SetConstraint
     subset::SubSetType
     supset::SupSetType
 end
 JuMP.function_string(print_mode, c::InclusionConstraint) = string(c.subset)
 JuMP.in_set_string(print_mode, c::InclusionConstraint) = string("⊆ ", c.supset)
-function variablify(c::InclusionConstraint)
-    return InclusionConstraint(variablify(c.subset), variablify(c.supset))
-end
 
 # Primal:
 #   set : x^T Q x ≤ 1
@@ -30,6 +20,9 @@ end
 function set_space(space::Space, ::InclusionConstraint{<:Polyhedra.Rep, <:VariableRef})
     return set_space(space, PrimalSpace)
 end
+
+### InclusionConstraint for sets ###
+
 function quad_form(Q::Symmetric, a::AbstractVector)
     u = Q * a
     v = dot(a, u)
@@ -61,6 +54,23 @@ function JuMP.add_constraint(model::JuMP.Model,
     end
 end
 
+### InclusionConstraint for variable sets  ###
+
+## Loading  ##
+
+function load(model::JuMP.Model, constraint::SetConstraint)
+    return JuMP.add_constraint(model, variablify(constraint))
+end
+
+variablify(p::Polyhedra.Rep) = p
+variablify(v::VariableRef) = v.variable
+
+function variablify(c::InclusionConstraint)
+    return InclusionConstraint(variablify(c.subset), variablify(c.supset))
+end
+
+## Building ##
+
 struct PowerSet{S}
     set::S
 end
@@ -69,11 +79,12 @@ function JuMP.build_constraint(_error::Function, subset,
     InclusionConstraint(subset, supset_powerset.set)
 end
 
+## Adding ##
+
 struct SetShape <: JuMP.AbstractShape end
 struct ConstraintIndex
     value::Int
 end
-const SetConstraintRef{M} = JuMP.ConstraintRef{M, ConstraintIndex, SetShape}
 
 function JuMP.add_constraint(model::JuMP.Model, constraint::InclusionConstraint,
                              name::String)
@@ -84,6 +95,10 @@ function JuMP.add_constraint(model::JuMP.Model, constraint::InclusionConstraint,
     container.names[index] = name
     return JuMP.ConstraintRef(model, index, SetShape())
 end
+
+### SetConstraintRef ###
+
+const SetConstraintRef{M} = JuMP.ConstraintRef{M, ConstraintIndex, SetShape}
 function JuMP.name(cref::SetConstraintRef)
     return data(cref.model).names[cref.index]
 end
