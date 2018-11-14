@@ -41,19 +41,20 @@ function quad_form(Q::Symmetric, a::AbstractVector)
 end
 function JuMP.build_constraint(_error::Function,
                                ell::Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
-                               h::PowerSet{<:HyperPlane})
+                               h::PowerSet{<:Polyhedra.HyperPlane})
     @assert iszero(h.set.β) # Otherwise it is not symmetric around the origin
     JuMP.build_constraint(_error, quad_form(ell.Q, h.set.a),
                           JuMP.MOI.EqualTo(h.set.β^2))
 end
 function JuMP.build_constraint(_error::Function,
                                ell::Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
-                               h::PowerSet{<:HalfSpace})
+                               h::PowerSet{<:Polyhedra.HalfSpace})
     JuMP.build_constraint(_error, quad_form(ell.Q, h.set.a),
                           JuMP.MOI.LessThan(h.set.β^2))
 end
 function load(model::JuMP.Model,
-              constraint::InclusionConstraint{<:Any, <:Polyhedra.Rep})
+              constraint::InclusionConstraint{<:Sets.AbstractSet{JuMP.VariableRef},
+                                              <:Polyhedra.Rep})
     p = constraint.supset
     for h in hyperplanes(p)
         @constraint(model, constraint.subset ⊆ h)
@@ -65,6 +66,7 @@ end
 
 function JuMP.build_constraint(_error::Function, subset,
                                supset_powerset::PowerSet)
+    @assert subset isa VariableRef || supset_powerset isa VariableRef
     InclusionConstraint(subset, supset_powerset.set)
 end
 
