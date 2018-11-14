@@ -1,7 +1,7 @@
 abstract type SetConstraint  <: JuMP.AbstractConstraint end
 
 function load(model::JuMP.Model, constraint::SetConstraint)
-    return load(model, variablify(constraint))
+    return JuMP.add_constraint(model, variablify(constraint))
 end
 
 variablify(p::Polyhedra.Rep) = p
@@ -38,19 +38,20 @@ end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
                                                              <:Polyhedra.HyperPlane},
-                             name::String)
+                             name::String = "")
     @assert iszero(h.set.β) # Otherwise it is not symmetric around the origin
     @constraint(model, quad_form(constraint.subset.Q, constraint.supset.a) in JuMP.MOI.EqualTo(constraint.supset.β^2))
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
                                                              <:Polyhedra.HalfSpace},
-                             name::String)
+                             name::String = "")
     @constraint(model, quad_form(constraint.subset.Q, constraint.supset.a) in JuMP.MOI.LessThan(constraint.supset.β^2))
 end
-function load(model::JuMP.Model,
-              constraint::InclusionConstraint{<:Sets.AbstractSet{JuMP.VariableRef},
-                                              <:Polyhedra.Rep})
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.AbstractSet{JuMP.VariableRef},
+                                                             <:Polyhedra.Rep},
+                             name::String = "")
     p = constraint.supset
     for h in hyperplanes(p)
         @constraint(model, constraint.subset ⊆ h)
