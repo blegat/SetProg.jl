@@ -60,10 +60,16 @@ function JuMP.add_constraint(model::JuMP.Model,
         @constraint(model, ◯ ⊆ hs)
     end
 end
-function quad_form(Q::Symmetric, a::AbstractVector)
-    u = Q * a
-    v = dot(a, u)
-    return v
+function quad_form(Q::Symmetric{JuMP.VariableRef}, a::AbstractVector{<:Real})
+    n = length(a)
+    @assert n == LinearAlgebra.checksquare(Q)
+    aff = zero(JuMP.GenericAffExpr{eltype(a), JuMP.VariableRef})
+    for j in 1:n
+        for i in 1:n
+            JuMP.add_to_expression!(aff, a[i] * a[j], Q[i, j])
+        end
+    end
+    return aff
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
