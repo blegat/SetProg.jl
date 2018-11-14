@@ -1,11 +1,33 @@
 abstract type SetConstraint  <: JuMP.AbstractConstraint end
 
+### MembershipConstraint ###
+struct MembershipConstraint{P, S}
+    member::P
+    set::S
+end
+JuMP.function_string(print_mode, c::MembershipConstraint) = string(c.member)
+JuMP.in_set_string(print_mode, c::MembershipConstraint) = string(JuMP.math_symbol(print_mode, :in), c.set)
+function JuMP.build_constraint(_error::Function, member,
+                               set::Sets.AbstractSet)
+    MembershipConstraint(member, set)
+end
+
+### InclusionConstraint ###
 struct InclusionConstraint{SubSetType, SupSetType} <: SetConstraint
     subset::SubSetType
     supset::SupSetType
 end
 JuMP.function_string(print_mode, c::InclusionConstraint) = string(c.subset)
-JuMP.in_set_string(print_mode, c::InclusionConstraint) = string("⊆ ", c.supset)
+function JuMP.in_set_string(print_mode, c::InclusionConstraint)
+    string(print_mode == JuMP.IJuliaMode ? "\\subseteq" : "⊆", " ", c.supset)
+end
+struct PowerSet{S}
+    set::S
+end
+function JuMP.build_constraint(_error::Function, subset,
+                               supset_powerset::PowerSet)
+    InclusionConstraint(subset, supset_powerset.set)
+end
 
 # Primal:
 #   set : x^T Q x ≤ 1
@@ -23,6 +45,21 @@ end
 
 ### InclusionConstraint for sets ###
 
+## Set in Polyhedron ##
+# Ellipsoid #
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.AbstractSet{JuMP.VariableRef},
+                                                             <:Polyhedra.Rep},
+                             name::String = "")
+    ◯ = constraint.subset
+    □ = constraint.supset
+    for hp in hyperplanes(□)
+        @constraint(model, ◯ ⊆ hp)
+    end
+    for hs in halfspaces(□)
+        @constraint(model, ◯ ⊆ hs)
+    end
+end
 function quad_form(Q::Symmetric, a::AbstractVector)
     u = Q * a
     v = dot(a, u)
@@ -41,17 +78,50 @@ function JuMP.add_constraint(model::JuMP.Model,
                              name::String = "")
     @constraint(model, quad_form(constraint.subset.Q, constraint.supset.a) in JuMP.MOI.LessThan(constraint.supset.β^2))
 end
+
+## Polyhedron in Set ##
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.AbstractSet{JuMP.VariableRef},
-                                                             <:Polyhedra.Rep},
+                             constraint::InclusionConstraint{<:Polyhedra.Rep,
+                                                             <:Sets.AbstractSet{JuMP.VariableRef}},
                              name::String = "")
-    p = constraint.supset
-    for h in hyperplanes(p)
-        @constraint(model, constraint.subset ⊆ h)
+    □ = constraint.subset
+    ◯ = constraint.supset
+    for line in lines(□)
+        @constraint(model, line in ◯)
     end
-    for h in halfspaces(p)
-        @constraint(model, constraint.subset ⊆ h)
+    for ray in rays(□)
+        @constraint(model, ray in ◯)
     end
+    for point in points(□)
+        @constraint(model, point in ◯)
+    end
+end
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::MembershipConstraint{<:AbstractVector,
+                                                              <:Sets.EllipsoidAtOrigin},
+                             name::String = "")
+    @constraint(model, quad_form(constraint.set.Q, constraint.member) in JuMP.MOI.LessThan(1.0))
+    # TODO if constraint.member is not constant, use Schur Lemma
+end
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::MembershipConstraint{<:Polyhedra.Line,
+                                                              <:Sets.EllipsoidAtOrigin},
+                             name::String = "")
+    # We must have (λl)^T Q (λl) ≤ 1 for all λ hence we must have l^T Q l ≤ 0
+    # As Q is positive definite, it means l^T Q l = 0
+    l = Polyhedra.coord(constraint.member)
+    @constraint(model, quad_form(constraint.set.Q, l) in JuMP.MOI.EqualTo(0.0))
+    # TODO if l is not constant, use Schur Lemma
+end
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::MembershipConstraint{<:Polyhedra.Ray,
+                                                              <:Sets.EllipsoidAtOrigin},
+                             name::String = "")
+    # We must have (λl)^T Q (λl) ≤ 1 for all λ > 0 hence we must have l^T Q l ≤ 0
+    # As Q is positive definite, it means l^T Q l = 0
+    r = Polyhedra.coord(constraint.member)
+    @constraint(model, quad_form(constraint.set.Q, r) in JuMP.MOI.EqualTo(0.0))
+    # TODO if r is not constant, use Schur Lemma
 end
 
 ### InclusionConstraint for variable sets  ###
@@ -67,16 +137,6 @@ variablify(v::VariableRef) = v.variable
 
 function variablify(c::InclusionConstraint)
     return InclusionConstraint(variablify(c.subset), variablify(c.supset))
-end
-
-## Building ##
-
-struct PowerSet{S}
-    set::S
-end
-function JuMP.build_constraint(_error::Function, subset,
-                               supset_powerset::PowerSet)
-    InclusionConstraint(subset, supset_powerset.set)
 end
 
 ## Adding ##
