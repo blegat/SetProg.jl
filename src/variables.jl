@@ -2,6 +2,12 @@ abstract type AbstractVariable <: JuMP.AbstractVariable end
 struct Ellipsoid <: AbstractVariable
     dimension::Int
 end
+function Ellipsoid(; dimension::Union{Int, Nothing}=nothing)
+    if dimension === nothing
+        error("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=...)")
+    end
+    return Ellipsoid(dimension)
+end
 function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
     n = ell.dimension
     Q = @variable(model, [1:n, 1:n], Symmetric)
