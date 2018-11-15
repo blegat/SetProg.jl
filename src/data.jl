@@ -3,6 +3,7 @@ mutable struct Data
     constraints::Dict{ConstraintIndex, InclusionConstraint}
     names::Dict{ConstraintIndex, String}
     last_index::Int
+    objective_sense::MOI.OptimizationSense
     objective::Union{Nothing, AbstractScalarFunction}
     objective_variable::Union{Nothing, JuMP.VariableRef}
     space::Space
@@ -30,8 +31,9 @@ function data(model::JuMP.Model)
     if !haskey(model.ext, :SetProg)
         model.ext[:SetProg] = Data(Set{VariableRef}(),
                                    Dict{ConstraintIndex, InclusionConstraint}(),
-                                   Dict{ConstraintIndex, String}(), 0, nothing,
-                                   nothing, Undecided)
+                                   Dict{ConstraintIndex, String}(), 0,
+                                   MOI.FeasibilitySense, nothing, nothing,
+                                   Undecided)
         model.optimize_hook = optimize_hook
     end
     return model.ext[:SetProg]

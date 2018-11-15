@@ -6,6 +6,7 @@ include("Sets/Sets.jl")
 
 import Reexport
 Reexport.@reexport using JuMP
+const MOI = JuMP.MOI
 Reexport.@reexport using Polyhedra
 
 export Ellipsoid

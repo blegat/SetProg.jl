@@ -11,8 +11,10 @@ Base.copy(rv::RootVolume) = rv
 nth_root(volume::Volume) = RootVolume(volume.variable)
 Base.show(io::IO, rv::RootVolume) = print(io, "volume^(1/n)(", rv.variable, ")")
 
-function JuMP.set_objective_function(model::JuMP.Model,
-                                     func::AbstractScalarFunction)
+function JuMP.set_objective(model::JuMP.Model,
+                            sense::MOI.OptimizationSense,
+                            func::AbstractScalarFunction)
+    data(model).objective_sense = sense
     data(model).objective = func
 end
 
@@ -31,12 +33,13 @@ end
 #   For t ≤ det(Q)^(1/n) to be tight we need to maximize `t`
 #   hence we need to maximize the volume
 function set_space(space::Space, ::RootVolume, model::JuMP.Model)
-    if JuMP.objective_sense(model) == JuMP.MOI.MinSense
+    sense = data(model).objective_sense
+    if sense == MOI.MinSense
         return set_space(space, PrimalSpace)
     else
         # The sense cannot be FeasibilitySense since the objective function is
         # not nothing
-        @assert JuMP.objective_sense(model) == JuMP.MOI.MaxSense
+        @assert sense == MOI.MaxSense
         return set_space(space, DualSpace)
     end
 end
@@ -46,10 +49,11 @@ function root_volume(model::JuMP.Model, ell::Union{Sets.EllipsoidAtOrigin,
     n = Sets.dimension(ell)
     t = @variable(model)
     upper_tri = [Q[i, j] for j in 1:n for i in 1:j]
-    @constraint(model, [t; upper_tri] in JuMP.MOI.RootDetConeTriangle(n))
+    @constraint(model, [t; upper_tri] in MOI.RootDetConeTriangle(n))
     return t
 end
 function load(model::JuMP.Model, rv::RootVolume)
     t = root_volume(model, rv.variable.variable)
+    JuMP.set_objective_sense(model, MOI.MaxSense)
     JuMP.set_objective_function(model, t)
 end

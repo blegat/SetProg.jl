@@ -76,13 +76,13 @@ function JuMP.add_constraint(model::JuMP.Model,
                                                              <:Polyhedra.HyperPlane},
                              name::String = "")
     @assert iszero(h.set.β) # Otherwise it is not symmetric around the origin
-    @constraint(model, quad_form(constraint.subset.Q, constraint.supset.a) in JuMP.MOI.EqualTo(constraint.supset.β^2))
+    @constraint(model, quad_form(constraint.subset.Q, constraint.supset.a) in MOI.EqualTo(constraint.supset.β^2))
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
-    @constraint(model, quad_form(constraint.subset.Q, constraint.supset.a) in JuMP.MOI.LessThan(constraint.supset.β^2))
+    @constraint(model, quad_form(constraint.subset.Q, constraint.supset.a) in MOI.LessThan(constraint.supset.β^2))
 end
 
 ## Polyhedron in Set ##
@@ -106,7 +106,7 @@ function JuMP.add_constraint(model::JuMP.Model,
                              constraint::MembershipConstraint{<:AbstractVector,
                                                               <:Sets.EllipsoidAtOrigin},
                              name::String = "")
-    @constraint(model, quad_form(constraint.set.Q, constraint.member) in JuMP.MOI.LessThan(1.0))
+    @constraint(model, quad_form(constraint.set.Q, constraint.member) in MOI.LessThan(1.0))
     # TODO if constraint.member is not constant, use Schur Lemma
 end
 function JuMP.add_constraint(model::JuMP.Model,
@@ -116,7 +116,7 @@ function JuMP.add_constraint(model::JuMP.Model,
     # We must have (λl)^T Q (λl) ≤ 1 for all λ hence we must have l^T Q l ≤ 0
     # As Q is positive definite, it means l^T Q l = 0
     l = Polyhedra.coord(constraint.member)
-    @constraint(model, quad_form(constraint.set.Q, l) in JuMP.MOI.EqualTo(0.0))
+    @constraint(model, quad_form(constraint.set.Q, l) in MOI.EqualTo(0.0))
     # TODO if l is not constant, use Schur Lemma
 end
 function JuMP.add_constraint(model::JuMP.Model,
@@ -126,7 +126,7 @@ function JuMP.add_constraint(model::JuMP.Model,
     # We must have (λl)^T Q (λl) ≤ 1 for all λ > 0 hence we must have l^T Q l ≤ 0
     # As Q is positive definite, it means l^T Q l = 0
     r = Polyhedra.coord(constraint.member)
-    @constraint(model, quad_form(constraint.set.Q, r) in JuMP.MOI.EqualTo(0.0))
+    @constraint(model, quad_form(constraint.set.Q, r) in MOI.EqualTo(0.0))
     # TODO if r is not constant, use Schur Lemma
 end
 

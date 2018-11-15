@@ -23,6 +23,7 @@ const MOI = JuMP.MOI
 
         SetProg.optimize!(model)
         @test JuMP.termination_status(model) == MOI.Success
+        @test JuMP.objective_sense(model) == MOI.MaxSense
         @test JuMP.objective_value(model) == 1.0
         @test JuMP.value(◯) isa SetProg.Sets.PolarEllipsoidAtOrigin
         @test JuMP.value(◯).Q == Symmetric([1.0 0.0; 0.0 1.0])
@@ -33,7 +34,7 @@ const MOI = JuMP.MOI
         # Q = [√2  0
         #       0 √2]
         # t = √det(Q) = 2                                                                  Q11  Q12  Q22  t
-        MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, [ √2, 0.0,  √2, 2.0]));
+        MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, [0.5, 0.0, 0.5, 0.5]));
 
         @variable(model, ◯, Ellipsoid(2))
         cref = @constraint(model, □ ⊆ ◯)
@@ -41,8 +42,9 @@ const MOI = JuMP.MOI
 
         SetProg.optimize!(model)
         @test JuMP.termination_status(model) == MOI.Success
-        @test JuMP.objective_value(model) == 2.0
+        @test JuMP.objective_sense(model) == MOI.MaxSense
+        @test JuMP.objective_value(model) == 0.5
         @test JuMP.value(◯) isa SetProg.Sets.EllipsoidAtOrigin
-        @test JuMP.value(◯).Q == Symmetric([√2 0.0; 0.0 √2])
+        @test JuMP.value(◯).Q == Symmetric([0.5 0.0; 0.0 0.5])
     end
 end
