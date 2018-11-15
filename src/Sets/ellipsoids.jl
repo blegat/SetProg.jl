@@ -23,14 +23,32 @@ function convert(::Type{EllipsoidAtOrigin{T}},
     EllipsoidAtOrigin(inv(ell.Q))
 end
 
-using RecipesBase
-@recipe function f(aell::AbstractEllipsoid{T}) where T
+"""
+    primal_contour(f::Function, npoints::Int)
+
+Return `npoints` points with equally spaced angles of the 1-sublevel set of the
+homogeneous function `f(x, y)`.
+"""
+function primal_contour(f::Function, npoints::Int)
+    x = Vector{Float64}(undef, npoints)
+    y = Vector{Float64}(undef, npoints)
+    for (i, α) in enumerate(range(0, stop=2π - 2π/npoints, length=npoints))
+        x0 = cos(α)
+        y0 = sin(α)
+        r = f(x0, y0)
+        # f is homogeneous so f(x0/r, y0/r) = 1
+        x[i] = x0 / r
+        y[i] = y0 / r
+    end
+    return x, y
+end
+
+@recipe function f(aell::AbstractEllipsoid{T}; npoints::Int=64) where T
     @assert dimension(aell) == 2
     ell = convert(Ellipsoid{T}, aell)
-    αs = range(0, stop=2π, length=1024)
-    ps = [[cos(α), sin(α)] for α in αs]
-    r = [sqrt(dot(p, ell.Q * p)) for p in ps]
     seriestype --> :shape
     legend --> false
-    ell.c[1] .+ cos.(αs) ./ r, ell.c[2] .+ sin.(αs) ./ r
+    Q = ell.Q
+    primal_contour((x, y) -> x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2],
+                   npoints)
 end
