@@ -1,5 +1,6 @@
 module Sets
 using LinearAlgebra
+using RecipesBase
 
 abstract type AbstractSet{T} end
 
