@@ -60,6 +60,7 @@ function JuMP.add_constraint(model::JuMP.Model,
         @constraint(model, ◯ ⊆ hs)
     end
 end
+# TODO if a is not constant, use Schur Lemma
 function quad_form(Q::Symmetric{JuMP.VariableRef}, a::AbstractVector{<:Real})
     n = length(a)
     @assert n == LinearAlgebra.checksquare(Q)
@@ -71,18 +72,39 @@ function quad_form(Q::Symmetric{JuMP.VariableRef}, a::AbstractVector{<:Real})
     end
     return aff
 end
+function poly_eval(p::AbstractPolynomial{JuMP.VariableRef}, a::AbstractVector{<:Real})
+    vars = variables(p)
+    aff = zero(JuMP.GenericAffExpr{eltype(a), JuMP.VariableRef})
+    for term in terms(p)
+        mono = monomial(term)
+        JuMP.add_to_expression!(aff, mono(vars => a), coefficient(term))
+    end
+    return aff
+end
+function sublevel_eval(ell::Union{Sets.EllipsoidAtOrigin,
+                                  Sets.PolarEllipsoidAtOrigin},
+                       a::AbstractVector)
+    return quad_form(ell.Q, a)
+end
+function sublevel_eval(set::Union{Sets.PolynomialSublevelSetAtOrigin,
+                                  Sets.PolarPolynomialSublevelSetAtOrigin},
+                       a::AbstractVector)
+    return poly_eval(set.p, a)
+end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
+                             constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
+                                                                     Sets.PolarPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
                                                              <:Polyhedra.HyperPlane},
                              name::String = "")
     @assert iszero(h.set.β) # Otherwise it is not symmetric around the origin
-    @constraint(model, quad_form(constraint.subset.Q, constraint.supset.a) in MOI.EqualTo(constraint.supset.β^2))
+    @constraint(model, sublevel_eval(constraint.subset, constraint.supset.a) in MOI.EqualTo(constraint.supset.β^2))
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
+                             constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
+                                                                     Sets.PolarPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
-    @constraint(model, quad_form(constraint.subset.Q, constraint.supset.a) in MOI.LessThan(constraint.supset.β^2))
+    @constraint(model, sublevel_eval(constraint.subset, constraint.supset.a) in MOI.LessThan(constraint.supset.β^2))
 end
 
 ## Polyhedron in Set ##
@@ -104,30 +126,30 @@ function JuMP.add_constraint(model::JuMP.Model,
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::MembershipConstraint{<:AbstractVector,
-                                                              <:Sets.EllipsoidAtOrigin},
+                                                              <:Union{Sets.EllipsoidAtOrigin,
+                                                                      Sets.PolynomialSublevelSetAtOrigin}},
                              name::String = "")
-    @constraint(model, quad_form(constraint.set.Q, constraint.member) in MOI.LessThan(1.0))
-    # TODO if constraint.member is not constant, use Schur Lemma
+    @constraint(model, sublevel_eval(constraint.set, constraint.member) in MOI.LessThan(1.0))
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::MembershipConstraint{<:Polyhedra.Line,
-                                                              <:Sets.EllipsoidAtOrigin},
+                                                              <:Union{Sets.EllipsoidAtOrigin,
+                                                                      Sets.PolynomialSublevelSetAtOrigin}},
                              name::String = "")
     # We must have (λl)^T Q (λl) ≤ 1 for all λ hence we must have l^T Q l ≤ 0
     # As Q is positive definite, it means l^T Q l = 0
     l = Polyhedra.coord(constraint.member)
-    @constraint(model, quad_form(constraint.set.Q, l) in MOI.EqualTo(0.0))
-    # TODO if l is not constant, use Schur Lemma
+    @constraint(model, sublevel_eval(constraint.set, l) in MOI.EqualTo(0.0))
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::MembershipConstraint{<:Polyhedra.Ray,
-                                                              <:Sets.EllipsoidAtOrigin},
+                                                              <:Union{Sets.EllipsoidAtOrigin,
+                                                                      Sets.PolynomialSublevelSetAtOrigin}},
                              name::String = "")
     # We must have (λl)^T Q (λl) ≤ 1 for all λ > 0 hence we must have l^T Q l ≤ 0
     # As Q is positive definite, it means l^T Q l = 0
     r = Polyhedra.coord(constraint.member)
-    @constraint(model, quad_form(constraint.set.Q, r) in MOI.EqualTo(0.0))
-    # TODO if r is not constant, use Schur Lemma
+    @constraint(model, sublevel_eval(constraint.set, r) in MOI.EqualTo(0.0))
 end
 
 ### InclusionConstraint for variable sets  ###

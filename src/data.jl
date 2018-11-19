@@ -6,6 +6,7 @@ mutable struct Data
     objective_sense::MOI.OptimizationSense
     objective::Union{Nothing, AbstractScalarFunction}
     objective_variable::Union{Nothing, JuMP.VariableRef}
+    polyvars::Union{Nothing, Vector{DynamicPolynomials.PolyVar{true}}}
     space::Space
 end
 
@@ -33,9 +34,8 @@ function data(model::JuMP.Model)
                                    Dict{ConstraintIndex, InclusionConstraint}(),
                                    Dict{ConstraintIndex, String}(), 0,
                                    MOI.FeasibilitySense, nothing, nothing,
-                                   Undecided)
+                                   nothing, Undecided)
         model.optimize_hook = optimize_hook
     end
     return model.ext[:SetProg]
 end
-

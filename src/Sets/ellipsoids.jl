@@ -43,12 +43,19 @@ function primal_contour(f::Function, npoints::Int)
     return x, y
 end
 
-@recipe function f(aell::AbstractEllipsoid{T}; npoints::Int=64) where T
+@recipe function f(aell::AbstractEllipsoid{T}; npoints=64) where T
     @assert dimension(aell) == 2
     ell = convert(Ellipsoid{T}, aell)
     seriestype --> :shape
     legend --> false
     Q = ell.Q
-    primal_contour((x, y) -> x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2],
+    primal_contour((x, y) -> sqrt(x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2]),
                    npoints)
+end
+
+function polar(ell::EllipsoidAtOrigin)
+    return PolarEllipsoidAtOrigin(ell.Q)
+end
+function polar(ell::PolarEllipsoidAtOrigin)
+    return EllipsoidAtOrigin(ell.Q)
 end

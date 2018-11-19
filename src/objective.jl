@@ -43,15 +43,39 @@ function set_space(space::Space, ::RootVolume, model::JuMP.Model)
         return set_space(space, DualSpace)
     end
 end
-function root_volume(model::JuMP.Model, ell::Union{Sets.EllipsoidAtOrigin,
-                                                   Sets.PolarEllipsoidAtOrigin})
-    Q = ell.Q
-    n = Sets.dimension(ell)
+
+function ellipsoid_root_volume(model::JuMP.Model, Q::AbstractMatrix)
+    n = LinearAlgebra.checksquare(Q)
     t = @variable(model)
     upper_tri = [Q[i, j] for j in 1:n for i in 1:j]
     @constraint(model, [t; upper_tri] in MOI.RootDetConeTriangle(n))
     return t
 end
+
+function root_volume(model::JuMP.Model, ell::Union{Sets.EllipsoidAtOrigin,
+                                                   Sets.PolarEllipsoidAtOrigin})
+    return ellipsoid_root_volume(model, ell.Q)
+end
+
+"""
+    root_volume(model::JuMP.Model, set::Union{Sets.PolynomialSublevelSetAtOrigin,
+                                              Sets.PolarPolynomialSublevelSetAtOrigin})
+
+Section IV.A of [MLB05].
+
+[MLB05] A. Magnani, S. Lall and S. Boyd.
+*Tractable fitting with convex polynomials via sum-of-squares*.
+Proceedings of the 44th IEEE Conference on Decision and Control, and European Control Conference 2005,
+**2005**.
+"""
+function root_volume(model::JuMP.Model, set::Union{Sets.PolynomialSublevelSetAtOrigin,
+                                                   Sets.PolarPolynomialSublevelSetAtOrigin})
+    if set.convexity_proof === nothing
+        error("Cannot optimize volume of non-convex polynomial sublevel set. Use PolySet(convex=true, ...)")
+    end
+    return ellipsoid_root_volume(model, set.convexity_proof)
+end
+
 function load(model::JuMP.Model, rv::RootVolume)
     t = root_volume(model, rv.variable.variable)
     JuMP.set_objective_sense(model, MOI.MaxSense)

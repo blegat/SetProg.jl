@@ -3,4 +3,7 @@ Reexport
 JuMP
 Polyhedra
 MultivariatePolynomials
+MultivariateMoments
+SumOfSquares
+DynamicPolynomials
 RecipesBase

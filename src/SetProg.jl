@@ -9,7 +9,11 @@ Reexport.@reexport using JuMP
 const MOI = JuMP.MOI
 Reexport.@reexport using Polyhedra
 
-export Ellipsoid
+using SumOfSquares
+using MultivariateMoments
+using DynamicPolynomials
+
+export Ellipsoid, PolySet
 export nth_root
 
 @enum Space Undecided PrimalSpace DualSpace
