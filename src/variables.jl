@@ -58,9 +58,9 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space)
     vars = data(model).polyvars[1:n]
     # General all monomials of degree `degree`, we don't want monomials of
     # lower degree as the polynomial is homogeneous
-    monos = monomials(vars, set.degree)
-    coefs = @variable(model, [1:length(monos)])
-    p = polynomial(coefs, monos)
+    @assert iseven(set.degree)
+    monos = monomials(vars, div(set.degree, 2))
+    p = @variable(model, variable_type=SOSPoly(monos))
     if set.convex
         cref = constrain_convex(model, p, vars)
         slack = SumOfSquares.PolyJuMP.getdelegate(cref).slack

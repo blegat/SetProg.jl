@@ -35,8 +35,9 @@ end
     end
     @testset "Polynomial" begin
         @polyvar x y
-        p = 1.0x^2 + 1.0y^2
         @testset "Circle" begin
+            p = SetProg.MatPolynomial{Float64}((i, j) -> convert(Float64, i == j),
+                                               monovec([x, y]))
             circle = SetProg.Sets.PolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
@@ -53,7 +54,9 @@ end
             @test hss[4].β ≈ 1.0
         end
         @testset "Scaled circle" begin
-            circle = SetProg.Sets.PolynomialSublevelSetAtOrigin(2, 2p, nothing)
+            p = SetProg.MatPolynomial{Float64}((i, j) -> 2convert(Float64, i == j),
+                                               monovec([x, y]))
+            circle = SetProg.Sets.PolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
                         [1/√2, 0.0, -1/√2, 0.0], [0.0, 1/√2, 0.0, -1/√2])
             hr = recipe(SetProg.Sets.polar(circle))[1]

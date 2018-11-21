@@ -72,12 +72,13 @@ function quad_form(Q::Symmetric{JuMP.VariableRef}, a::AbstractVector{<:Real})
     end
     return aff
 end
-function poly_eval(p::AbstractPolynomial{JuMP.VariableRef}, a::AbstractVector{<:Real})
+function poly_eval(p::AbstractPolynomial{JuMP.AffExpr},
+                   a::AbstractVector{Float64})
     vars = variables(p)
-    aff = zero(JuMP.GenericAffExpr{eltype(a), JuMP.VariableRef})
+    aff = zero(JuMP.AffExpr)
     for term in terms(p)
         mono = monomial(term)
-        JuMP.add_to_expression!(aff, mono(vars => a), coefficient(term))
+        aff = JuMP.destructive_add!(aff, mono(vars => a), coefficient(term))
     end
     return aff
 end
@@ -89,7 +90,7 @@ end
 function sublevel_eval(set::Union{Sets.PolynomialSublevelSetAtOrigin,
                                   Sets.PolarPolynomialSublevelSetAtOrigin},
                        a::AbstractVector)
-    return poly_eval(set.p, a)
+    return poly_eval(polynomial(set.p), a)
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},

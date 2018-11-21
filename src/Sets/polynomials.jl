@@ -14,7 +14,8 @@ homogeneous polynomial of degree `degree`.
 """
 struct PolarPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
     degree::Int
-    p::DynamicPolynomials.Polynomial{true, T}
+    p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+                     DynamicPolynomials.MonomialVector{true}}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}}
 end
 
@@ -41,13 +42,9 @@ function dual_contour(f::Function, nhalfspaces::Int, T::Type)
 end
 
 @recipe function f(set::PolarPolynomialSublevelSetAtOrigin{T}; npoints=64) where T
-    vars = variables(set.p)
-    @assert length(vars) == 2
-    vx, vy = vars
     seriestype --> :shape
     legend --> false
-    dual_contour((x, y) -> set.p(vx => x, vy => y)^(1 / set.degree),
-                 npoints, T)
+    dual_contour(scaling_function(set), npoints, T)
 end
 
 
@@ -62,18 +59,26 @@ of degree `degree`.
 """
 struct PolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
     degree::Int
-    p::DynamicPolynomials.Polynomial{true, T}
+    p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+                     DynamicPolynomials.MonomialVector{true}}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}}
 end
 
 @recipe function f(set::PolynomialSublevelSetAtOrigin; npoints=64)
-    vars = variables(set.p)
-    @assert length(vars) == 2
-    vx, vy = vars
     seriestype --> :shape
     legend --> false
-    primal_contour((x, y) -> set.p(vx => x, vy => y)^(1 / set.degree),
-                   npoints)
+    primal_contour(scaling_function(set), npoints)
+end
+
+function scaling_function(set::Union{PolarPolynomialSublevelSetAtOrigin,
+                                     PolynomialSublevelSetAtOrigin})
+    # We convert the MatPolynomial to a polynomial to avoid having to do the
+    # conversion for every substitution.
+    p = polynomial(set.p)
+    vars = variables(p)
+    @assert length(vars) == 2
+    vx, vy = vars
+    return (x, y) -> p(vx => x, vy => y)^(1 / set.degree)
 end
 
 function polar(set::PolynomialSublevelSetAtOrigin)
