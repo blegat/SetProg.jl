@@ -12,5 +12,5 @@ function JuMP.set_objective(model::JuMP.Model,
     data(model).objective = func
 end
 
-include("root_volume.jl")
+include("nth_root.jl")
 include("L1_heuristic.jl")

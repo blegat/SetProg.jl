@@ -53,12 +53,12 @@ const MOI = JuMP.MOI
         @testset "Inner" begin
             mock = MOI.Utilities.MockOptimizer(JuMP.JuMPMOIModel{Float64}())
             model = JuMP.direct_model(mock);
-            # 5 variables for the polynomials
+            # The PSD matrix for the variable  is 3 x 3 so 3 * (3+1) / 2 = 6
             # The PSD matrix for the convexity is 6 x 6 so 6 * (6+1) / 2 = 21
             # entries
             # 1 variable for t
-            # hence 27 variables
-            MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, ones(27)))
+            # hence 28 variables
+            MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, ones(28)))
 
             @variable(model, ◯, PolySet(degree=4, dimension=2, convex=true))
             cref = @constraint(model, ◯ ⊆ □)
@@ -79,7 +79,7 @@ const MOI = JuMP.MOI
         @testset "Outer" begin
             mock = MOI.Utilities.MockOptimizer(JuMP.JuMPMOIModel{Float64}())
             model = JuMP.direct_model(mock);
-            MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, ones(27)))
+            MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, ones(28)))
 
             @variable(model, ◯, PolySet(degree=4, dimension=2, convex=true))
             cref = @constraint(model, □ ⊆ ◯)
