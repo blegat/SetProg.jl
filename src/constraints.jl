@@ -98,6 +98,12 @@ function sublevel_eval(set::Union{Sets.PolynomialSublevelSetAtOrigin,
                        a::AbstractVector)
     return poly_eval(polynomial(set.p), a)
 end
+function sublevel_eval(model, set::Sets.DualQuadCone, a::AbstractVector, β)
+    d = data(model)
+    x = d.polyvars[1:dimension(constraint.subset)]
+    z = d.perspective_polyvar
+    return set.p(z => -β, x => a)
+end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
                                                                      Sets.PolarPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
@@ -107,11 +113,27 @@ function JuMP.add_constraint(model::JuMP.Model,
     @constraint(model, sublevel_eval(constraint.subset, constraint.supset.a) in MOI.EqualTo(constraint.supset.β^2))
 end
 function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.DualQuadCone,
+                                                             <:Polyhedra.HyperPlane},
+                             name::String = "")
+    val = sublevel_eval(model, constraint.subset, constraint.supset.a,
+                        constraint.supset.β)
+    @constraint(model, val in MOI.EqualTo(0.0))
+end
+function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
                                                                      Sets.PolarPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
     @constraint(model, sublevel_eval(constraint.subset, constraint.supset.a) in MOI.LessThan(constraint.supset.β^2))
+end
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.DualQuadCone,
+                                                             <:Polyhedra.HalfSpace},
+                             name::String = "")
+    val = sublevel_eval(model, constraint.subset, constraint.supset.a,
+                        constraint.supset.β)
+    @constraint(model, val in MOI.LessThan(0.0))
 end
 
 ## Polyhedron in Set ##

@@ -18,7 +18,7 @@ const MOI = JuMP.MOI
             # t = √det(Q) = 1                                                                  Q11  Q12  Q22  t
             MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, [1.0, 0.0, 1.0, 1.0]));
 
-            @variable(model, ◯, Ellipsoid(dimension=2))
+            @variable(model, ◯, Ellipsoid(symmetric=true, dimension=2))
             cref = @constraint(model, ◯ ⊆ □)
             @objective(model, Max, nth_root(volume(◯)))
 
@@ -37,7 +37,7 @@ const MOI = JuMP.MOI
             # t = √det(Q) = 2                                                                  Q11  Q12  Q22  t
             MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, [0.5, 0.0, 0.5, 0.5]));
 
-            @variable(model, ◯, Ellipsoid(dimension=2))
+            @variable(model, ◯, Ellipsoid(symmetric=true, dimension=2))
             cref = @constraint(model, □ ⊆ ◯)
             @objective(model, Min, nth_root(volume(◯)))
 
@@ -60,7 +60,8 @@ const MOI = JuMP.MOI
             # hence 28 variables
             MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, ones(28)))
 
-            @variable(model, ◯, PolySet(degree=4, dimension=2, convex=true))
+            @variable(model, ◯, PolySet(symmetric=true, degree=4, dimension=2,
+                                        convex=true))
             cref = @constraint(model, ◯ ⊆ □)
             @objective(model, Max, nth_root(volume(◯)))
 
@@ -81,7 +82,8 @@ const MOI = JuMP.MOI
             model = JuMP.direct_model(mock);
             MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, ones(28)))
 
-            @variable(model, ◯, PolySet(degree=4, dimension=2, convex=true))
+            @variable(model, ◯, PolySet(symmetric=true, degree=4, dimension=2,
+                                        convex=true))
             cref = @constraint(model, □ ⊆ ◯)
             @objective(model, Min, nth_root(volume(◯)))
 

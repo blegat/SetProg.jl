@@ -40,7 +40,8 @@ function ellipsoid_root_volume(model::JuMP.Model, Q::AbstractMatrix)
 end
 
 function root_volume(model::JuMP.Model, ell::Union{Sets.EllipsoidAtOrigin,
-                                                   Sets.PolarEllipsoidAtOrigin})
+                                                   Sets.PolarEllipsoidAtOrigin,
+                                                   Sets.DualQuadCone})
     return ellipsoid_root_volume(model, ell.Q)
 end
 

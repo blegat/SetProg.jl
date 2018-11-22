@@ -24,7 +24,63 @@ function convert(::Type{EllipsoidAtOrigin{T}},
 end
 
 """
-    struct DualQuadCone{T}
+    householder(x)
+
+Householder reflection
+```math
+I - 2 v v^T / (v^T v)
+```
+It is symmetric and orthogonal.
+"""
+function householder(x)
+    y = copy(x)
+    t = LinearAlgebra.reflector!(y)
+    v = [1; y[2:end]]
+    I - t * v * v'
+end
+_householder(h) = householder([1.0; h]) # We add 1, for perspective variable z
+
+function _HPH(D, d, δ, H)
+    P = [δ d'
+         d D]
+    HPH = H * P * H
+end
+
+abstract type DualQuadCone{T, S} <: AbstractEllipsoid{T} end
+
+"""
+    struct CenterDualQuadCone{T}
+        p::DynamicPolynomials.Polynomial{true}
+        Q::Symmetric{T, Matrix{T}}
+        h::Vector{Float64} # h is an center-like point
+        H::Matrix{Float64}
+    end
+
+```math
+p(y) =
+y^\\top H^\\top
+\\begin{bmatrix}
+  -1 & 0\\
+   0 & Q
+\\end{bmatrix}
+H y
+```
+where ``y = (z, x)``.
+"""
+struct CenterDualQuadCone{T, S} <: DualQuadCone{T, S}
+    p::DynamicPolynomials.Polynomial{true}
+    Q::Symmetric{T, Matrix{T}}
+    h::Vector{Float64} # h is an center-like point
+    H::Matrix{Float64}
+end
+function CenterDualQuadCone(Q::Symmetric, y, h::Vector{Float64})
+    H = _householder(point)
+    p = y' * _HPH(Q, zeros(length(h)), -1.0, H) * y
+    CenterQuadCone(p, Q, h, H)
+end
+
+"""
+    struct InteriorDualQuadCone{T}
         p::DynamicPolynomials.Polynomial{true}
         Q::Symmetric{T, Matrix{T}}
         b::Vector{S}
@@ -35,21 +91,26 @@ end
 
 ```math
 p =
-H^\\top
+y^\\top H^\\top
 \\begin{bmatrix}
   \\beta & b^\\top\\
   b & Q
 \\end{bmatrix}
-H
+H y
 ```
 """
-struct DualQuadCone{T, S}
+struct InteriorDualQuadCone{T, S} <: DualQuadCone{T, S}
     p::DynamicPolynomials.Polynomial{true}
     Q::Symmetric{T, Matrix{T}}
     b::Vector{S}
     β::S
     h::Vector{Float64} # h is an interior point
     H::Matrix{Float64}
+end
+function InteriorDualQuadCone(Q::Symmetric, b::Vector, β, y, h::Vector{Float64})
+    H = _householder(point)
+    p = y' * _HPH(Q, b, β, H) * y
+    QuadCone(p, Q, b, β, h, H)
 end
 
 """

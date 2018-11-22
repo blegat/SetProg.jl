@@ -6,8 +6,6 @@ abstract type HintPoint end
 struct CenterPoint{T} <: HintPoint
     h::Vector{T}
 end
-_β(m, h::CenterPoint{T}) where T = -one(T)
-_b(m, h::CenterPoint{T}) where T = zeros(T, length(h.h))
 
 struct InteriorPoint{T} <: HintPoint
     h::Vector{T}
@@ -15,13 +13,14 @@ end
 _β(model, h::InteriorPoint) = @variable(model)
 _b(model, h::InteriorPoint) = @variable(model, [1:length(h.h)])
 
+
 ### Ellipsoid ###
-struct Ellipsoid{P} <: AbstractVariable
-    point::Union{P}
+struct Ellipsoid <: AbstractVariable
+    point::Union{Nothing, HintPoint}
     symmetric::Bool
     dimension::Int
 end
-function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing
+function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
                    symmetric::Bool=false,
                    dimension::Union{Int, Nothing}=nothing)
     if dimension === nothing
@@ -29,19 +28,25 @@ function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing
     end
     return Ellipsoid(point, symmetric, dimension)
 end
+function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef},
+                        point::CenterPoint, y::Vector)
+    @constraint(model, Q in PSDCone())
+    return CenterDualQuadCone(Q, y, point.h)
+end
+function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef},
+                        point::InteriorPoint, y::Vector)
+    n = LinearAlgebra.checksquare(Q)
+    @assert n == length(h.h)
+    β = @variable(model)
+    b = @variable(model, [1:length(h.h)])
+    @constraint(model, Symmetric([β+1 b'; b Q]) in PSDCone())
+    return InteriorDualQuadCone(Q, b, β, y, point.h)
+end
 function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef}, point::HintPoint)
     n = LinearAlgebra.checksquare(Q)
-    #β = 1.#@variable m lowerbound=0.
-    β = _β(model, point)
-    b = _b(model, point)
-    @constraint m SetProg.quad_form(Symmetric([β+1 b'; b Q]), y) in SOSCone()
-    H = _householder(point)
-    p = y' * _HPH(Q, b, β, H) * y
-    vol = @variable m
-    #@constraint m vol <= trace Q
-    @constraint m [vol; [Q[i, j] for j in 1:n for i in 1:j]] in detcone(n)
-    QuadCone(p, Q, b, β, h, H, vol)
-
+    d = data(model)
+    y = [d.perspective_polyvar; d.polyvars[1:n]]
+    return dual_quad_cone(model, Q, point, y)
 end
 function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
     n = ell.dimension
@@ -58,7 +63,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
             error("TODO")
         else
             @assert space == DualSpace
-            return dual_quad_cone(Q)
+            return dual_quad_cone(Q, ell.point)
         end
     end
 end
@@ -71,11 +76,15 @@ end
 
 ### PolySet ###
 struct PolySet <: AbstractVariable
+    point::Union{Nothing, HintPoint}
+    symmetric::Bool
     degree::Int
     dimension::Int
     convex::Bool
 end
-function PolySet(; degree::Union{Int, Nothing}=nothing,
+function PolySet(; point::Union{Nothing, HintPoint}=nothing,
+                 symmetric::Bool=false,
+                 degree::Union{Int, Nothing}=nothing,
                  dimension::Union{Int, Nothing}=nothing,
                  convex::Bool=false)
     if degree === nothing
@@ -87,7 +96,7 @@ function PolySet(; degree::Union{Int, Nothing}=nothing,
     if dimension === nothing
         error("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=..., ...)")
     end
-    return PolySet(degree, dimension, convex)
+    return PolySet(point, symmetric, degree, dimension, convex)
 end
 
 function constrain_convex(model, p, vars)
