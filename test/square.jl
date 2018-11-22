@@ -71,7 +71,7 @@ const MOI = JuMP.MOI
             @test JuMP.value(◯) isa SetProg.Sets.PolarPolynomialSublevelSetAtOrigin{Float64}
             @test JuMP.value(◯).degree == 4
             x, y = SetProg.data(model).polyvars
-            @test JuMP.value(◯).p == x^4 + x^3*y + x^2*y^2 + x*y^3 + y^4
+            @test polynomial(JuMP.value(◯).p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4
             @test JuMP.value(◯).convexity_proof.n == 6
             @test JuMP.value(◯).convexity_proof.Q == ones(21)
             @test JuMP.objective_value(model) == 1.0
@@ -92,7 +92,7 @@ const MOI = JuMP.MOI
             @test JuMP.value(◯) isa SetProg.Sets.PolynomialSublevelSetAtOrigin{Float64}
             @test JuMP.value(◯).degree == 4
             x, y = SetProg.data(model).polyvars
-            @test JuMP.value(◯).p == x^4 + x^3*y + x^2*y^2 + x*y^3 + y^4
+            @test polynomial(JuMP.value(◯).p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4
             @test JuMP.value(◯).convexity_proof.n == 6
             @test JuMP.value(◯).convexity_proof.Q == ones(21)
         end
