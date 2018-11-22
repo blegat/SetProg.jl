@@ -1,7 +1,5 @@
-using MultivariatePolynomials
 using Polyhedra
 using SumOfSquares
-using DynamicPolynomials
 
 """
     struct PolarPolynomialSublevelSet{T, P<:AbstractPolynomial{T}}

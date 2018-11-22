@@ -1,16 +1,47 @@
 abstract type AbstractVariable <: JuMP.AbstractVariable end
 
+abstract type HintPoint end
+
+# It will not really be the center and the center for z = 0 is the the same as for <h, x> = 0
+struct CenterPoint{T} <: HintPoint
+    h::Vector{T}
+end
+_β(m, h::CenterPoint{T}) where T = -one(T)
+_b(m, h::CenterPoint{T}) where T = zeros(T, length(h.h))
+
+struct InteriorPoint{T} <: HintPoint
+    h::Vector{T}
+end
+_β(model, h::InteriorPoint) = @variable(model)
+_b(model, h::InteriorPoint) = @variable(model, [1:length(h.h)])
+
 ### Ellipsoid ###
-struct Ellipsoid <: AbstractVariable
+struct Ellipsoid{P} <: AbstractVariable
+    point::Union{P}
     symmetric::Bool
     dimension::Int
 end
-function Ellipsoid(; symmetric::Bool=false,
+function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing
+                   symmetric::Bool=false,
                    dimension::Union{Int, Nothing}=nothing)
     if dimension === nothing
         error("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=...)")
     end
-    return Ellipsoid(symmetric, dimension)
+    return Ellipsoid(point, symmetric, dimension)
+end
+function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef}, point::HintPoint)
+    n = LinearAlgebra.checksquare(Q)
+    #β = 1.#@variable m lowerbound=0.
+    β = _β(model, point)
+    b = _b(model, point)
+    @constraint m SetProg.quad_form(Symmetric([β+1 b'; b Q]), y) in SOSCone()
+    H = _householder(point)
+    p = y' * _HPH(Q, b, β, H) * y
+    vol = @variable m
+    #@constraint m vol <= trace Q
+    @constraint m [vol; [Q[i, j] for j in 1:n for i in 1:j]] in detcone(n)
+    QuadCone(p, Q, b, β, h, H, vol)
+
 end
 function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
     n = ell.dimension
@@ -27,7 +58,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
             error("TODO")
         else
             @assert space == DualSpace
-            return Sets.DualQuadCone(Q)
+            return dual_quad_cone(Q)
         end
     end
 end

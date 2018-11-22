@@ -1,6 +1,8 @@
 module Sets
 using LinearAlgebra
 using RecipesBase
+using MultivariatePolynomials
+using DynamicPolynomials
 
 abstract type AbstractSet{T} end
 

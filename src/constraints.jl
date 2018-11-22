@@ -61,6 +61,12 @@ function JuMP.add_constraint(model::JuMP.Model,
     end
 end
 # TODO if a is not constant, use Schur Lemma
+function quad_form(Q::Symmetric{<:JuMP.AbstractJuMPScalar},
+                   a::AbstractVector{<:AbstractMonomialLike})
+    n = length(a)
+    @assert n == LinearAlgebra.checksquare(Q)
+    return sum((i == j ? 1 : 2) * a[i] * Q[i, j] * a[j] for j in 1:n for i in 1:j)
+end
 function quad_form(Q::Symmetric{JuMP.VariableRef}, a::AbstractVector{<:Real})
     n = length(a)
     @assert n == LinearAlgebra.checksquare(Q)

@@ -23,8 +23,33 @@ function convert(::Type{EllipsoidAtOrigin{T}},
     EllipsoidAtOrigin(inv(ell.Q))
 end
 
-struct DualQuadCone
+"""
+    struct DualQuadCone{T}
+        p::DynamicPolynomials.Polynomial{true}
+        Q::Symmetric{T, Matrix{T}}
+        b::Vector{S}
+        β::S
+        h::Vector{Float64} # h is an interior point
+        H::Matrix{Float64}
+    end
+
+```math
+p =
+H^\\top
+\\begin{bmatrix}
+  \\beta & b^\\top\\
+  b & Q
+\\end{bmatrix}
+H
+```
+"""
+struct DualQuadCone{T, S}
+    p::DynamicPolynomials.Polynomial{true}
     Q::Symmetric{T, Matrix{T}}
+    b::Vector{S}
+    β::S
+    h::Vector{Float64} # h is an interior point
+    H::Matrix{Float64}
 end
 
 """
