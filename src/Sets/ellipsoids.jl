@@ -23,6 +23,10 @@ function convert(::Type{EllipsoidAtOrigin{T}},
     EllipsoidAtOrigin(inv(ell.Q))
 end
 
+struct DualQuadCone
+    Q::Symmetric{T, Matrix{T}}
+end
+
 """
     primal_contour(f::Function, npoints::Int)
 

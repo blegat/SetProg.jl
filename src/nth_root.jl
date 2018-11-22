@@ -63,6 +63,8 @@ function root_volume(model::JuMP.Model, set::Union{Sets.PolynomialSublevelSetAtO
     return ellipsoid_root_volume(model, set.convexity_proof)
 end
 
+objective_sense(::JuMP.Model, ::RootVolume) = MOI.MaxSense
+
 function load(model::JuMP.Model, rv::RootVolume)
     t = root_volume(model, rv.variable.variable)
     JuMP.set_objective_sense(model, MOI.MaxSense)

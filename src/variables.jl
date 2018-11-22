@@ -2,22 +2,33 @@ abstract type AbstractVariable <: JuMP.AbstractVariable end
 
 ### Ellipsoid ###
 struct Ellipsoid <: AbstractVariable
+    symmetric::Bool
     dimension::Int
 end
-function Ellipsoid(; dimension::Union{Int, Nothing}=nothing)
+function Ellipsoid(; symmetric::Bool=false,
+                   dimension::Union{Int, Nothing}=nothing)
     if dimension === nothing
         error("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=...)")
     end
-    return Ellipsoid(dimension)
+    return Ellipsoid(symmetric, dimension)
 end
 function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
     n = ell.dimension
     Q = @variable(model, [1:n, 1:n], Symmetric)
-    if space == PrimalSpace
-        return Sets.EllipsoidAtOrigin(Q)
+    if ell.symmetric
+        if space == PrimalSpace
+            return Sets.EllipsoidAtOrigin(Q)
+        else
+            @assert space == DualSpace
+            return Sets.PolarEllipsoidAtOrigin(Q)
+        end
     else
-        @assert space == DualSpace
-        return Sets.PolarEllipsoidAtOrigin(Q)
+        if space == PrimalSpace
+            error("TODO")
+        else
+            @assert space == DualSpace
+            return Sets.DualQuadCone(Q)
+        end
     end
 end
 function JuMP.value(ell::Sets.EllipsoidAtOrigin)

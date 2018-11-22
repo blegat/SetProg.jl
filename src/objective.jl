@@ -12,5 +12,11 @@ function JuMP.set_objective(model::JuMP.Model,
     data(model).objective = func
 end
 
+function load(model::JuMP.Model, f::AbstractScalarFunction)
+    JuMP.set_objective_sense(model, objective_sense(model, f))
+    JuMP.set_objective_sense(model, objective_function(model, f))
+end
+
+include("affine.jl")
 include("nth_root.jl")
 include("L1_heuristic.jl")

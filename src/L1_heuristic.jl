@@ -74,8 +74,7 @@ function l1_integral(set::Union{Sets.PolarEllipsoidAtOrigin,
     return l1_integral(Sets.polar(set), 1 ./ vertex)
 end
 
-function load(model::JuMP.Model, l::L1Heuristic)
-    t = l1_integral(l.variable.variable, l.rectangle_vertex)
-    JuMP.set_objective_sense(model, data(model).objective_sense)
-    JuMP.set_objective_function(model, t)
+objective_sense(model::JuMP.Model, ::L1Heuristic) = data(model).objective_sense
+function objective_function(::JuMP.Model, l::L1Heuristic)
+    return l1_integral(l.variable.variable, l.rectangle_vertex)
 end
