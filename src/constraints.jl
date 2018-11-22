@@ -45,6 +45,9 @@ end
 
 ### InclusionConstraint for sets ###
 
+## Set in Set ##
+
+
 ## Set in Polyhedron ##
 # Ellipsoid #
 function JuMP.add_constraint(model::JuMP.Model,

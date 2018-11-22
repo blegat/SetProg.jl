@@ -1,5 +1,6 @@
 abstract type AbstractEllipsoid{T} <: AbstractSet{T} end
 dimension(ell::AbstractEllipsoid) = LinearAlgebra.checksquare(ell.Q)
+
 struct Ellipsoid{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
     c::Vector{T}
@@ -21,6 +22,52 @@ end
 function convert(::Type{EllipsoidAtOrigin{T}},
                  ell::PolarEllipsoidAtOrigin{T}) where T
     EllipsoidAtOrigin(inv(ell.Q))
+end
+
+struct LiftedEllipsoid{T}
+    P::Matrix{T}
+end
+dimension(ell::LiftedEllipsoid) = LinearAlgebra.checksquare(ell.P) - 1
+
+function LiftedEllipsoid(ell::Ellipsoid)
+    md = ell.Q * ell.c
+    δ = ell.c' * md-1
+    d = -md
+    D = ell.Q
+    P = [δ d'
+         d D]
+    LiftedEllipsoid(P)
+end
+
+function Base.convert(::Type{Ellipsoid{T}}, ell::LiftedEllipsoid) where T
+    convert(Ellipsoid{T}, Ellipsoid(ell))
+end
+function Bbβλ(P)
+    n = LinearAlgebra.checksquare(P) - 1
+    ix = 1 .+ (1:n)
+    β = P[1, 1]
+    b = P[1, ix]
+    B = P[ix, ix]
+    λ = dot(b, B \ b) - β
+    @assert λ >= 0
+    B, b, β, λ
+end
+function Ellipsoid(ell::LiftedEllipsoid)
+    # P is
+    # λ * [c'Qc-1  -c'Q
+    #         -Qc   Q]
+    # Let P be [β b'; b B]
+    # We have
+    # β = λ c'Qc - λ
+    # b = -λ Qc <=> Q^{-1/2}b = -λ Q^{1/2} c
+    # hence
+    # λ c'Qc = β + λ
+    # λ^2 c'Qc = b'Q^{-1}b = λ b'B^{-1}b <=> λ c'Qc = b'B^{-1}b
+    # Hence λ = b'B^{-1}b - β
+    B, b, β, λ = Bbβλ(ell.P)
+    c = -(B \ b)
+    Q = B / λ
+    Ellipsoid(Q, c)
 end
 
 """
@@ -76,8 +123,10 @@ end
 function CenterDualQuadCone(Q::Symmetric, y, h::Vector{Float64})
     H = _householder(point)
     p = y' * _HPH(Q, zeros(length(h)), -1.0, H) * y
-    CenterQuadCone(p, Q, h, H)
+    CenterDualQuadCone(p, Q, h, H)
 end
+_HPH(q::CenterDualQuadCone) = _HPH(q.Q, zeros(size(q.Q, 1)), -1.0, q.H)
+samecenter(q1::CenterDualQuadCone, q2::CenterDualQuadCone) = q1.h == q2.h
 
 """
     struct InteriorDualQuadCone{T}
@@ -111,6 +160,15 @@ function InteriorDualQuadCone(Q::Symmetric, b::Vector, β, y, h::Vector{Float64}
     H = _householder(point)
     p = y' * _HPH(Q, b, β, H) * y
     QuadCone(p, Q, b, β, h, H)
+end
+_HPH(q::InteriorDualQuadCone) = _HPH(q.Q, q.b, q.β, q.H)
+samecenter(::InteriorDualQuadCone, ::InteriorDualQuadCone) = false
+
+function convert(::Type{LiftedEllipsoid{T}}, qc::DualQuadCone) where T
+    LiftedEllipsoid{T}(inv(_HPH(p)))
+end
+function convert(::Type{Ellipsoid{T}}, qc::DualQuadCone) where T
+    convert(Ellipsoid{T}, convert(LiftedEllipsoid{T}, qc))
 end
 
 """
