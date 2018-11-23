@@ -25,7 +25,7 @@ function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
                    dimension::Union{Int, Nothing}=nothing)
     if dimension === nothing
         if point !== nothing
-            dimension = length(h.h)
+            dimension = length(point.h)
         else
             error("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=...)")
         end

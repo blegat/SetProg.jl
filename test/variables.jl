@@ -5,6 +5,9 @@ using SetProg
     @testset "Ellipsoid" begin
         err = ErrorException("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=...)")
         @test_throws err Ellipsoid()
+        for d in 1:3
+            @test Ellipsoid(point=SetProg.InteriorPoint(ones(d))).dimension == d
+        end
     end
     @testset "PolySet" begin
         err = ErrorException("Degree of PolySet not specified, use PolySet(degree=..., ...)")
