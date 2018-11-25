@@ -2,7 +2,7 @@ using Polyhedra
 using SumOfSquares
 
 """
-    struct PolarPolynomialSublevelSet{T, P<:AbstractPolynomial{T}}
+    struct PolarConvexPolynomialSublevelSet{T, P<:AbstractPolynomial{T}}
         degree::Int
         p::P
     end
@@ -10,11 +10,11 @@ using SumOfSquares
 Set whose polar is ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a
 homogeneous polynomial of degree `degree`.
 """
-struct PolarPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
+struct PolarConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
     degree::Int
     p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
                      DynamicPolynomials.MonomialVector{true}}
-    convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}}
+    convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
 
 """
@@ -39,7 +39,7 @@ function dual_contour(f::Function, nhalfspaces::Int, T::Type)
     return polyhedron(h)
 end
 
-@recipe function f(set::PolarPolynomialSublevelSetAtOrigin{T}; npoints=64) where T
+@recipe function f(set::PolarConvexPolynomialSublevelSetAtOrigin{T}; npoints=64) where T
     seriestype --> :shape
     legend --> false
     dual_contour(scaling_function(set), npoints, T)
@@ -47,7 +47,7 @@ end
 
 
 """
-    struct PolarPolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomial{T}}
+    struct ConvexPolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomial{T}}
         degree::Int
         p::P
     end
@@ -55,21 +55,21 @@ end
 Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
 of degree `degree`.
 """
-struct PolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
+struct ConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
     degree::Int
     p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
                      DynamicPolynomials.MonomialVector{true}}
-    convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}}
+    convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
 
-@recipe function f(set::PolynomialSublevelSetAtOrigin; npoints=64)
+@recipe function f(set::ConvexPolynomialSublevelSetAtOrigin; npoints=64)
     seriestype --> :shape
     legend --> false
     primal_contour(scaling_function(set), npoints)
 end
 
-function scaling_function(set::Union{PolarPolynomialSublevelSetAtOrigin,
-                                     PolynomialSublevelSetAtOrigin})
+function scaling_function(set::Union{PolarConvexPolynomialSublevelSetAtOrigin,
+                                     ConvexPolynomialSublevelSetAtOrigin})
     # We convert the MatPolynomial to a polynomial to avoid having to do the
     # conversion for every substitution.
     p = polynomial(set.p)
@@ -79,10 +79,10 @@ function scaling_function(set::Union{PolarPolynomialSublevelSetAtOrigin,
     return (x, y) -> p(vx => x, vy => y)^(1 / set.degree)
 end
 
-function polar(set::PolynomialSublevelSetAtOrigin)
-    return PolarPolynomialSublevelSetAtOrigin( set.degree, set.p,
+function polar(set::ConvexPolynomialSublevelSetAtOrigin)
+    return PolarConvexPolynomialSublevelSetAtOrigin( set.degree, set.p,
                                               set.convexity_proof)
 end
-function polar(set::PolarPolynomialSublevelSetAtOrigin)
-    return PolynomialSublevelSetAtOrigin(set.degree, set.p, set.convexity_proof)
+function polar(set::PolarConvexPolynomialSublevelSetAtOrigin)
+    return ConvexPolynomialSublevelSetAtOrigin(set.degree, set.p, set.convexity_proof)
 end

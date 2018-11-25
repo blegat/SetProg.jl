@@ -1,6 +1,9 @@
+# Avoid variables, constraints and objective being added when loading
+@enum State Loading Modeling
+
 mutable struct Data
     variables::Set{VariableRef}
-    constraints::Dict{ConstraintIndex, InclusionConstraint}
+    constraints::Dict{ConstraintIndex, SetConstraint}
     names::Dict{ConstraintIndex, String}
     last_index::Int
     objective_sense::MOI.OptimizationSense
@@ -9,6 +12,7 @@ mutable struct Data
     polyvars::Union{Nothing, Vector{DynamicPolynomials.PolyVar{true}}}
     perspective_polyvar::DynamicPolynomials.PolyVar{true}
     space::Space
+    state::State
 end
 
 function set_space(cur::Space, space::Space)
@@ -33,10 +37,10 @@ function data(model::JuMP.Model)
     if !haskey(model.ext, :SetProg)
         @polyvar z # perspective variable
         model.ext[:SetProg] = Data(Set{VariableRef}(),
-                                   Dict{ConstraintIndex, InclusionConstraint}(),
+                                   Dict{ConstraintIndex, SetConstraint}(),
                                    Dict{ConstraintIndex, String}(), 0,
                                    MOI.FeasibilitySense, nothing, nothing,
-                                   nothing, z, Undecided)
+                                   nothing, z, Undecided, Modeling)
         model.optimize_hook = optimize_hook
     end
     return model.ext[:SetProg]

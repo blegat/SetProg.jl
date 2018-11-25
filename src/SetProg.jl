@@ -14,12 +14,14 @@ using MultivariateMoments
 using DynamicPolynomials
 
 export Ellipsoid, PolySet
-export nth_root
+export nth_root, L1_heuristic
 
 @enum Space Undecided PrimalSpace DualSpace
 
+include("utilities.jl")
 include("variables.jl")
 include("macros.jl") # need to be before constraint as it uses ⊆ in @constraint
+include("map.jl")
 include("constraints.jl")
 include("objective.jl")
 include("data.jl")

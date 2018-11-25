@@ -7,7 +7,7 @@ using Polyhedra
 using JuMP
 const MOI = JuMP.MOI
 
-@testset "Square" begin
+@testset "Algebraic" begin
     □ = polyhedron(HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1))
     @testset "Ellipsoid" begin
         @testset "John" begin
@@ -69,7 +69,7 @@ const MOI = JuMP.MOI
             @test JuMP.termination_status(model) == MOI.Success
             @test JuMP.objective_sense(model) == MOI.MaxSense
             @test JuMP.objective_value(model) == 1.0
-            @test JuMP.value(◯) isa SetProg.Sets.PolarConvexPolynomialSublevelSetAtOrigin{Float64}
+            @test JuMP.value(◯) isa SetProg.Sets.PolarPolynomialSublevelSetAtOrigin{Float64}
             @test JuMP.value(◯).degree == 4
             x, y = SetProg.data(model).polyvars
             @test polynomial(JuMP.value(◯).p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4
@@ -91,7 +91,7 @@ const MOI = JuMP.MOI
             @test JuMP.termination_status(model) == MOI.Success
             @test JuMP.objective_sense(model) == MOI.MaxSense
             @test JuMP.objective_value(model) == 1.0
-            @test JuMP.value(◯) isa SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}
+            @test JuMP.value(◯) isa SetProg.Sets.PolynomialSublevelSetAtOrigin{Float64}
             @test JuMP.value(◯).degree == 4
             x, y = SetProg.data(model).polyvars
             @test polynomial(JuMP.value(◯).p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4

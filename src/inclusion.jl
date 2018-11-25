@@ -22,26 +22,61 @@ function JuMP.build_constraint(_error::Function, subset,
     InclusionConstraint(subset, supset_powerset.set)
 end
 
-# Primal:
-#   set : x^T Q x ≤ 1
-#   volume proportional to 1/det(Q)
-#   t ≤ det(Q)^(1/n) <=> 1/t^n ≥ 1/det(Q)
-#   volume proportional to 1/t^n
-#   For t ≤ det(Q)^(1/n) to be tight we need to maximize `t`
-#   hence we need to minimize the volume
-function set_space(space::Space, ::InclusionConstraint{<:VariableRef, <:Polyhedra.Rep})
-    return set_space(space, DualSpace)
-end
-function set_space(space::Space, ::InclusionConstraint{<:Polyhedra.Rep, <:VariableRef})
-    return set_space(space, PrimalSpace)
-end
-
 ### InclusionConstraint for sets ###
 
 ## Set in Set ##
+function set_space(space::Space, ::InclusionConstraint{<:LinearImage{<:VariableRef},
+                                                       <:LinearImage{<:VariableRef}})
+    return set_space(space, DualSpace)
+end
 
+# S-procedure: Q ⊆ P <=> xQx ≤ 1 => xPx ≤ 1 <=> xPx ≤ xQx <=> Q - P is PSD
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.EllipsoidAtOrigin,
+                                                             <:Sets.EllipsoidAtOrigin},
+                             name::String = "")
+    Q = constraint.subset.Q
+    P = constraint.supset.Q
+    @constraint(model, Symmetric(Q - P) in PSDCone())
+end
+
+# S-procedure: Q ⊆ P <=> q(x) ≤ 1 => p(x) ≤ 1 <=> p(x) ≤ q(x) <= q - p is SOS
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.ConvexPolynomialSublevelSetAtOrigin,
+                                                             <:Sets.ConvexPolynomialSublevelSetAtOrigin},
+                             name::String = "")
+    q = constraint.subset.p
+    p = constraint.supset.p
+    @constraint(model, q - p in SOSCone())
+end
+
+# S ⊆ T <=> polar(T) ⊆ polar(S)
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin,
+                                                                     Sets.PolarConvexPolynomialSublevelSetAtOrigin},
+                                                             <:Union{Sets.PolarEllipsoidAtOrigin,
+                                                                     Sets.PolarConvexPolynomialSublevelSetAtOrigin}},
+                             name::String = "")
+    S = constraint.subset
+    T = constraint.supset
+    @constraint(model, Sets.polar(T) ⊆ Sets.polar(S))
+end
+
+# See [LTJ18]
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:LinearImage{S},
+                                                             <:LinearImage{T}},
+                             name::String = "") where {S <: Sets.AbstractSet,
+                                                       T <: Sets.AbstractSet}
+    @constraint(model, apply_map(model, constraint.subset) ⊆ apply_map(model, constraint.supset))
+end
 
 ## Set in Polyhedron ##
+function set_space(space::Space, ::InclusionConstraint{<:VariableRef,
+                                                       <:Polyhedra.Rep})
+    return set_space(space, DualSpace)
+end
+
 # Ellipsoid #
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Sets.AbstractSet{JuMP.VariableRef},
@@ -56,24 +91,6 @@ function JuMP.add_constraint(model::JuMP.Model,
         @constraint(model, ◯ ⊆ hs)
     end
 end
-# TODO if a is not constant, use Schur Lemma
-function quad_form(Q::Symmetric{<:JuMP.AbstractJuMPScalar},
-                   a::AbstractVector{<:AbstractMonomialLike})
-    n = length(a)
-    @assert n == LinearAlgebra.checksquare(Q)
-    return sum((i == j ? 1 : 2) * a[i] * Q[i, j] * a[j] for j in 1:n for i in 1:j)
-end
-function quad_form(Q::Symmetric{JuMP.VariableRef}, a::AbstractVector{<:Real})
-    n = length(a)
-    @assert n == LinearAlgebra.checksquare(Q)
-    aff = zero(JuMP.GenericAffExpr{eltype(a), JuMP.VariableRef})
-    for j in 1:n
-        for i in 1:n
-            JuMP.add_to_expression!(aff, a[i] * a[j], Q[i, j])
-        end
-    end
-    return aff
-end
 function poly_eval(p::AbstractPolynomial{JuMP.AffExpr},
                    a::AbstractVector{Float64})
     vars = variables(p)
@@ -84,13 +101,14 @@ function poly_eval(p::AbstractPolynomial{JuMP.AffExpr},
     end
     return aff
 end
+# TODO if a is not constant, use Schur Lemma
 function sublevel_eval(ell::Union{Sets.EllipsoidAtOrigin,
                                   Sets.PolarEllipsoidAtOrigin},
                        a::AbstractVector)
     return quad_form(ell.Q, a)
 end
-function sublevel_eval(set::Union{Sets.PolynomialSublevelSetAtOrigin,
-                                  Sets.PolarPolynomialSublevelSetAtOrigin},
+function sublevel_eval(set::Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
+                                  Sets.PolarConvexPolynomialSublevelSetAtOrigin},
                        a::AbstractVector)
     return poly_eval(polynomial(set.p), a)
 end
@@ -102,7 +120,7 @@ function sublevel_eval(model, set::Sets.DualQuadCone, a::AbstractVector, β)
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
-                                                                     Sets.PolarPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
+                                                                     Sets.PolarConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
                                                              <:Polyhedra.HyperPlane},
                              name::String = "")
     @assert iszero(h.set.β) # Otherwise it is not symmetric around the origin
@@ -118,7 +136,7 @@ function JuMP.add_constraint(model::JuMP.Model,
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
-                                                                     Sets.PolarPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
+                                                                     Sets.PolarConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
     @constraint(model, sublevel_eval(constraint.subset, constraint.supset.a) in MOI.LessThan(constraint.supset.β^2))
@@ -133,6 +151,11 @@ function JuMP.add_constraint(model::JuMP.Model,
 end
 
 ## Polyhedron in Set ##
+function set_space(space::Space, ::InclusionConstraint{<:Polyhedra.Rep,
+                                                       <:VariableRef})
+    return set_space(space, PrimalSpace)
+end
+
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Polyhedra.Rep,
                                                              <:Sets.AbstractSet{JuMP.VariableRef}},

@@ -1,4 +1,5 @@
 function load(model::JuMP.Model, d::Data)
+    d.state = Loading
     for variable in d.variables
         load(model, variable)
     end
@@ -8,6 +9,7 @@ function load(model::JuMP.Model, d::Data)
     if d.objective !== nothing
         load(model, d.objective)
     end
+    d.state = Modeling
 end
 
 # set as `optimize_hook` to JuMP Model in `data` so it is called at

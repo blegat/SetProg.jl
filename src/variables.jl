@@ -19,6 +19,7 @@ struct Ellipsoid <: AbstractVariable
     point::Union{Nothing, HintPoint}
     symmetric::Bool
     dimension::Int
+    guaranteed_psd::Bool # Is it already guaranteed that it is PSD ? e.g. by nth_root
 end
 function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
                    symmetric::Bool=false,
@@ -30,7 +31,7 @@ function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
             error("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=...)")
         end
     end
-    return Ellipsoid(point, symmetric, dimension)
+    return Ellipsoid(point, symmetric, dimension, false)
 end
 function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef},
                         point::CenterPoint, y::Vector)
@@ -41,8 +42,8 @@ function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef},
                         point::InteriorPoint, y::Vector)
     n = LinearAlgebra.checksquare(Q)
     @assert n == length(h.h)
-    β = @variable(model)
-    b = @variable(model, [1:length(h.h)])
+    β = @variable(model, base_name="β")
+    b = @variable(model, [1:length(h.h)], base_name="b")
     @constraint(model, Symmetric([β+1 b'; b Q]) in PSDCone())
     return InteriorDualQuadCone(Q, b, β, y, point.h)
 end
@@ -54,7 +55,10 @@ function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef}, point::HintPoint)
 end
 function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
     n = ell.dimension
-    Q = @variable(model, [1:n, 1:n], Symmetric)
+    Q = @variable(model, [1:n, 1:n], Symmetric, base_name="Q")
+    if !ell.guaranteed_psd
+        @constraint(model, Q in PSDCone())
+    end
     if ell.symmetric
         if space == PrimalSpace
             return Sets.EllipsoidAtOrigin(Q)
@@ -114,20 +118,20 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space)
     # General all monomials of degree `degree`, we don't want monomials of
     # lower degree as the polynomial is homogeneous
     @assert iseven(set.degree)
-    monos = monomials(vars, div(set.degree, 2))
-    p = @variable(model, variable_type=SOSPoly(monos))
     if set.convex
+        monos = monomials(vars, div(set.degree, 2))
+        p = @variable(model, variable_type=SOSPoly(monos))
         cref = constrain_convex(model, p, vars)
         slack = SumOfSquares.PolyJuMP.getdelegate(cref).slack
         convexity_proof = MultivariateMoments.getmat(slack)
+        if space == PrimalSpace
+            return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
+        else
+            @assert space == DualSpace
+            return Sets.PolarConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
+        end
     else
-        convexity_proof = nothing
-    end
-    if space == PrimalSpace
-        return Sets.PolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
-    else
-        @assert space == DualSpace
-        return Sets.PolarPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
+        error("TODO")
     end
 end
 _value(convexity_proof::Nothing) = nothing
@@ -135,11 +139,11 @@ function _value(convexity_proof::MultivariateMoments.SymMatrix)
     return MultivariateMoments.SymMatrix(JuMP.value.(convexity_proof.Q),
                                          convexity_proof.n)
 end
-function JuMP.value(set::Sets.PolynomialSublevelSetAtOrigin)
-    return Sets.PolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
+function JuMP.value(set::Sets.ConvexPolynomialSublevelSetAtOrigin)
+    return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
 end
-function JuMP.value(set::Sets.PolarPolynomialSublevelSetAtOrigin)
-    return Sets.PolarPolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
+function JuMP.value(set::Sets.PolarConvexPolynomialSublevelSetAtOrigin)
+    return Sets.PolarConvexPolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
 end
 
 ### VariableRef ###
@@ -157,7 +161,9 @@ function JuMP.build_variable(_error, info::JuMP.VariableInfo, set::AbstractVaria
 end
 function JuMP.add_variable(model::JuMP.AbstractModel, set::AbstractVariable, name::String)
     vref = VariableRef(model, set, name, nothing)
-    push!(data(model).variables, vref)
+    d = data(model)
+    @assert d.state == Modeling
+    push!(d.variables, vref)
     return vref
 end
 function load(model::JuMP.AbstractModel, vref::VariableRef)

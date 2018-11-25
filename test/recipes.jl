@@ -38,7 +38,7 @@ end
         @testset "Circle" begin
             p = SetProg.MatPolynomial{Float64}((i, j) -> convert(Float64, i == j),
                                                monovec([x, y]))
-            circle = SetProg.Sets.PolynomialSublevelSetAtOrigin(2, p, nothing)
+            circle = SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
             hr = recipe(SetProg.Sets.polar(circle))[1]
@@ -56,7 +56,7 @@ end
         @testset "Scaled circle" begin
             p = SetProg.MatPolynomial{Float64}((i, j) -> 2convert(Float64, i == j),
                                                monovec([x, y]))
-            circle = SetProg.Sets.PolynomialSublevelSetAtOrigin(2, p, nothing)
+            circle = SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
                         [1/√2, 0.0, -1/√2, 0.0], [0.0, 1/√2, 0.0, -1/√2])
             hr = recipe(SetProg.Sets.polar(circle))[1]

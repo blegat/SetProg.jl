@@ -58,7 +58,7 @@ As developed in [HL12].
 fixed-order controller design*.
 International Journal of Control, **2012**.
 """
-function l1_integral(set::Sets.PolynomialSublevelSetAtOrigin, vertex)
+function l1_integral(set::Sets.ConvexPolynomialSublevelSetAtOrigin, vertex)
     return rectangle_integrate(set.p, vertex)
 end
 
@@ -69,7 +69,7 @@ end
 # outside the polar of the rectangle with vertices (-v, v). However, since it
 # is homogeneous, only the ratios between the dimensions is important
 function l1_integral(set::Union{Sets.PolarEllipsoidAtOrigin,
-                                Sets.PolarPolynomialSublevelSetAtOrigin},
+                                Sets.PolarConvexPolynomialSublevelSetAtOrigin},
                      vertex)
     return l1_integral(Sets.polar(set), 1 ./ vertex)
 end
