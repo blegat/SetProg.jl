@@ -114,7 +114,7 @@ function sublevel_eval(set::Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
 end
 function sublevel_eval(model, set::Sets.DualQuadCone, a::AbstractVector, β)
     d = data(model)
-    x = d.polyvars[1:dimension(constraint.subset)]
+    x = d.polyvars[1:Sets.dimension(set)]
     z = d.perspective_polyvar
     return set.p(z => -β, x => a)
 end

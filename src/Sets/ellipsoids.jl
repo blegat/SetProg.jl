@@ -9,17 +9,17 @@ end
 struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
 end
-function convert(::Type{Ellipsoid{T}}, ell::EllipsoidAtOrigin{T}) where T
+function Base.convert(::Type{Ellipsoid{T}}, ell::EllipsoidAtOrigin{T}) where T
     Ellipsoid(ell.Q, zeros(T, dimension(ell)))
 end
 
 struct PolarEllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
 end
-function convert(::Type{Ellipsoid{T}}, ell::PolarEllipsoidAtOrigin{T}) where T
+function Base.convert(::Type{Ellipsoid{T}}, ell::PolarEllipsoidAtOrigin{T}) where T
     convert(Ellipsoid{T}, convert(EllipsoidAtOrigin{T}, ell))
 end
-function convert(::Type{EllipsoidAtOrigin{T}},
+function Base.convert(::Type{EllipsoidAtOrigin{T}},
                  ell::PolarEllipsoidAtOrigin{T}) where T
     EllipsoidAtOrigin(inv(ell.Q))
 end
@@ -67,7 +67,7 @@ function Ellipsoid(ell::LiftedEllipsoid)
     B, b, β, λ = Bbβλ(ell.P)
     c = -(B \ b)
     Q = B / λ
-    Ellipsoid(Q, c)
+    Ellipsoid(Symmetric(Q), c)
 end
 
 """
@@ -149,25 +149,25 @@ H y
 ```
 """
 struct InteriorDualQuadCone{T, S} <: DualQuadCone{T, S}
-    p::DynamicPolynomials.Polynomial{true}
+    p::DynamicPolynomials.Polynomial{true, S}
     Q::Symmetric{T, Matrix{T}}
-    b::Vector{S}
-    β::S
+    b::Vector{T}
+    β::T
     h::Vector{Float64} # h is an interior point
     H::Matrix{Float64}
 end
 function InteriorDualQuadCone(Q::Symmetric, b::Vector, β, y, h::Vector{Float64})
-    H = _householder(point)
+    H = _householder(h)
     p = y' * _HPH(Q, b, β, H) * y
-    QuadCone(p, Q, b, β, h, H)
+    InteriorDualQuadCone(p, Q, b, β, h, H)
 end
 _HPH(q::InteriorDualQuadCone) = _HPH(q.Q, q.b, q.β, q.H)
 samecenter(::InteriorDualQuadCone, ::InteriorDualQuadCone) = false
 
-function convert(::Type{LiftedEllipsoid{T}}, qc::DualQuadCone) where T
-    LiftedEllipsoid{T}(inv(_HPH(p)))
+function Base.convert(::Type{LiftedEllipsoid{T}}, qc::DualQuadCone) where T
+    LiftedEllipsoid{T}(inv(_HPH(qc)))
 end
-function convert(::Type{Ellipsoid{T}}, qc::DualQuadCone) where T
+function Base.convert(::Type{Ellipsoid{T}}, qc::DualQuadCone) where T
     convert(Ellipsoid{T}, convert(LiftedEllipsoid{T}, qc))
 end
 
