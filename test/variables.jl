@@ -8,6 +8,13 @@ using SetProg
         for d in 1:3
             @test Ellipsoid(point=SetProg.InteriorPoint(ones(d))).dimension == d
         end
+        @testset "Missing Point" begin
+            model = Model()
+            @variable(model, E, Ellipsoid(dimension=2))
+            @objective(model, Max, nth_root(volume(E))) # Force dual space
+            err = ArgumentError("Specify a point for nonsymmetric ellipsoid, e.g. `Ellipsoid(point=InteriorPoint([1.0, 0.0]))")
+            @test_throws err JuMP.optimize!(model)
+        end
     end
     @testset "PolySet" begin
         err = ErrorException("Degree of PolySet not specified, use PolySet(degree=..., ...)")

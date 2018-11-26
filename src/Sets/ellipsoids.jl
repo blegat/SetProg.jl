@@ -3,7 +3,7 @@ dimension(ell::AbstractEllipsoid) = LinearAlgebra.checksquare(ell.Q)
 
 struct Ellipsoid{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
-    c::Vector{T}
+    center::Vector{T}
 end
 
 struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
@@ -197,8 +197,9 @@ end
     seriestype --> :shape
     legend --> false
     Q = ell.Q
-    primal_contour((x, y) -> sqrt(x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2]),
-                   npoints)
+    x, y = primal_contour((x, y) -> sqrt(x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2]),
+                          npoints)
+    ell.center[1] .+ x, ell.center[2] .+ y
 end
 
 function polar(ell::EllipsoidAtOrigin)

@@ -25,6 +25,11 @@ end
             recipe_test(SetProg.Sets.polar(circle),
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
         end
+        @testset "Shifted Circle" begin
+            circle = SetProg.Sets.Ellipsoid(Symmetric(Q), [1.0, 2.0])
+            recipe_test(circle,
+                        [2.0, 1.0, 0.0, 1.0], [2.0, 3.0, 2.0, 1.0])
+        end
         @testset "Scaled circle" begin
             scaled_circle = SetProg.Sets.EllipsoidAtOrigin(Symmetric(2Q))
             recipe_test(scaled_circle,
