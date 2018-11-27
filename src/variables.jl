@@ -105,7 +105,11 @@ function PolySet(; point::Union{Nothing, HintPoint}=nothing,
         throw(ArgumentError("Degree of PolySet not even"))
     end
     if dimension === nothing
-        error("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=..., ...)")
+        if point !== nothing
+            dimension = length(point.h)
+        else
+            error("Dimension of PolySet not specified, use PolySet(dimension=..., ...)")
+        end
     end
     return PolySet(point, symmetric, degree, dimension, convex)
 end
@@ -117,24 +121,38 @@ end
 
 function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space)
     n = set.dimension
-    vars = data(model).polyvars[1:n]
+    d = data(model)
+    vars = d.polyvars[1:n]
     # General all monomials of degree `degree`, we don't want monomials of
     # lower degree as the polynomial is homogeneous
     @assert iseven(set.degree)
     if set.convex
-        monos = monomials(vars, div(set.degree, 2))
-        p = @variable(model, variable_type=SOSPoly(monos))
-        cref = constrain_convex(model, p, vars)
-        slack = SumOfSquares.PolyJuMP.getdelegate(cref).slack
-        convexity_proof = MultivariateMoments.getmat(slack)
-        if space == PrimalSpace
-            return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
+        if set.symmetric
+            monos = monomials(vars, div(set.degree, 2))
+            p = @variable(model, variable_type=SOSPoly(monos))
+            cref = constrain_convex(model, p, vars)
+            slack = SumOfSquares.PolyJuMP.getdelegate(cref).slack
+            convexity_proof = MultivariateMoments.getmat(slack)
+            if space == PrimalSpace
+                return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
+            else
+                @assert space == DualSpace
+                return Sets.PolarConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
+            end
         else
-            @assert space == DualSpace
-            return Sets.PolarConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
+            z = d.perspective_polyvar
+            monos = monomials([z; vars], div(set.degree, 2))
+            p = @variable(model, variable_type=SOSPoly(monos))
+            cref = constrain_convex(model, subs(p, z => 1), vars)
+            if space == PrimalSpace
+                error("Non-symmetric PolySet in PrimalSpace not implemented yet")
+            else
+                @assert space == DualSpace
+                return Sets.DualConvexPolynomialCone(set.degree, p, z, vars)
+            end
         end
     else
-        error("TODO")
+        error("Non-convex PolySet not implemented yet")
     end
 end
 _value(convexity_proof::Nothing) = nothing
@@ -157,6 +175,10 @@ function JuMP.value(set::Sets.InteriorDualQuadCone)
                                      Symmetric(JuMP.value.(set.Q)),
                                      JuMP.value.(set.b),
                                      JuMP.value(set.β), set.h, set.H)
+end
+function JuMP.value(set::Sets.DualConvexPolynomialCone)
+    return Sets.DualConvexPolynomialCone(set.degree, JuMP.value(set.q),
+                                         JuMP.value(set.p), set.z, set.x)
 end
 
 ### VariableRef ###

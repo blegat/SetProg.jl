@@ -52,24 +52,45 @@ const MOI = JuMP.MOI
                             end)
             end
             @testset "Non-homogeneous" begin
-                β = 1.0
-                b = [0.0, 0.0]
-                square_test(true,
-                            Ellipsoid(point=SetProg.InteriorPoint([0.0, 0.0])),
-                            nth_root,
-                            mock -> MOI.Utilities.mock_optimize!(mock, [Q; β; b; t]),
-                            1.0,
-                            ◯ -> begin
-                                @test ◯ isa SetProg.Sets.InteriorDualQuadCone{Float64,Float64}
-								z, x, y = variables(◯.p)
-                                @test ◯.p == z^2 + x^2 + y^2
-                                @test ◯.Q == Symmetric([1.0 0.0; 0.0 1.0])
-                                @test ◯.b == [0.0, 0.0]
-                                @test ◯.β == 1.0
-                                @test ◯.H ≈ [-1.0 0.0 0.0
-                                              0.0 1.0 0.0
-                                              0.0 0.0 1.0]
-                            end)
+                @testset "Ellipsoid" begin
+                    β = 1.0
+                    b = [0.0, 0.0]
+                    square_test(true,
+                                Ellipsoid(point=SetProg.InteriorPoint([0.0, 0.0])),
+                                nth_root,
+                                mock -> MOI.Utilities.mock_optimize!(mock, [Q; β; b; t]),
+                                1.0,
+                                ◯ -> begin
+                                    @test ◯ isa SetProg.Sets.InteriorDualQuadCone{Float64,Float64}
+                                    z, x, y = variables(◯.p)
+                                    @test ◯.p == z^2 + x^2 + y^2
+                                    @test ◯.Q == Symmetric([1.0 0.0; 0.0 1.0])
+                                    @test ◯.b == [0.0, 0.0]
+                                    @test ◯.β == 1.0
+                                    @test ◯.H ≈ [-1.0 0.0 0.0
+                                                  0.0 1.0 0.0
+                                                  0.0 0.0 1.0]
+                                end)
+                end
+                @testset "PolySet" begin
+                    β = 1.0
+                    b = [0.0, 0.0]
+                    square_test(true,
+                                PolySet(degree=2, convex=true, point=SetProg.InteriorPoint([0.0, 0.0])),
+                                set -> L1_heuristic(set, [1.0, 1.0]),
+                                mock -> begin
+                                    # β-1 b[1] b[2]
+                                    #  .  Q[1] Q[2]
+                                    #  .   .   Q[3]
+                                    MOI.Utilities.mock_optimize!(mock, [β-1; b[1]; Q[1]; b[2]; Q[2]; Q[3]; 2Q])
+                                end,
+                                8/3,
+                                ◯ -> begin
+                                    @test ◯ isa SetProg.Sets.DualConvexPolynomialCone{Float64,Float64}
+                                    z, x, y = variables(◯.p)
+                                    @test ◯.p == -z^2 + x^2 + y^2
+                                end)
+                end
             end
         end
         @testset "Löwner" begin

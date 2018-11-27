@@ -103,6 +103,8 @@ abstract type DualQuadCone{T, S} <: AbstractEllipsoid{T} end
         H::Matrix{Float64}
     end
 
+Set whose dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` where `p` is a
+quadratic forms given by:
 ```math
 p(y) =
 y^\\top H^\\top
@@ -138,6 +140,8 @@ samecenter(q1::CenterDualQuadCone, q2::CenterDualQuadCone) = q1.h == q2.h
         H::Matrix{Float64}
     end
 
+Set whose dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` where `p` is a
+quadratic forms given by:
 ```math
 p =
 y^\\top H^\\top

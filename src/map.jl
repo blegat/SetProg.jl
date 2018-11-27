@@ -15,6 +15,21 @@ function apply_map(model, lm::LinearImage{<:Sets.PolarEllipsoidAtOrigin})
 end
 
 """
+    apply_map(lm::LinearImage{Sets.InteriorDualQuadCone})
+
+The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
+and given ..., we have
+...
+"""
+function apply_map(model, lm::LinearImage{<:Sets.InteriorDualQuadCone})
+    d = data(model)
+    old_vars = d.polyvars[1:size(lm.A, 2)]
+    new_vars = d.polyvars[1:size(lm.A, 1)]
+    q = subs(lm.set.p, old_vars => lm.A' * new_vars)
+    return Sets.DualPolynomialSet(2, q)
+end
+
+"""
     apply_map(lm::LinearImage{Sets.PolarConvexPolynomialSublevelSetAtOrigin})
 
 The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``

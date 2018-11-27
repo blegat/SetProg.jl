@@ -50,6 +50,17 @@ function JuMP.add_constraint(model::JuMP.Model,
     @constraint(model, q - p in SOSCone())
 end
 
+# S-procedure: Q ⊆ P <=> Q* ⊇ P* <= p - q is SOS
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.DualPolynomialSet,
+                                                             <:Sets.DualPolynomialSet},
+                             name::String = "")
+    q = constraint.subset.p
+    p = constraint.supset.p
+    @constraint(model, p - q in SOSCone()) # TODO λ
+end
+
+
 # S ⊆ T <=> polar(T) ⊆ polar(S)
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin,
@@ -112,7 +123,9 @@ function sublevel_eval(set::Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
                        a::AbstractVector)
     return poly_eval(polynomial(set.p), a)
 end
-function sublevel_eval(model, set::Sets.DualQuadCone, a::AbstractVector, β)
+function sublevel_eval(model, set::Union{Sets.DualQuadCone,
+                                         Sets.DualConvexPolynomialCone},
+                       a::AbstractVector, β)
     d = data(model)
     x = d.polyvars[1:Sets.dimension(set)]
     z = d.perspective_polyvar
@@ -127,7 +140,8 @@ function JuMP.add_constraint(model::JuMP.Model,
     @constraint(model, sublevel_eval(constraint.subset, constraint.supset.a) in MOI.EqualTo(constraint.supset.β^2))
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.DualQuadCone,
+                             constraint::InclusionConstraint{<:Union{Sets.DualQuadCone,
+                                                                     Sets.DualConvexPolynomialCone},
                                                              <:Polyhedra.HyperPlane},
                              name::String = "")
     val = sublevel_eval(model, constraint.subset, constraint.supset.a,
@@ -142,7 +156,8 @@ function JuMP.add_constraint(model::JuMP.Model,
     @constraint(model, sublevel_eval(constraint.subset, constraint.supset.a) in MOI.LessThan(constraint.supset.β^2))
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.DualQuadCone,
+                             constraint::InclusionConstraint{<:Union{Sets.DualQuadCone,
+                                                                     Sets.DualConvexPolynomialCone},
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
     val = sublevel_eval(model, constraint.subset, constraint.supset.a,

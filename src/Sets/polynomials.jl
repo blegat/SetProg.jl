@@ -2,9 +2,25 @@ using Polyhedra
 using SumOfSquares
 
 """
-    struct PolarConvexPolynomialSublevelSet{T, P<:AbstractPolynomial{T}}
+    struct DualPolynomialSet{T} <: AbstractSet{T}
         degree::Int
-        p::P
+        p::DynamicPolynomials.Polynomial{true, T}
+    end
+
+Sets whose perspective-dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}``
+where `p` is a homogeneous polynomial of degree `degree`.
+"""
+struct DualPolynomialSet{T} <: AbstractSet{T}
+    degree::Int
+    p::DynamicPolynomials.Polynomial{true, T}
+end
+
+"""
+    struct PolarConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
+        degree::Int
+        p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+                         DynamicPolynomials.MonomialVector{true}}
+        convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
     end
 
 Set whose polar is ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a
@@ -16,6 +32,31 @@ struct PolarConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
                      DynamicPolynomials.MonomialVector{true}}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
+
+"""
+    struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
+        degree::Int
+        p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+                            DynamicPolynomials.MonomialVector{true}}
+        q::DynamicPolynomials.Polynomial{true, U}
+    end
+
+Set whose dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` or
+``\\{\\, (z, x) \\mid q(z, x) \\le z^{\\texttt{degree}} \\,\\}`` where `p` and
+`q` are homogeneous polynomials of degree `degree`.
+"""
+struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
+    degree::Int
+    q::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+                        DynamicPolynomials.MonomialVector{true}}
+    p::DynamicPolynomials.Polynomial{true, U}
+    z::DynamicPolynomials.PolyVar{true}
+    x::Vector{DynamicPolynomials.PolyVar{true}}
+end
+function DualConvexPolynomialCone(degree::Integer, q::MatPolynomial, z, x)
+    return DualConvexPolynomialCone(degree, q, q - z^degree, z, x)
+end
+dimension(d::DualConvexPolynomialCone) = length(d.x)
 
 """
     dual_contour(f::Function, nhalfspaces::Int, T::Type)

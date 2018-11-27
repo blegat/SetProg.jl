@@ -73,6 +73,9 @@ function l1_integral(set::Union{Sets.PolarEllipsoidAtOrigin,
                      vertex)
     return l1_integral(Sets.polar(set), 1 ./ vertex)
 end
+function l1_integral(set::Sets.DualConvexPolynomialCone, vertex)
+    return rectangle_integrate(subs(set.p, set.z => 0), 1 ./ vertex)
+end
 
 objective_sense(model::JuMP.Model, ::L1Heuristic) = data(model).objective_sense
 function objective_function(::JuMP.Model, l::L1Heuristic)
