@@ -39,7 +39,7 @@ end
         end
     end
     @testset "Polynomial" begin
-        @polyvar x y
+        @polyvar z x y
         @testset "Circle" begin
             p = SetProg.MatPolynomial{Float64}((i, j) -> convert(Float64, i == j),
                                                monovec([x, y]))
@@ -67,14 +67,74 @@ end
             hr = recipe(SetProg.Sets.polar(circle))[1]
             @test !hashyperplanes(hr)
             hss = collect(halfspaces(hr))
-            @test hss[1].a ≈ [1.0, 0.0]
-            @test hss[1].β ≈ √2
-            @test hss[2].a ≈ [0.0, 1.0]
-            @test hss[2].β ≈ √2
-            @test hss[3].a ≈ [-1.0, 0.0]
-            @test hss[3].β ≈ √2
-            @test hss[4].a ≈ [0.0, -1.0]
-            @test hss[4].β ≈ √2
+            @test hss[1].a ≈ [1/√2, 0.0]
+            @test hss[1].β ≈ 1.0
+            @test hss[2].a ≈ [0.0, 1/√2]
+            @test hss[2].β ≈ 1.0
+            @test hss[3].a ≈ [-1/√2, 0.0]
+            @test hss[3].β ≈ 1.0
+            @test hss[4].a ≈ [0.0, -1/√2]
+            @test hss[4].β ≈ 1.0
+        end
+        @testset "Non-homogeneous Circle" begin
+            @testset "Basic" begin
+                q = SetProg.MatPolynomial(Float64[0 0 0
+                                                  0 1 0
+                                                  0 0 1], monovec([z, x, y]))
+                shifted_circle = SetProg.Sets.DualConvexPolynomialCone(2, q,
+                                                                       zeros(2), z,
+                                                                       [x, y])
+                hr = recipe(shifted_circle)[1]
+                @test !hashyperplanes(hr)
+                hss = collect(halfspaces(hr))
+                @test hss[1].a ≈ [1.0, 0.0]
+                @test hss[1].β ≈ 1.0
+                @test hss[2].a ≈ [0.0, 1.0]
+                @test hss[2].β ≈ 1.0
+                @test hss[3].a ≈ [-1.0, 0.0]
+                @test hss[3].β ≈ 1.0
+                @test hss[4].a ≈ [0.0, -1.0]
+                @test hss[4].β ≈ 1.0
+            end
+            @testset "Scaled" begin
+                q = SetProg.MatPolynomial(Float64[0 0 0
+                                                  0 2 0
+                                                  0 0 2], monovec([z, x, y]))
+                shifted_circle = SetProg.Sets.DualConvexPolynomialCone(2, q,
+                                                                       zeros(2), z,
+                                                                       [x, y])
+                hr = recipe(shifted_circle)[1]
+                @test !hashyperplanes(hr)
+                hss = collect(halfspaces(hr))
+                @test hss[1].a ≈ [1/√2, 0.0]
+                @test hss[1].β ≈ 1.0
+                @test hss[2].a ≈ [0.0, 1/√2]
+                @test hss[2].β ≈ 1.0
+                @test hss[3].a ≈ [-1/√2, 0.0]
+                @test hss[3].β ≈ 1.0
+                @test hss[4].a ≈ [0.0, -1/√2]
+                @test hss[4].β ≈ 1.0
+            end
+            @testset "z-Scaled" begin
+                # z: -1/2 + 1 = 1/2
+                q = SetProg.MatPolynomial([1/2 0 0
+                                           0   1 0
+                                           0   0 1], monovec([z, x, y]))
+                shifted_circle = SetProg.Sets.DualConvexPolynomialCone(2, q,
+                                                                       zeros(2), z,
+                                                                       [x, y])
+                hr = recipe(shifted_circle)[1]
+                @test !hashyperplanes(hr)
+                hss = collect(halfspaces(hr))
+                @test hss[1].a ≈ [1/√2, 0.0]
+                @test hss[1].β ≈ 1.0
+                @test hss[2].a ≈ [0.0, 1/√2]
+                @test hss[2].β ≈ 1.0
+                @test hss[3].a ≈ [-1/√2, 0.0]
+                @test hss[3].β ≈ 1.0
+                @test hss[4].a ≈ [0.0, -1/√2]
+                @test hss[4].β ≈ 1.0
+            end
         end
     end
 end

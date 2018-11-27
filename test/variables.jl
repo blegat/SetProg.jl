@@ -20,7 +20,7 @@ using SetProg
         err = ErrorException("Degree of PolySet not specified, use PolySet(degree=..., ...)")
         @test_throws err PolySet(dimension=1)
         @test_throws ArgumentError("Degree of PolySet not even") PolySet(degree=1)
-        err = ErrorException("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=..., ...)")
+        err = ErrorException("Dimension of PolySet not specified, use PolySet(dimension=..., ...)")
         @test_throws err PolySet(degree=2)
         #@testset "Convex" begin
         #    model = Model()

@@ -122,7 +122,7 @@ struct CenterDualQuadCone{T, S} <: DualQuadCone{T, S}
     h::Vector{Float64} # h is an center-like point
     H::Matrix{Float64}
 end
-function CenterDualQuadCone(Q::Symmetric, y, h::Vector{Float64})
+function CenterDualQuadCone(Q::Symmetric, y, h::Vector)
     H = _householder(point)
     p = y' * _HPH(Q, zeros(length(h)), -1.0, H) * y
     CenterDualQuadCone(p, Q, h, H)
@@ -160,7 +160,7 @@ struct InteriorDualQuadCone{T, S} <: DualQuadCone{T, S}
     h::Vector{Float64} # h is an interior point
     H::Matrix{Float64}
 end
-function InteriorDualQuadCone(Q::Symmetric, b::Vector, β, y, h::Vector{Float64})
+function InteriorDualQuadCone(Q::Symmetric, b::Vector, β, y, h::Vector)
     H = _householder(h)
     p = y' * _HPH(Q, b, β, H) * y
     InteriorDualQuadCone(p, Q, b, β, h, H)

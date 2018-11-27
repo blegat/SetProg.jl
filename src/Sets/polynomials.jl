@@ -34,48 +34,27 @@ struct PolarConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
 end
 
 """
-    struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
-        degree::Int
-        p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
-                            DynamicPolynomials.MonomialVector{true}}
-        q::DynamicPolynomials.Polynomial{true, U}
-    end
-
-Set whose dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` or
-``\\{\\, (z, x) \\mid q(z, x) \\le z^{\\texttt{degree}} \\,\\}`` where `p` and
-`q` are homogeneous polynomials of degree `degree`.
-"""
-struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
-    degree::Int
-    q::MatPolynomial{T, DynamicPolynomials.Monomial{true},
-                        DynamicPolynomials.MonomialVector{true}}
-    p::DynamicPolynomials.Polynomial{true, U}
-    z::DynamicPolynomials.PolyVar{true}
-    x::Vector{DynamicPolynomials.PolyVar{true}}
-end
-function DualConvexPolynomialCone(degree::Integer, q::MatPolynomial, z, x)
-    return DualConvexPolynomialCone(degree, q, q - z^degree, z, x)
-end
-dimension(d::DualConvexPolynomialCone) = length(d.x)
-
-"""
     dual_contour(f::Function, nhalfspaces::Int, T::Type)
 
 Return a polytope of `nhalfspaces` halfspaces defined by normal vectors of
 equally spaced angles for the polar of the 1-sublevel set of the homogeneous
 function `f(x, y)`.
 """
-function dual_contour(f::Function, nhalfspaces::Int, T::Type)
-    αs = range(0, stop=2π, length=nhalfspaces)
+function dual_contour(f::Function, nhalfspaces::Int, ::Type{T},
+                      point::Vector{T} = [0.0, 0.0],
+                      x_axis::Vector{T} = [1.0, 0.0],
+                      y_axis::Vector{T} = [0.0, 1.0],
+                      cone = false) where T
     h = hrep(Polyhedra.HyperPlane{T, Vector{T}}[],
-             Polyhedra.HalfSpace{T, Vector{T}}[], d=2)
-    for (i, α) in enumerate(range(0, stop=2π - 2π/nhalfspaces, length=nhalfspaces))
-        a = cos(α)
-        b = sin(α)
-        r = f(a, b)
-        # f is homogeneous so f(a/r, b/r) = 1 so the halfspace is
-        # a*x/r + b*y/r ≤ 1 or equivalently a*x + b*y ≤ r
-        intersect!(h, HalfSpace([a, b], r))
+             Polyhedra.HalfSpace{T, Vector{T}}[], d=length(x_axis))
+    for α in range(0, stop=2π - 2π/nhalfspaces, length=nhalfspaces)
+        ray = x_axis * cos(α) + y_axis * sin(α)
+        λ = f(ray...)
+        # We have f(ray/λ) = 1 so the halfspace is
+        # (point + ray / λ) ⋅ x ≤ 1 for non-cone
+        # (point + ray / λ) ⋅ x ≥ 0 for coen
+        a = point + ray / λ
+        intersect!(h, HalfSpace(cone ? -a : a, cone ? zero(T) : one(T)))
     end
     return polyhedron(h)
 end
@@ -126,4 +105,88 @@ function polar(set::ConvexPolynomialSublevelSetAtOrigin)
 end
 function polar(set::PolarConvexPolynomialSublevelSetAtOrigin)
     return ConvexPolynomialSublevelSetAtOrigin(set.degree, set.p, set.convexity_proof)
+end
+
+"""
+    struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
+        degree::Int
+        p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+                            DynamicPolynomials.MonomialVector{true}}
+        q::DynamicPolynomials.Polynomial{true, U}
+    end
+
+Set whose dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` or
+``H \\{\\, (z, x) \\mid q(z, x) \\le z^{\\texttt{degree}} \\,\\}`` where `p` and
+`q` are homogeneous polynomials of degree `degree`.
+"""
+struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
+    degree::Int
+    q::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+                        DynamicPolynomials.MonomialVector{true}}
+    p::DynamicPolynomials.Polynomial{true, U}
+    h::Vector{Float64}
+    H::Matrix{Float64}
+    z::DynamicPolynomials.PolyVar{true}
+    x::Vector{DynamicPolynomials.PolyVar{true}}
+end
+function DualConvexPolynomialCone(degree::Integer, q::MatPolynomial, h::Vector,
+                                  z, x)
+    H = _householder(h)
+    y = [z; x]
+    p = (q - z^degree)(y => H * y)
+    return DualConvexPolynomialCone(degree, q, p, h, H, z, x)
+end
+dimension(d::DualConvexPolynomialCone) = length(d.x)
+
+function scaling_function(set::DualConvexPolynomialCone)
+    @assert length(set.x) == 2
+    vars = [set.z; set.x]
+    # z is a halfspace of the primal so a ray of the dual
+    z = [1.0, 0.0, 0.0]
+    in_set(Δ::Vector) = set.p(vars => z + Δ) < 0
+    @assert in_set(zeros(3))
+    return (Δz, Δx, Δy) -> begin
+        Δ = [Δz, Δx, Δy]
+        _in_set(λ::Real) = in_set(Δ * λ)
+        λ = 1.0
+        while _in_set(λ)
+            if λ > 1e10
+                error("Error in plotting : the `InteriorPoint` seems to be on the boundary")
+            end
+            λ *= 2
+        end
+        λmin = 0.0
+        λmax = λ
+        # Binary search. Invariant: in_set(λmin) and !in_set(λmax)
+        while abs(λmin - λmax) > 1e-8
+            λ = (λmin + λmax) / 2
+            if _in_set(λ)
+                λmin = λ
+            else
+                λmax = λ
+            end
+        end
+        λ = (λmin + λmax) / 2
+        return 1 / λ
+    end
+end
+
+@recipe function f(set::DualConvexPolynomialCone{T}; npoints=64) where T
+    seriestype --> :shape
+    legend --> false
+    # z is a halfspace of the primal so a ray of the dual
+    z = [1.0, 0.0, 0.0]
+    h1, h2 = set.h
+    # a is a ray of the primal so a halfspace of the dual
+    a = [1, h1, h2]
+    b = [h1, -1, 0]
+    @assert abs(dot(a, b)) < 1e-8
+    c = [h2 * (1 - h1^2) / (1 + h1^2), h1*h2 / (1 + h1^2), -1]
+    @assert abs(dot(b, c)) < 1e-8
+    @assert abs(dot(a, c)) < 1e-8
+    polyhedron = dual_contour(scaling_function(set), npoints, T,
+                              z, b, c, true)
+    # We fix z to 1.0 and eliminate it, this is cheap for H-rep
+    pp = fixandeliminate(polyhedron, 1, 1.0)
+    pp
 end

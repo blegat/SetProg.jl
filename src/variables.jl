@@ -148,7 +148,11 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space)
                 error("Non-symmetric PolySet in PrimalSpace not implemented yet")
             else
                 @assert space == DualSpace
-                return Sets.DualConvexPolynomialCone(set.degree, p, z, vars)
+                if set.point === nothing
+                    throw(ArgumentError("Specify a point for nonsymmetric polyset, e.g. `PolySet(point=InteriorPoint([1.0, 0.0]))"))
+                end
+                return Sets.DualConvexPolynomialCone(set.degree, p, set.point.h,
+                                                     z, vars)
             end
         end
     else
@@ -178,7 +182,8 @@ function JuMP.value(set::Sets.InteriorDualQuadCone)
 end
 function JuMP.value(set::Sets.DualConvexPolynomialCone)
     return Sets.DualConvexPolynomialCone(set.degree, JuMP.value(set.q),
-                                         JuMP.value(set.p), set.z, set.x)
+                                         JuMP.value(set.p), set.h, set.H, set.z,
+                                         set.x)
 end
 
 ### VariableRef ###
