@@ -9,10 +9,16 @@ mutable struct Data
     objective_sense::MOI.OptimizationSense
     objective::Union{Nothing, AbstractScalarFunction}
     objective_variable::Union{Nothing, JuMP.VariableRef}
-    polyvars::Union{Nothing, Vector{DynamicPolynomials.PolyVar{true}}}
-    perspective_polyvar::DynamicPolynomials.PolyVar{true}
+    perspective_polyvar::SpaceVariable
     space::Space
     state::State
+    spaces::Union{Nothing, Spaces}
+end
+
+function lift_space_variables(data::Data,
+                              x::Vector{SpaceVariable})
+    @assert data.perspective_polyvar > x[1]
+    SpaceVariable[data.perspective_polyvar; x]
 end
 
 function set_space(cur::Space, space::Space)
@@ -33,6 +39,42 @@ function set_space(d::Data, model::JuMP.Model)
     d.space = space
 end
 
+# Remove spaces creating in earlier `optimize!`
+function clear_spaces(d::Data)
+    for vref in d.variables
+        clear_spaces(vref)
+    end
+    for (index, constraint) in d.constraints
+        clear_spaces(constraint)
+    end
+end
+
+# No space index stored in constants
+function clear_spaces(::Union{Polyhedra.Rep, Sets.AbstractSet}) end
+function create_spaces(set::Polyhedra.Rep, spaces::Spaces)
+    return new_space(spaces, Polyhedra.fulldim(set))
+end
+function create_spaces(set::Sets.AbstractSet, spaces::Spaces)
+    polyvars = Sets.space_variables(set)
+    if polyvars === nothing
+        return new_space(spaces, Sets.dimension(set))
+    else
+        return new_space(spaces, polyvars)
+    end
+end
+
+# Create spaces and identify objects lying the the same space
+function create_spaces(d::Data)
+    spaces = Spaces()
+    for vref in d.variables
+        create_spaces(vref, spaces)
+    end
+    for (index, constraint) in d.constraints
+        create_spaces(constraint, spaces)
+    end
+    d.spaces = spaces
+end
+
 function data(model::JuMP.Model)
     if !haskey(model.ext, :SetProg)
         @polyvar z # perspective variable
@@ -40,7 +82,7 @@ function data(model::JuMP.Model)
                                    Dict{ConstraintIndex, SetConstraint}(),
                                    Dict{ConstraintIndex, String}(), 0,
                                    MOI.FeasibilitySense, nothing, nothing,
-                                   nothing, z, Undecided, Modeling)
+                                   z, Undecided, Modeling, nothing)
         model.optimize_hook = optimize_hook
     end
     return model.ext[:SetProg]

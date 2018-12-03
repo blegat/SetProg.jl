@@ -73,6 +73,9 @@ function l1_integral(set::Union{Sets.PolarEllipsoidAtOrigin,
                      vertex)
     return l1_integral(Sets.polar(set), 1 ./ vertex)
 end
+function l1_integral(set::Sets.DualQuadCone, vertex)
+    return l1_integral(Sets.PolarEllipsoidAtOrigin(set.Q), vertex)
+end
 function l1_integral(set::Sets.DualConvexPolynomialCone, vertex)
     return rectangle_integrate(subs(set.q, set.z => 0), 1 ./ vertex)
 end

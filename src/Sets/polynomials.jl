@@ -5,6 +5,9 @@ using SumOfSquares
     struct DualPolynomialSet{T} <: AbstractSet{T}
         degree::Int
         p::DynamicPolynomials.Polynomial{true, T}
+        h::Vector{Float64}
+        z::SpaceVariable
+        x::Vector{SpaceVariable}
     end
 
 Sets whose perspective-dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}``
@@ -13,7 +16,12 @@ where `p` is a homogeneous polynomial of degree `degree`.
 struct DualPolynomialSet{T} <: AbstractSet{T}
     degree::Int
     p::DynamicPolynomials.Polynomial{true, T}
+    h::Vector{Float64}
+    z::SpaceVariable
+    x::Vector{SpaceVariable}
 end
+
+space_variables(set::DualPolynomialSet) = set.x
 
 """
     struct PolarConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
@@ -82,6 +90,11 @@ struct ConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
 
+function space_variables(set::Union{ConvexPolynomialSublevelSetAtOrigin,
+                                    PolarConvexPolynomialSublevelSetAtOrigin})
+    return variables(set.p)
+end
+
 @recipe function f(set::ConvexPolynomialSublevelSetAtOrigin; npoints=64)
     seriestype --> :shape
     legend --> false
@@ -100,11 +113,12 @@ function scaling_function(set::Union{PolarConvexPolynomialSublevelSetAtOrigin,
 end
 
 function polar(set::ConvexPolynomialSublevelSetAtOrigin)
-    return PolarConvexPolynomialSublevelSetAtOrigin( set.degree, set.p,
-                                              set.convexity_proof)
+    return PolarConvexPolynomialSublevelSetAtOrigin(set.degree, set.p,
+                                                    set.convexity_proof)
 end
 function polar(set::PolarConvexPolynomialSublevelSetAtOrigin)
-    return ConvexPolynomialSublevelSetAtOrigin(set.degree, set.p, set.convexity_proof)
+    return ConvexPolynomialSublevelSetAtOrigin(set.degree, set.p,
+                                               set.convexity_proof)
 end
 
 """
@@ -126,8 +140,8 @@ struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
     p::DynamicPolynomials.Polynomial{true, U}
     h::Vector{Float64}
     H::Matrix{Float64}
-    z::DynamicPolynomials.PolyVar{true}
-    x::Vector{DynamicPolynomials.PolyVar{true}}
+    z::SpaceVariable
+    x::Vector{SpaceVariable}
 end
 function DualConvexPolynomialCone(degree::Integer, q::MatPolynomial, h::Vector,
                                   z, x)
@@ -137,8 +151,19 @@ function DualConvexPolynomialCone(degree::Integer, q::MatPolynomial, h::Vector,
     return DualConvexPolynomialCone(degree, q, p, h, H, z, x)
 end
 dimension(d::DualConvexPolynomialCone) = length(d.x)
+space_variables(set::DualConvexPolynomialCone) = set.x
+function Polyhedra.project(set::DualConvexPolynomialCone, I)
+    project(set, [I])
+end
+function Polyhedra.project(set::DualConvexPolynomialCone{T},
+                           I::AbstractVector) where T
+    J = setdiff(1:dimension(set), I)
+    DualPolynomialSet(set.degree, subs(set.p, set.x[J] => zeros(T, length(J))),
+                      set.h[I], set.z, set.x[I])
+end
 
-function scaling_function(set::DualConvexPolynomialCone)
+function scaling_function(set::Union{DualConvexPolynomialCone,
+                                     DualPolynomialSet})
     @assert length(set.x) == 2
     vars = [set.z; set.x]
     # z is a halfspace of the primal so a ray of the dual
@@ -171,7 +196,8 @@ function scaling_function(set::DualConvexPolynomialCone)
     end
 end
 
-@recipe function f(set::DualConvexPolynomialCone{T}; npoints=64) where T
+@recipe function f(set::Union{DualConvexPolynomialCone{T},
+                              DualPolynomialSet{T}}; npoints=64) where T
     seriestype --> :shape
     legend --> false
     # z is a halfspace of the primal so a ray of the dual

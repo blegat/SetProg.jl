@@ -9,6 +9,15 @@ end
 function variablify(c::InclusionConstraint)
     return InclusionConstraint(variablify(c.subset), variablify(c.supset))
 end
+function clear_spaces(c::InclusionConstraint)
+    clear_spaces(c.subset)
+    clear_spaces(c.supset)
+end
+function create_spaces(c::InclusionConstraint, spaces::Spaces)
+    sub = create_spaces(c.subset, spaces)
+    sup = create_spaces(c.supset, spaces)
+    merge_spaces(spaces, sub, sup)
+end
 
 JuMP.function_string(print_mode, c::InclusionConstraint) = string(c.subset)
 function JuMP.in_set_string(print_mode, c::InclusionConstraint)
@@ -25,8 +34,8 @@ end
 ### InclusionConstraint for sets ###
 
 ## Set in Set ##
-function set_space(space::Space, ::InclusionConstraint{<:LinearImage{<:VariableRef},
-                                                       <:LinearImage{<:VariableRef}})
+function set_space(space::Space, ::InclusionConstraint{<:LinearImage,
+                                                       <:LinearImage})
     return set_space(space, DualSpace)
 end
 
@@ -127,9 +136,17 @@ function sublevel_eval(model, set::Union{Sets.DualQuadCone,
                                          Sets.DualConvexPolynomialCone},
                        a::AbstractVector, β)
     d = data(model)
-    x = d.polyvars[1:Sets.dimension(set)]
+    x = Sets.space_variables(set)
     z = d.perspective_polyvar
-    return set.p(z => -β, x => a)
+    # Avoid large values, with high degree polynomials, it might cause issues
+    if false
+        scale_a = norm(a)
+        scale_β = abs(β)
+        scaling = max(scale_a, scale_β) / sqrt(scale_a * scale_β)
+    else
+        scaling = 1.0
+    end
+    return set.p(z => -β / scaling, x => a / scaling)
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},

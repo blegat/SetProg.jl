@@ -5,29 +5,61 @@ struct Ellipsoid{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
     center::Vector{T}
 end
+Ellipsoid(ell::Ellipsoid) = ell
+function Polyhedra.project(ell::Ellipsoid, I)
+    homogeneous = EllipsoidAtOrigin(project(EllipsoidAtOrigin(ell.Q), I))
+    return Ellipsoid(homogeneous.Q, ell.center[I])
+end
 
+"""
+    struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
+        Q::Symmetric{T, Matrix{T}}
+    end
+"""
 struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
 end
-function Base.convert(::Type{Ellipsoid{T}}, ell::EllipsoidAtOrigin{T}) where T
-    Ellipsoid(ell.Q, zeros(T, dimension(ell)))
+function Ellipsoid(ell::EllipsoidAtOrigin)
+    Ellipsoid(ell.Q, zeros(eltype(ell.Q), dimension(ell)))
+end
+function Polyhedra.project(ell::EllipsoidAtOrigin, I)
+    return project(PolarEllipsoidAtOrigin(ell), I)
 end
 
+
+"""
+    struct PolarEllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
+        Q::Symmetric{T, Matrix{T}}
+    end
+"""
 struct PolarEllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
 end
-function Base.convert(::Type{Ellipsoid{T}}, ell::PolarEllipsoidAtOrigin{T}) where T
-    convert(Ellipsoid{T}, convert(EllipsoidAtOrigin{T}, ell))
+
+function Ellipsoid(ell::PolarEllipsoidAtOrigin)
+    Ellipsoid(EllipsoidAtOrigin(ell))
 end
-function Base.convert(::Type{EllipsoidAtOrigin{T}},
-                 ell::PolarEllipsoidAtOrigin{T}) where T
+function EllipsoidAtOrigin(ell::PolarEllipsoidAtOrigin)
     EllipsoidAtOrigin(inv(ell.Q))
+end
+function PolarEllipsoidAtOrigin(ell::EllipsoidAtOrigin)
+    PolarEllipsoidAtOrigin(inv(ell.Q))
+end
+
+function Polyhedra.project(ell::PolarEllipsoidAtOrigin, I)
+    return PolarEllipsoidAtOrigin(Symmetric(ell.Q[I, I]))
 end
 
 struct LiftedEllipsoid{T}
     P::Matrix{T}
 end
 dimension(ell::LiftedEllipsoid) = LinearAlgebra.checksquare(ell.P) - 1
+
+function space_variables(ell::Union{Ellipsoid, EllipsoidAtOrigin,
+                                    PolarEllipsoidAtOrigin,
+                                    LiftedEllipsoid})
+    return nothing
+end
 
 function LiftedEllipsoid(ell::Ellipsoid)
     md = ell.Q * ell.c
@@ -39,9 +71,6 @@ function LiftedEllipsoid(ell::Ellipsoid)
     LiftedEllipsoid(P)
 end
 
-function Base.convert(::Type{Ellipsoid{T}}, ell::LiftedEllipsoid) where T
-    convert(Ellipsoid{T}, Ellipsoid(ell))
-end
 function Bbβλ(P)
     n = LinearAlgebra.checksquare(P) - 1
     ix = 1 .+ (1:n)
@@ -94,6 +123,9 @@ function _HPH(D, d, δ, H)
 end
 
 abstract type DualQuadCone{T, S} <: AbstractEllipsoid{T} end
+
+# The first variable is the perspective variable z
+space_variables(ell::DualQuadCone) = variables(ell.p)[2:end]
 
 """
     struct CenterDualQuadCone{T}
@@ -168,11 +200,10 @@ end
 _HPH(q::InteriorDualQuadCone) = _HPH(q.Q, q.b, q.β, q.H)
 samecenter(::InteriorDualQuadCone, ::InteriorDualQuadCone) = false
 
-function Base.convert(::Type{LiftedEllipsoid{T}}, qc::DualQuadCone) where T
-    LiftedEllipsoid{T}(inv(_HPH(qc)))
-end
-function Base.convert(::Type{Ellipsoid{T}}, qc::DualQuadCone) where T
-    convert(Ellipsoid{T}, convert(LiftedEllipsoid{T}, qc))
+LiftedEllipsoid(qc::DualQuadCone) = LiftedEllipsoid(inv(_HPH(qc)))
+Ellipsoid(qc::DualQuadCone) = Ellipsoid(LiftedEllipsoid(qc))
+function Polyhedra.project(ell::DualQuadCone, I)
+    return project(Ellipsoid(ell), I)
 end
 
 """
@@ -195,9 +226,9 @@ function primal_contour(f::Function, npoints::Int)
     return x, y
 end
 
-@recipe function f(aell::AbstractEllipsoid{T}; npoints=64) where T
+@recipe function f(aell::AbstractEllipsoid; npoints=64)
     @assert dimension(aell) == 2
-    ell = convert(Ellipsoid{T}, aell)
+    ell = Ellipsoid(aell)
     seriestype --> :shape
     legend --> false
     Q = ell.Q
@@ -206,9 +237,17 @@ end
     ell.center[1] .+ x, ell.center[2] .+ y
 end
 
-function polar(ell::EllipsoidAtOrigin)
-    return PolarEllipsoidAtOrigin(ell.Q)
-end
-function polar(ell::PolarEllipsoidAtOrigin)
-    return EllipsoidAtOrigin(ell.Q)
+polar(ell::EllipsoidAtOrigin) = PolarEllipsoidAtOrigin(ell.Q)
+polar(ell::PolarEllipsoidAtOrigin) = EllipsoidAtOrigin(ell.Q)
+
+function InteriorDualQuadCone(ell::LiftedEllipsoid)
+    Pd = inv(le.P)
+    H = SetProg.Sets._householder(h[state])
+    HPdH = H * Pd * H
+    # HPdH is not like a solution what would be obtained by solving the program
+    # since the λ computed for unlifting it is maybe not one.
+    # Therefore, the S-procedure's λ for the constraints will be different.
+    B, b, β, λ = Bbβλ(HPdH)
+    ps[state] = y' * _HPH(B/λ, b/λ, β/λ, H) * y
+    error("TODO: LiftedEllipsoid -> InteriorDualQuadCone")
 end

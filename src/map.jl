@@ -1,47 +1,66 @@
 struct LinearImage{S, T, MT <: AbstractMatrix{T}}
     set::S
     A::MT
+    space::Union{Nothing, SpaceIndex}
+    variables::Union{Nothing, Vector{SpaceVariable}}
+    space_index::Union{Nothing, SpaceIndex}
 end
 
+function clear_space(li::LinearImage)
+    li.space_index = nothing
+end
+function create_spaces(li::LinearImage, spaces::Spaces)
+    if li.space_index === nothing
+        li.space_index = new_space(spaces, size(li.A, 1))
+    end
+    return li.space_index
+end
+space_index(li::LinearImage) = li.space_index
+
 """
-    apply_map(lm::LinearImage{Sets.PolarEllipsoidAtOrigin})
+    apply_map(li::LinearImage{Sets.PolarEllipsoidAtOrigin})
 
 The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
 and given ``S^\\circ = \\{\\, x \\mid x^\\top Q x \\le 1\\,\\}``, we have
 ``A^{-\\top}S^\\circ = \\{\\, x \\mid x^\\top AQA^\\top x \\le 1\\,\\}``.
 """
-function apply_map(model, lm::LinearImage{<:Sets.PolarEllipsoidAtOrigin})
-    return Sets.PolarEllipsoidAtOrigin(Symmetric(lm.A * lm.set.Q * lm.A'))
+function apply_map(model, li::LinearImage{<:Sets.PolarEllipsoidAtOrigin})
+    return Sets.PolarEllipsoidAtOrigin(Symmetric(li.A * li.set.Q * li.A'))
 end
 
 """
-    apply_map(lm::LinearImage{Sets.InteriorDualQuadCone})
-
-The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
-and given ..., we have
-...
-"""
-function apply_map(model, lm::LinearImage{<:Sets.InteriorDualQuadCone})
-    d = data(model)
-    old_vars = d.polyvars[1:size(lm.A, 2)]
-    new_vars = d.polyvars[1:size(lm.A, 1)]
-    q = subs(lm.set.p, old_vars => lm.A' * new_vars)
-    return Sets.DualPolynomialSet(2, q)
-end
-
-"""
-    apply_map(lm::LinearImage{Sets.PolarConvexPolynomialSublevelSetAtOrigin})
+    apply_map(li::LinearImage{Sets.PolarConvexPolynomialSublevelSetAtOrigin})
 
 The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
 and given ``S^\\circ = \\{\\, x \\mid p(x) \\le 1\\,\\}``, we have
 ``A^{-\\top}S^\\circ = \\{\\, x \\mid x^\\top p(A^\\top x) \\le 1\\,\\}``.
 """
 function apply_map(model,
-                   lm::LinearImage{<:Sets.PolarConvexPolynomialSublevelSetAtOrigin})
-    new_vars = data(model).polyvars[1:size(lm.A, 1)]
-    @assert iseven(lm.set.degree)
-    q = apply_matrix(lm.set.p, lm.A', new_vars, div(lm.set.degree, 2))
-    return Sets.PolarConvexPolynomialSublevelSetAtOrigin(lm.set.degree, q, nothing)
+                   li::LinearImage{<:Sets.PolarConvexPolynomialSublevelSetAtOrigin})
+    new_vars = li.variables
+    @assert iseven(li.set.degree)
+    q = apply_matrix(li.set.p, li.A', new_vars, div(li.set.degree, 2))
+    return Sets.PolarConvexPolynomialSublevelSetAtOrigin(li.set.degree, q, nothing)
 end
 
-Base.:(*)(A::AbstractMatrix, set::VariableRef) = LinearImage(set, A)
+"""
+    apply_map(li::LinearImage{Sets.InteriorDualQuadCone})
+
+The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
+and given ..., we have
+...
+"""
+function apply_map(model, li::LinearImage{<:Union{Sets.InteriorDualQuadCone,
+                                                  Sets.DualConvexPolynomialCone}})
+    d = data(model)
+    old_vars = Sets.space_variables(li.set)
+    new_vars = li.variables
+    q = subs(li.set.p, old_vars => li.A' * new_vars)
+    return Sets.DualPolynomialSet(2, q, li.A * li.set.h, d.perspective_polyvar,
+                                  new_vars)
+end
+
+# FIXME, for Sets.AbstractSet, we should apply it directly
+function Base.:(*)(A::AbstractMatrix, set::Union{VariableRef, Sets.AbstractSet})
+    return LinearImage(set, A, nothing, nothing)
+end

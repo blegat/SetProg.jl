@@ -18,7 +18,7 @@ _b(model, h::InteriorPoint) = @variable(model, [1:length(h.h)])
 struct Ellipsoid <: AbstractVariable
     point::Union{Nothing, HintPoint}
     symmetric::Bool
-    dimension::Int
+    dimension::Union{Nothing, Int}
     guaranteed_psd::Bool # Is it already guaranteed that it is PSD ? e.g. by nth_root
 end
 function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
@@ -27,8 +27,6 @@ function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
     if dimension === nothing
         if point !== nothing
             dimension = length(point.h)
-        else
-            error("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=...)")
         end
     end
     return Ellipsoid(point, symmetric, dimension, false)
@@ -47,14 +45,9 @@ function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef},
     @constraint(model, Symmetric([β+1 b'; b Q]) in PSDCone())
     return Sets.InteriorDualQuadCone(Q, b, β, y, point.h)
 end
-function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef}, point::HintPoint)
-    n = LinearAlgebra.checksquare(Q)
-    d = data(model)
-    y = [d.perspective_polyvar; d.polyvars[1:n]]
-    return dual_quad_cone(model, Q, point, y)
-end
-function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
-    n = ell.dimension
+function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
+                      space_dimension, space_polyvars)
+    n = space_dimension
     Q = @variable(model, [1:n, 1:n], Symmetric, base_name="Q")
     if !ell.guaranteed_psd
         @constraint(model, Q in PSDCone())
@@ -74,7 +67,9 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space)
             if ell.point === nothing
                 throw(ArgumentError("Specify a point for nonsymmetric ellipsoid, e.g. `Ellipsoid(point=InteriorPoint([1.0, 0.0]))"))
             end
-            return dual_quad_cone(model, Q, ell.point)
+            return dual_quad_cone(model, Q, ell.point,
+                                  [data(model).perspective_polyvar;
+                                   space_polyvars])
         end
     end
 end
@@ -90,7 +85,7 @@ struct PolySet <: AbstractVariable
     point::Union{Nothing, HintPoint}
     symmetric::Bool
     degree::Int
-    dimension::Int
+    dimension::Union{Nothing, Int}
     convex::Bool
 end
 function PolySet(; point::Union{Nothing, HintPoint}=nothing,
@@ -107,8 +102,6 @@ function PolySet(; point::Union{Nothing, HintPoint}=nothing,
     if dimension === nothing
         if point !== nothing
             dimension = length(point.h)
-        else
-            error("Dimension of PolySet not specified, use PolySet(dimension=..., ...)")
         end
     end
     return PolySet(point, symmetric, degree, dimension, convex)
@@ -119,18 +112,18 @@ function constrain_convex(model, p, vars)
     return @constraint(model, hessian in SOSMatrixCone())
 end
 
-function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space)
-    n = set.dimension
+function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
+                      space_dimension, space_polyvars)
+    n = space_dimension
     d = data(model)
-    vars = d.polyvars[1:n]
     # General all monomials of degree `degree`, we don't want monomials of
     # lower degree as the polynomial is homogeneous
     @assert iseven(set.degree)
     if set.convex
         if set.symmetric
-            monos = monomials(vars, div(set.degree, 2))
+            monos = monomials(space_polyvars, div(set.degree, 2))
             p = @variable(model, variable_type=SOSPoly(monos))
-            cref = constrain_convex(model, p, vars)
+            cref = constrain_convex(model, p, space_polyvars)
             slack = SumOfSquares.PolyJuMP.getdelegate(cref).slack
             convexity_proof = MultivariateMoments.getmat(slack)
             if space == PrimalSpace
@@ -140,10 +133,11 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space)
                 return Sets.PolarConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
             end
         else
-            z = d.perspective_polyvar
-            monos = monomials([z; vars], div(set.degree, 2))
+            monos = monomials(lift_space_variables(d, space_polyvars),
+                              div(set.degree, 2))
             p = @variable(model, variable_type=SOSPoly(monos))
-            cref = constrain_convex(model, subs(p, z => 1), vars)
+            cref = constrain_convex(model, subs(p, d.perspective_polyvar => 1),
+                                    space_polyvars)
             if space == PrimalSpace
                 error("Non-symmetric PolySet in PrimalSpace not implemented yet")
             else
@@ -152,7 +146,8 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space)
                     throw(ArgumentError("Specify a point for nonsymmetric polyset, e.g. `PolySet(point=InteriorPoint([1.0, 0.0]))"))
                 end
                 return Sets.DualConvexPolynomialCone(set.degree, p, set.point.h,
-                                                     z, vars)
+                                                     d.perspective_polyvar,
+                                                     space_polyvars)
             end
         end
     else
@@ -193,6 +188,7 @@ mutable struct VariableRef{M <: JuMP.AbstractModel,
     set::S
     name::String
     variable::Union{Nothing, Sets.AbstractSet{JuMP.VariableRef}}
+    space_index::Union{Nothing, SpaceIndex}
 end
 JuMP.name(vref::VariableRef) = vref.name
 function JuMP.build_variable(_error, info::JuMP.VariableInfo, set::AbstractVariable)
@@ -200,15 +196,32 @@ function JuMP.build_variable(_error, info::JuMP.VariableInfo, set::AbstractVaria
     return set
 end
 function JuMP.add_variable(model::JuMP.AbstractModel, set::AbstractVariable, name::String)
-    vref = VariableRef(model, set, name, nothing)
+    vref = VariableRef(model, set, name, nothing, nothing)
     d = data(model)
     @assert d.state == Modeling
     push!(d.variables, vref)
     return vref
 end
+JuMP.value(vref::VariableRef) = JuMP.value(vref.variable)
+
+function clear_spaces(vref::VariableRef)
+    vref.space_index = nothing
+end
+function create_spaces(vref::VariableRef, spaces::Spaces)
+    if vref.space_index === nothing
+        if vref.set.dimension === nothing
+            vref.space_index = new_space(spaces)
+        else
+            vref.space_index = new_space(spaces, vref.set.dimension)
+        end
+    end
+    return vref.space_index
+end
+space_index(vref::VariableRef) = vref.space_index
+
 function load(model::JuMP.AbstractModel, vref::VariableRef)
     d = data(model)
-    variable = variable_set(model, vref.set, d.space)
-    vref.variable = variable
+    vref.variable = variable_set(model, vref.set, d.space,
+                                 space_dimension(d.spaces, vref.space_index),
+                                 space_polyvars(d.spaces, vref.space_index))
 end
-JuMP.value(vref::VariableRef) = JuMP.value(vref.variable)

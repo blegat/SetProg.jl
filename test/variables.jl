@@ -3,8 +3,12 @@ using SetProg
 
 @testset "Variables" begin
     @testset "Ellipsoid" begin
-        err = ErrorException("Dimension of Ellipsoid not specified, use Ellipsoid(dimension=...)")
-        @test_throws err Ellipsoid()
+        @testset "Dimension" begin
+            model = Model()
+            @variable(model, S, Ellipsoid())
+            err = ErrorException("Missing dimension information, use Ellipsoid(dimension=...) or PolySet(dimension=...)")
+            @test_throws err JuMP.optimize!(model)
+        end
         for d in 1:3
             @test Ellipsoid(point=SetProg.InteriorPoint(ones(d))).dimension == d
         end
@@ -20,8 +24,12 @@ using SetProg
         err = ErrorException("Degree of PolySet not specified, use PolySet(degree=..., ...)")
         @test_throws err PolySet(dimension=1)
         @test_throws ArgumentError("Degree of PolySet not even") PolySet(degree=1)
-        err = ErrorException("Dimension of PolySet not specified, use PolySet(dimension=..., ...)")
-        @test_throws err PolySet(degree=2)
+        @testset "Dimension" begin
+            model = Model()
+            @variable(model, S, PolySet(degree=2))
+            err = ErrorException("Missing dimension information, use Ellipsoid(dimension=...) or PolySet(dimension=...)")
+            @test_throws err JuMP.optimize!(model)
+        end
         #@testset "Convex" begin
         #    model = Model()
         #    @variable(model, E, PolySet(degree=2, dimension=2))
