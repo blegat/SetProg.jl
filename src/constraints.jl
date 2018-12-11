@@ -6,8 +6,6 @@ need_variablify(set::Union{Polyhedra.Rep, Sets.AbstractSet}) = false
 variablify(set::Union{Polyhedra.Rep, Sets.AbstractSet}) = set
 need_variablify(v::VariableRef) = true
 variablify(v::VariableRef) = v.variable
-need_variablify(lm::LinearImage) = need_variablify(lm.set)
-variablify(lm::LinearImage) = LinearImage(variablify(lm.set), lm.A)
 
 function load(model::JuMP.Model, constraint::SetConstraint)
     @assert need_variablify(constraint)

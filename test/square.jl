@@ -15,9 +15,6 @@ const MOI = JuMP.MOI
                          objective_value, set_test)
         mock = MOI.Utilities.MockOptimizer(JuMP.JuMPMOIModel{Float64}())
         model = JuMP.direct_model(mock);
-        # Q = [1 0
-        #      0 1]
-        # t = √det(Q) = 1                                                                  Q11  Q12  Q22  t
         MOI.Utilities.set_mock_optimize!(mock, mock_optimize!)
 
         @variable(model, ◯, variable)

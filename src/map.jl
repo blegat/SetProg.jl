@@ -1,12 +1,16 @@
-struct LinearImage{S, T, MT <: AbstractMatrix{T}}
+mutable struct LinearImage{S, T, MT <: AbstractMatrix{T}}
     set::S
     A::MT
-    space::Union{Nothing, SpaceIndex}
-    variables::Union{Nothing, Vector{SpaceVariable}}
     space_index::Union{Nothing, SpaceIndex}
 end
 
-function clear_space(li::LinearImage)
+
+need_variablify(lm::LinearImage) = need_variablify(lm.set)
+function variablify(lm::LinearImage)
+    return LinearImage(variablify(lm.set), lm.A, lm.space_index)
+end
+
+function clear_spaces(li::LinearImage)
     li.space_index = nothing
 end
 function create_spaces(li::LinearImage, spaces::Spaces)
@@ -37,7 +41,8 @@ and given ``S^\\circ = \\{\\, x \\mid p(x) \\le 1\\,\\}``, we have
 """
 function apply_map(model,
                    li::LinearImage{<:Sets.PolarConvexPolynomialSublevelSetAtOrigin})
-    new_vars = li.variables
+    d = data(model)
+    new_vars = space_polyvars(d.spaces, li.space_index)
     @assert iseven(li.set.degree)
     q = apply_matrix(li.set.p, li.A', new_vars, div(li.set.degree, 2))
     return Sets.PolarConvexPolynomialSublevelSetAtOrigin(li.set.degree, q, nothing)
@@ -54,7 +59,7 @@ function apply_map(model, li::LinearImage{<:Union{Sets.InteriorDualQuadCone,
                                                   Sets.DualConvexPolynomialCone}})
     d = data(model)
     old_vars = Sets.space_variables(li.set)
-    new_vars = li.variables
+    new_vars = space_polyvars(d.spaces, li.space_index)
     q = subs(li.set.p, old_vars => li.A' * new_vars)
     return Sets.DualPolynomialSet(2, q, li.A * li.set.h, d.perspective_polyvar,
                                   new_vars)
@@ -62,5 +67,5 @@ end
 
 # FIXME, for Sets.AbstractSet, we should apply it directly
 function Base.:(*)(A::AbstractMatrix, set::Union{VariableRef, Sets.AbstractSet})
-    return LinearImage(set, A, nothing, nothing)
+    return LinearImage(set, A, nothing)
 end
