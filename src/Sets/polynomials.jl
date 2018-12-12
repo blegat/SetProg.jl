@@ -21,6 +21,7 @@ struct DualPolynomialSet{T} <: AbstractSet{T}
     x::Vector{SpaceVariable}
 end
 
+perspective_variable(set::DualPolynomialSet) = set.z
 space_variables(set::DualPolynomialSet) = set.x
 
 """
@@ -90,6 +91,10 @@ struct ConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
 
+function perspective_variable(set::Union{ConvexPolynomialSublevelSetAtOrigin,
+                                         PolarConvexPolynomialSublevelSetAtOrigin})
+    return nothing
+end
 function space_variables(set::Union{ConvexPolynomialSublevelSetAtOrigin,
                                     PolarConvexPolynomialSublevelSetAtOrigin})
     return variables(set.p)
@@ -151,6 +156,7 @@ function DualConvexPolynomialCone(degree::Integer, q::MatPolynomial, h::Vector,
     return DualConvexPolynomialCone(degree, q, p, h, H, z, x)
 end
 dimension(d::DualConvexPolynomialCone) = length(d.x)
+perspective_variable(set::DualConvexPolynomialCone) = set.z
 space_variables(set::DualConvexPolynomialCone) = set.x
 function Polyhedra.project(set::DualConvexPolynomialCone, I)
     project(set, [I])

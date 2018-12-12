@@ -20,9 +20,11 @@ struct ConstraintIndex
 end
 
 function JuMP.add_constraint(model::JuMP.Model, constraint::SetConstraint,
-                             name::String)
+                             name::String="")
     d = data(model)
-    @assert d.state == Modeling
+    if d.state != Modeling
+        error("Constraint of type $(typeof(constraint)) not supported yet")
+    end
     @assert need_variablify(constraint)
     index = ConstraintIndex(d.last_index += 1)
     d.constraints[index] = constraint

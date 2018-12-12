@@ -207,6 +207,7 @@ JuMP.value(vref::VariableRef) = JuMP.value(vref.variable)
 function clear_spaces(vref::VariableRef)
     vref.space_index = nothing
 end
+function Sets.perspective_variable(::VariableRef) end
 function create_spaces(vref::VariableRef, spaces::Spaces)
     if vref.space_index === nothing
         if vref.set.dimension === nothing

@@ -19,6 +19,7 @@ function optimize_hook(model::JuMP.AbstractModel)
     set_space(d, model)
     # In case `optimize!` is called then the problem is modified and then it is
     # called again we need to clear first the space that might be wrong
+    synchronize_perspective(d)
     clear_spaces(d)
     create_spaces(d)
     load(model, d)

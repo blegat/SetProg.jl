@@ -9,7 +9,7 @@ mutable struct Data
     objective_sense::MOI.OptimizationSense
     objective::Union{Nothing, AbstractScalarFunction}
     objective_variable::Union{Nothing, JuMP.VariableRef}
-    perspective_polyvar::SpaceVariable
+    perspective_polyvar::Union{Nothing, SpaceVariable}
     space::Space
     state::State
     spaces::Union{Nothing, Spaces}
@@ -48,9 +48,32 @@ function clear_spaces(d::Data)
         clear_spaces(constraint)
     end
 end
-
 # No space index stored in constants
 function clear_spaces(::Union{Polyhedra.Rep, Sets.AbstractSet}) end
+
+# No perspective variable
+function Sets.perspective_variable(::Polyhedra.Rep) end
+
+synchronize_perspective(::Nothing, ::Nothing) = nothing
+synchronize_perspective(::Nothing, z::SpaceVariable) = z
+synchronize_perspective(z::SpaceVariable, ::Nothing) = z
+function synchronize_perspective(z1::SpaceVariable, z2::SpaceVariable)
+    if z1 !== z2
+        throw(ArgumentError("Perspective variables do not match"))
+    end
+    return z1
+end
+function synchronize_perspective(d::Data)
+    z = nothing
+    for (index, constraint) in d.constraints
+        z = synchronize_perspective(z, Sets.perspective_variable(constraint))
+    end
+    if z === nothing
+        @polyvar z
+    end
+    d.perspective_polyvar = z
+end
+
 function create_spaces(set::Polyhedra.Rep, spaces::Spaces)
     return new_space(spaces, Polyhedra.fulldim(set))
 end
@@ -77,12 +100,11 @@ end
 
 function data(model::JuMP.Model)
     if !haskey(model.ext, :SetProg)
-        @polyvar z # perspective variable
         model.ext[:SetProg] = Data(Set{VariableRef}(),
                                    Dict{ConstraintIndex, SetConstraint}(),
                                    Dict{ConstraintIndex, String}(), 0,
                                    MOI.FeasibilitySense, nothing, nothing,
-                                   z, Undecided, Modeling, nothing)
+                                   nothing, Undecided, Modeling, nothing)
         model.optimize_hook = optimize_hook
     end
     return model.ext[:SetProg]

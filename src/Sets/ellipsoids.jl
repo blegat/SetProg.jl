@@ -55,6 +55,11 @@ struct LiftedEllipsoid{T}
 end
 dimension(ell::LiftedEllipsoid) = LinearAlgebra.checksquare(ell.P) - 1
 
+function perspective_variables(ell::Union{Ellipsoid, EllipsoidAtOrigin,
+                                          PolarEllipsoidAtOrigin,
+                                          LiftedEllipsoid})
+    return nothing
+end
 function space_variables(ell::Union{Ellipsoid, EllipsoidAtOrigin,
                                     PolarEllipsoidAtOrigin,
                                     LiftedEllipsoid})
@@ -125,6 +130,7 @@ end
 abstract type DualQuadCone{T, S} <: AbstractEllipsoid{T} end
 
 # The first variable is the perspective variable z
+perspective_variable(ell::DualQuadCone) = variables(ell.p)[1]
 space_variables(ell::DualQuadCone) = variables(ell.p)[2:end]
 
 """
@@ -155,7 +161,7 @@ struct CenterDualQuadCone{T, S} <: DualQuadCone{T, S}
     H::Matrix{Float64}
 end
 function CenterDualQuadCone(Q::Symmetric, y, h::Vector)
-    H = _householder(point)
+    H = _householder(h)
     p = y' * _HPH(Q, zeros(length(h)), -1.0, H) * y
     CenterDualQuadCone(p, Q, h, H)
 end

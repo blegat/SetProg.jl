@@ -13,6 +13,7 @@ end
 function clear_spaces(li::LinearImage)
     li.space_index = nothing
 end
+Sets.perspective_variable(li::LinearImage) = Sets.perspective_variable(li.set)
 function create_spaces(li::LinearImage, spaces::Spaces)
     if li.space_index === nothing
         li.space_index = new_space(spaces, size(li.A, 1))

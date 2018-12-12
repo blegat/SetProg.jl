@@ -13,6 +13,10 @@ function clear_spaces(c::InclusionConstraint)
     clear_spaces(c.subset)
     clear_spaces(c.supset)
 end
+function Sets.perspective_variable(c::InclusionConstraint)
+    return synchronize_perspective(Sets.perspective_variable(c.subset),
+                                   Sets.perspective_variable(c.supset))
+end
 function create_spaces(c::InclusionConstraint, spaces::Spaces)
     sub = create_spaces(c.subset, spaces)
     sup = create_spaces(c.supset, spaces)
@@ -38,6 +42,13 @@ function set_space(space::Space, ::InclusionConstraint{<:LinearImage,
                                                        <:LinearImage})
     return set_space(space, DualSpace)
 end
+# We can always transform  an ellipsoid to primal or dual space so we can handle
+# any space
+function set_space(space::Space,
+                   ::InclusionConstraint{<:VariableRef,
+                                         <:Sets.AbstractEllipsoid{T}}) where T<:Number
+    return space
+end
 
 # S-procedure: Q ⊆ P <=> xQx ≤ 1 => xPx ≤ 1 <=> xPx ≤ xQx <=> Q - P is PSD
 function JuMP.add_constraint(model::JuMP.Model,
@@ -61,8 +72,10 @@ end
 
 # S-procedure: Q ⊆ P <=> Q* ⊇ P* <= p - q is SOS
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.DualPolynomialSet,
-                                                             <:Sets.DualPolynomialSet},
+                             constraint::InclusionConstraint{<:Union{Sets.DualQuadCone,
+                                                                     Sets.DualPolynomialSet},
+                                                             <:Union{Sets.DualQuadCone,
+                                                                     Sets.DualPolynomialSet}},
                              name::String = "")
     q = constraint.subset.p
     p = constraint.supset.p
