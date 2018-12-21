@@ -23,12 +23,12 @@ const MOI = JuMP.MOI
         else
             cref = @constraint(model, □ ⊆ ◯)
         end
-        @objective(model, inner ? MOI.MaxSense : MOI.MinSense,
+        @objective(model, inner ? MOI.MAX_SENSE : MOI.MIN_SENSE,
                    metric(volume(◯)))
 
         SetProg.optimize!(model)
-        @test JuMP.termination_status(model) == MOI.Success
-        @test JuMP.objective_sense(model) == MOI.MaxSense
+        @test JuMP.termination_status(model) == MOI.OPTIMAL
+        @test JuMP.objective_sense(model) == MOI.MAX_SENSE
         @test JuMP.objective_value(model) == objective_value
         set_test(JuMP.value(◯))
     end

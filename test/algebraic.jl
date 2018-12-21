@@ -23,8 +23,8 @@ const MOI = JuMP.MOI
             @objective(model, Max, nth_root(volume(◯)))
 
             SetProg.optimize!(model)
-            @test JuMP.termination_status(model) == MOI.Success
-            @test JuMP.objective_sense(model) == MOI.MaxSense
+            @test JuMP.termination_status(model) == MOI.OPTIMAL
+            @test JuMP.objective_sense(model) == MOI.MAX_SENSE
             @test JuMP.objective_value(model) == 1.0
             @test JuMP.value(◯) isa SetProg.Sets.PolarEllipsoidAtOrigin
             @test JuMP.value(◯).Q == Symmetric([1.0 0.0; 0.0 1.0])
@@ -42,8 +42,8 @@ const MOI = JuMP.MOI
             @objective(model, Min, nth_root(volume(◯)))
 
             SetProg.optimize!(model)
-            @test JuMP.termination_status(model) == MOI.Success
-            @test JuMP.objective_sense(model) == MOI.MaxSense
+            @test JuMP.termination_status(model) == MOI.OPTIMAL
+            @test JuMP.objective_sense(model) == MOI.MAX_SENSE
             @test JuMP.objective_value(model) == 0.5
             @test JuMP.value(◯) isa SetProg.Sets.EllipsoidAtOrigin
             @test JuMP.value(◯).Q == Symmetric([0.5 0.0; 0.0 0.5])
@@ -66,8 +66,8 @@ const MOI = JuMP.MOI
             @objective(model, Max, nth_root(volume(◯)))
 
             SetProg.optimize!(model)
-            @test JuMP.termination_status(model) == MOI.Success
-            @test JuMP.objective_sense(model) == MOI.MaxSense
+            @test JuMP.termination_status(model) == MOI.OPTIMAL
+            @test JuMP.objective_sense(model) == MOI.MAX_SENSE
             @test JuMP.objective_value(model) == 1.0
             @test JuMP.value(◯) isa SetProg.Sets.PolarPolynomialSublevelSetAtOrigin{Float64}
             @test JuMP.value(◯).degree == 4
@@ -88,8 +88,8 @@ const MOI = JuMP.MOI
             @objective(model, Min, nth_root(volume(◯)))
 
             SetProg.optimize!(model)
-            @test JuMP.termination_status(model) == MOI.Success
-            @test JuMP.objective_sense(model) == MOI.MaxSense
+            @test JuMP.termination_status(model) == MOI.OPTIMAL
+            @test JuMP.objective_sense(model) == MOI.MAX_SENSE
             @test JuMP.objective_value(model) == 1.0
             @test JuMP.value(◯) isa SetProg.Sets.PolynomialSublevelSetAtOrigin{Float64}
             @test JuMP.value(◯).degree == 4

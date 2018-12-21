@@ -24,12 +24,12 @@ function set_space(space::Space, rv::RootVolume, model::JuMP.Model)
         rv.variable.guaranteed_psd = true
     end
     sense = data(model).objective_sense
-    if sense == MOI.MinSense
+    if sense == MOI.MIN_SENSE
         return set_space(space, PrimalSpace)
     else
-        # The sense cannot be FeasibilitySense since the objective function is
+        # The sense cannot be FEASIBILITY_SENSE since the objective function is
         # not nothing
-        @assert sense == MOI.MaxSense
+        @assert sense == MOI.MAX_SENSE
         return set_space(space, DualSpace)
     end
 end
@@ -67,7 +67,7 @@ function root_volume(model::JuMP.Model, set::Union{Sets.ConvexPolynomialSublevel
     return ellipsoid_root_volume(model, set.convexity_proof)
 end
 
-objective_sense(::JuMP.Model, ::RootVolume) = MOI.MaxSense
+objective_sense(::JuMP.Model, ::RootVolume) = MOI.MAX_SENSE
 function objective_function(model::JuMP.Model, rv::RootVolume)
     return root_volume(model, rv.variable.variable)
 end

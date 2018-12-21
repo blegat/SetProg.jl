@@ -103,7 +103,7 @@ function data(model::JuMP.Model)
         model.ext[:SetProg] = Data(Set{VariableRef}(),
                                    Dict{ConstraintIndex, SetConstraint}(),
                                    Dict{ConstraintIndex, String}(), 0,
-                                   MOI.FeasibilitySense, nothing, nothing,
+                                   MOI.FEASIBILITY_SENSE, nothing, nothing,
                                    nothing, Undecided, Modeling, nothing)
         model.optimize_hook = optimize_hook
     end

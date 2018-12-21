@@ -22,8 +22,8 @@ const MOI = SetProg.JuMP.MOI
     @objective(model, Max, nth_root(volume(◯◯)))
 
     SetProg.optimize!(model)
-    @test JuMP.termination_status(model) == MOI.Success
-    @test JuMP.objective_sense(model) == MOI.MaxSense
+    @test JuMP.termination_status(model) == MOI.OPTIMAL
+    @test JuMP.objective_sense(model) == MOI.MAX_SENSE
     @test JuMP.objective_value(model) == t
     @test JuMP.value(◯◯).p == ◯.p
 end
