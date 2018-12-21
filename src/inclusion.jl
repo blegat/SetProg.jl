@@ -124,50 +124,13 @@ function JuMP.add_constraint(model::JuMP.Model,
         @constraint(model, ◯ ⊆ hs)
     end
 end
-function poly_eval(p::AbstractPolynomial{JuMP.AffExpr},
-                   a::AbstractVector{Float64})
-    vars = variables(p)
-    aff = zero(JuMP.AffExpr)
-    for term in terms(p)
-        mono = monomial(term)
-        aff = JuMP.destructive_add!(aff, mono(vars => a), coefficient(term))
-    end
-    return aff
-end
-# TODO if a is not constant, use Schur Lemma
-function sublevel_eval(ell::Union{Sets.EllipsoidAtOrigin,
-                                  Sets.PolarEllipsoidAtOrigin},
-                       a::AbstractVector)
-    return quad_form(ell.Q, a)
-end
-function sublevel_eval(set::Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
-                                  Sets.PolarConvexPolynomialSublevelSetAtOrigin},
-                       a::AbstractVector)
-    return poly_eval(polynomial(set.p), a)
-end
-function sublevel_eval(model, set::Union{Sets.DualQuadCone,
-                                         Sets.DualConvexPolynomialCone},
-                       a::AbstractVector, β)
-    d = data(model)
-    x = Sets.space_variables(set)
-    z = d.perspective_polyvar
-    # Avoid large values, with high degree polynomials, it might cause issues
-    if false
-        scale_a = norm(a)
-        scale_β = abs(β)
-        scaling = max(scale_a, scale_β) / sqrt(scale_a * scale_β)
-    else
-        scaling = 1.0
-    end
-    return set.p(z => -β / scaling, x => a / scaling)
-end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
                                                                      Sets.PolarConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
                                                              <:Polyhedra.HyperPlane},
                              name::String = "")
-    @assert iszero(h.set.β) # Otherwise it is not symmetric around the origin
-    @constraint(model, sublevel_eval(constraint.subset, constraint.supset.a) in MOI.EqualTo(constraint.supset.β^2))
+    @assert iszero(constraint.supset.β) # Otherwise it is not symmetric around the origin
+    @constraint(model, Line(constraint.supset.a) in Sets.polar(constraint.subset))
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.DualQuadCone,
@@ -183,7 +146,7 @@ function JuMP.add_constraint(model::JuMP.Model,
                                                                      Sets.PolarConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
-    @constraint(model, sublevel_eval(constraint.subset, constraint.supset.a) in MOI.LessThan(constraint.supset.β^2))
+    @constraint(model, ScaledPoint(constraint.supset.a, constraint.supset.β) in Sets.polar(constraint.subset))
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.DualQuadCone,
