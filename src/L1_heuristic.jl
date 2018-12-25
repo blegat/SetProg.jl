@@ -68,13 +68,13 @@ end
 # the set is not necessarily inside this rectangle, we just know that it is
 # outside the polar of the rectangle with vertices (-v, v). However, since it
 # is homogeneous, only the ratios between the dimensions is important
-function l1_integral(set::Union{Sets.PolarEllipsoidAtOrigin,
-                                Sets.PolarConvexPolynomialSublevelSetAtOrigin},
+function l1_integral(set::Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin,
+                                               Sets.ConvexPolynomialSublevelSetAtOrigin}},
                      vertex)
     return l1_integral(Sets.polar(set), 1 ./ vertex)
 end
 function l1_integral(set::Sets.DualQuadCone, vertex)
-    return l1_integral(Sets.PolarEllipsoidAtOrigin(set.Q), vertex)
+    return l1_integral(Sets.polar(Sets.EllipsoidAtOrigin(set.Q)), vertex)
 end
 function l1_integral(set::Sets.DualConvexPolynomialCone, vertex)
     return rectangle_integrate(subs(set.q, set.z => 0), 1 ./ vertex)

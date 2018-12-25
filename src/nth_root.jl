@@ -42,15 +42,14 @@ function ellipsoid_root_volume(model::JuMP.Model, Q::AbstractMatrix)
     return t
 end
 
-function root_volume(model::JuMP.Model, ell::Union{Sets.EllipsoidAtOrigin,
-                                                   Sets.PolarEllipsoidAtOrigin,
+function root_volume(model::JuMP.Model, ell::Union{Sets.PolarOrNot{<:Sets.EllipsoidAtOrigin},
                                                    Sets.DualQuadCone})
-    return ellipsoid_root_volume(model, ell.Q)
+    return ellipsoid_root_volume(model, Sets.convexity_proof(ell))
 end
 
 """
-    root_volume(model::JuMP.Model, set::Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
-                                              Sets.PolarConvexPolynomialSublevelSetAtOrigin})
+    root_volume(model::JuMP.Model,
+                set::Sets.PolarOrNot{<:Sets.ConvexPolynomialSublevelSetAtOrigin})
 
 Section IV.A of [MLB05].
 
@@ -59,12 +58,13 @@ Section IV.A of [MLB05].
 Proceedings of the 44th IEEE Conference on Decision and Control, and European Control Conference 2005,
 **2005**.
 """
-function root_volume(model::JuMP.Model, set::Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
-                                                   Sets.PolarConvexPolynomialSublevelSetAtOrigin})
-    if set.convexity_proof === nothing
-        error("Cannot optimize volume of non-convex polynomial sublevel set. Use PolySet(convex=true, ...)")
+function root_volume(model::JuMP.Model,
+                     set::Sets.PolarOrNot{<:Sets.ConvexPolynomialSublevelSetAtOrigin})
+    if Sets.convexity_proof(set) === nothing
+        error("Cannot optimize volume of non-convex polynomial sublevel set.",
+              " Use PolySet(convex=true, ...)")
     end
-    return ellipsoid_root_volume(model, set.convexity_proof)
+    return ellipsoid_root_volume(model, Sets.convexity_proof(set))
 end
 
 objective_sense(::JuMP.Model, ::RootVolume) = MOI.MAX_SENSE

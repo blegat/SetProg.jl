@@ -23,30 +23,32 @@ end
 space_index(li::LinearImage) = li.space_index
 
 """
-    apply_map(li::LinearImage{Sets.PolarEllipsoidAtOrigin})
+    apply_map(li::LinearImage{<:Sets.PolarOf{<:Sets.EllipsoidAtOrigin}})
 
 The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
 and given ``S^\\circ = \\{\\, x \\mid x^\\top Q x \\le 1\\,\\}``, we have
 ``A^{-\\top}S^\\circ = \\{\\, x \\mid x^\\top AQA^\\top x \\le 1\\,\\}``.
 """
-function apply_map(model, li::LinearImage{<:Sets.PolarEllipsoidAtOrigin})
-    return Sets.PolarEllipsoidAtOrigin(Symmetric(li.A * li.set.Q * li.A'))
+function apply_map(model, li::LinearImage{<:Sets.PolarOf{<:Sets.EllipsoidAtOrigin}})
+    return Sets.polar(Sets.EllipsoidAtOrigin(Symmetric(li.A * Sets.polar(li.set).Q * li.A')))
 end
 
 """
-    apply_map(li::LinearImage{Sets.PolarConvexPolynomialSublevelSetAtOrigin})
+    apply_map(li::LinearImage{<:Sets.PolarOf{<:Sets.ConvexPolynomialSublevelSetAtOrigin}})
 
 The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
 and given ``S^\\circ = \\{\\, x \\mid p(x) \\le 1\\,\\}``, we have
 ``A^{-\\top}S^\\circ = \\{\\, x \\mid x^\\top p(A^\\top x) \\le 1\\,\\}``.
 """
-function apply_map(model,
-                   li::LinearImage{<:Sets.PolarConvexPolynomialSublevelSetAtOrigin})
+function apply_map(model::JuMP.AbstractModel,
+                   li::LinearImage{<:Sets.PolarOf{<:Sets.ConvexPolynomialSublevelSetAtOrigin}})
     d = data(model)
     new_vars = space_polyvars(d.spaces, li.space_index)
-    @assert iseven(li.set.degree)
-    q = apply_matrix(li.set.p, li.A', new_vars, div(li.set.degree, 2))
-    return Sets.PolarConvexPolynomialSublevelSetAtOrigin(li.set.degree, q, nothing)
+    deg = Sets.polar(li.set).degree
+    @assert iseven(deg)
+    q = apply_matrix(Sets.polar(li.set).p, li.A', new_vars,
+                     div(deg, 2))
+    return Sets.polar(Sets.ConvexPolynomialSublevelSetAtOrigin(deg, q, nothing))
 end
 
 """

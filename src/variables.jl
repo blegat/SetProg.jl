@@ -57,7 +57,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
             return Sets.EllipsoidAtOrigin(Q)
         else
             @assert space == DualSpace
-            return Sets.PolarEllipsoidAtOrigin(Q)
+            return Sets.polar(Sets.EllipsoidAtOrigin(Q))
         end
     else
         if space == PrimalSpace
@@ -75,9 +75,6 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
 end
 function JuMP.value(ell::Sets.EllipsoidAtOrigin)
     return Sets.EllipsoidAtOrigin(Symmetric(JuMP.value.(ell.Q)))
-end
-function JuMP.value(ell::Sets.PolarEllipsoidAtOrigin)
-    return Sets.PolarEllipsoidAtOrigin(Symmetric(JuMP.value.(ell.Q)))
 end
 
 ### PolySet ###
@@ -130,7 +127,7 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
                 return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
             else
                 @assert space == DualSpace
-                return Sets.PolarConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
+                return Sets.polar(Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof))
             end
         else
             monos = monomials(lift_space_variables(d, space_polyvars),
@@ -162,8 +159,8 @@ end
 function JuMP.value(set::Sets.ConvexPolynomialSublevelSetAtOrigin)
     return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
 end
-function JuMP.value(set::Sets.PolarConvexPolynomialSublevelSetAtOrigin)
-    return Sets.PolarConvexPolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
+function JuMP.value(set::Sets.Polar)
+    return Sets.polar(JuMP.value(Sets.polar(set)))
 end
 function JuMP.value(set::Sets.CenterDualQuadCone)
     return Sets.CenterDualQuadCone(JuMP.value(set.p),

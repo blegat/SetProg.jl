@@ -38,12 +38,22 @@ end
 
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::MembershipConstraint{<:Point,
-                                                              <:Sets.PolarEllipsoidAtOrigin},
+                                                              Sets.PolarOf{<:Sets.EllipsoidAtOrigin}},
                              name::String = "")
     p = constraint.member
     P = [scaling(p) coord(p)'
          coord(p)   constraint.set.Q]
     @constraint(model, Symmetric(P) in PSDCone())
+end
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::MembershipConstraint{<:Point,
+                                                              Sets.EllipsoidAtOrigin{T}},
+                             name::String = "") where {T <: Number}
+    # The eltype of Point is an expression of JuMP variables so we cannot compute
+    # x' * Q * x <= 1, we need to do
+    # [ 1 x'     ]
+    # [ x Q^{-1} ] ⪰ 0 so we switch to the polar representation
+    @constraint(model, constraint.member in Sets.polar(Sets.EllipsoidAtOrigin(constraint.set)))
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::MembershipConstraint{<:Point{T},

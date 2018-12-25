@@ -1,7 +1,7 @@
 using LinearAlgebra
 using Test
 
-using SetProg
+using SetProg, SetProg.Sets
 using Polyhedra
 using MultivariatePolynomials
 
@@ -44,8 +44,8 @@ const MOI = JuMP.MOI
                             mock -> MOI.Utilities.mock_optimize!(mock, [Q; t]),
                             1.0,
                             ◯ -> begin
-                                @test ◯ isa SetProg.Sets.PolarEllipsoidAtOrigin
-                                @test ◯.Q == Symmetric([1.0 0.0; 0.0 1.0])
+                                @test ◯ isa Sets.Polar{Float64, Sets.EllipsoidAtOrigin{Float64}}
+                                @test Sets.polar(◯).Q == Symmetric([1.0 0.0; 0.0 1.0])
                             end)
             end
             @testset "Non-homogeneous" begin
@@ -58,7 +58,7 @@ const MOI = JuMP.MOI
                                 mock -> MOI.Utilities.mock_optimize!(mock, [Q; β; b; t]),
                                 1.0,
                                 ◯ -> begin
-                                    @test ◯ isa SetProg.Sets.InteriorDualQuadCone{Float64,Float64}
+                                    @test ◯ isa Sets.InteriorDualQuadCone{Float64,Float64}
                                     z, x, y = variables(◯.p)
                                     @test ◯.p == z^2 + x^2 + y^2
                                     @test ◯.Q == Symmetric([1.0 0.0; 0.0 1.0])
@@ -83,7 +83,7 @@ const MOI = JuMP.MOI
                                 end,
                                 8/3,
                                 ◯ -> begin
-                                    @test ◯ isa SetProg.Sets.DualConvexPolynomialCone{Float64,Float64}
+                                    @test ◯ isa Sets.DualConvexPolynomialCone{Float64,Float64}
                                     z, x, y = variables(◯.p)
                                     @test ◯.p == -z^2 + x^2 + y^2
                                 end)
@@ -100,7 +100,7 @@ const MOI = JuMP.MOI
                         mock -> MOI.Utilities.mock_optimize!(mock, [0.5, 0.0, 0.5, 0.5]),
                         0.5,
                         ◯ -> begin
-                            @test ◯ isa SetProg.Sets.EllipsoidAtOrigin
+                            @test ◯ isa Sets.EllipsoidAtOrigin
                             @test ◯.Q == Symmetric([0.5 0.0; 0.0 0.5])
                         end)
         end
@@ -118,12 +118,14 @@ const MOI = JuMP.MOI
                         mock -> MOI.Utilities.mock_optimize!(mock, ones(28)),
                         1.0,
                         ◯ -> begin
-                            @test ◯ isa SetProg.Sets.PolarConvexPolynomialSublevelSetAtOrigin{Float64}
-                            @test ◯.degree == 4
-                            x, y = variables(◯.p)
-                            @test polynomial(◯.p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4
-                            @test ◯.convexity_proof.n == 6
-                            @test ◯.convexity_proof.Q == ones(21)
+                            @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}}
+                            ◯_polar = Sets.polar(◯)
+                            @test ◯_polar.degree == 4
+                            x, y = variables(◯_polar.p)
+                            @test polynomial(◯_polar.p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4
+                            convexity_proof = Sets.convexity_proof(◯)
+                            @test convexity_proof.n == 6
+                            @test convexity_proof.Q == ones(21)
                         end)
         end
         @testset "Outer" begin
@@ -133,12 +135,13 @@ const MOI = JuMP.MOI
                         mock -> MOI.Utilities.mock_optimize!(mock, ones(28)),
                         1.0,
                         ◯ -> begin
-                            @test ◯ isa SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}
+                            @test ◯ isa Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}
                             @test ◯.degree == 4
                             x, y = variables(◯.p)
                             @test polynomial(◯.p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4
-                            @test ◯.convexity_proof.n == 6
-                            @test ◯.convexity_proof.Q == ones(21)
+                            convexity_proof = Sets.convexity_proof(◯)
+                            @test convexity_proof.n == 6
+                            @test convexity_proof.Q == ones(21)
                         end)
         end
     end

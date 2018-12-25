@@ -23,31 +23,22 @@ function Ellipsoid(ell::EllipsoidAtOrigin)
     Ellipsoid(ell.Q, zeros(eltype(ell.Q), dimension(ell)))
 end
 function Polyhedra.project(ell::EllipsoidAtOrigin, I)
-    return project(PolarEllipsoidAtOrigin(ell), I)
+    return project(polar_representation(ell), I)
+end
+convexity_proof(ell::EllipsoidAtOrigin) = ell.Q
+
+function Ellipsoid(ell::PolarOf{<:EllipsoidAtOrigin})
+    Ellipsoid(polar_representation(ell))
+end
+function polar_representation(ell::PolarOf{<:EllipsoidAtOrigin})
+    EllipsoidAtOrigin(inv(ell.set.Q))
+end
+function polar_representation(ell::EllipsoidAtOrigin)
+    polar(EllipsoidAtOrigin(inv(ell.Q)))
 end
 
-
-"""
-    struct PolarEllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
-        Q::Symmetric{T, Matrix{T}}
-    end
-"""
-struct PolarEllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
-    Q::Symmetric{T, Matrix{T}}
-end
-
-function Ellipsoid(ell::PolarEllipsoidAtOrigin)
-    Ellipsoid(EllipsoidAtOrigin(ell))
-end
-function EllipsoidAtOrigin(ell::PolarEllipsoidAtOrigin)
-    EllipsoidAtOrigin(inv(ell.Q))
-end
-function PolarEllipsoidAtOrigin(ell::EllipsoidAtOrigin)
-    PolarEllipsoidAtOrigin(inv(ell.Q))
-end
-
-function Polyhedra.project(ell::PolarEllipsoidAtOrigin, I)
-    return PolarEllipsoidAtOrigin(Symmetric(ell.Q[I, I]))
+function Polyhedra.project(ell::PolarOf{<:EllipsoidAtOrigin}, I)
+    return polar(EllipsoidAtOrigin(Symmetric(ell.set.Q[I, I])))
 end
 
 struct LiftedEllipsoid{T}
@@ -56,12 +47,10 @@ end
 dimension(ell::LiftedEllipsoid) = LinearAlgebra.checksquare(ell.P) - 1
 
 function perspective_variables(ell::Union{Ellipsoid, EllipsoidAtOrigin,
-                                          PolarEllipsoidAtOrigin,
                                           LiftedEllipsoid})
     return nothing
 end
 function space_variables(ell::Union{Ellipsoid, EllipsoidAtOrigin,
-                                    PolarEllipsoidAtOrigin,
                                     LiftedEllipsoid})
     return nothing
 end
@@ -132,6 +121,7 @@ abstract type DualQuadCone{T, S} <: AbstractEllipsoid{T} end
 # The first variable is the perspective variable z
 perspective_variable(ell::DualQuadCone) = variables(ell.p)[1]
 space_variables(ell::DualQuadCone) = variables(ell.p)[2:end]
+convexity_proof(ell::DualQuadCone) = ell.Q
 
 """
     struct CenterDualQuadCone{T}
@@ -232,7 +222,7 @@ function primal_contour(f::Function, npoints::Int)
     return x, y
 end
 
-@recipe function f(aell::AbstractEllipsoid; npoints=64)
+@recipe function f(aell::PolarOrNot{<:AbstractEllipsoid}; npoints=64)
     @assert dimension(aell) == 2
     ell = Ellipsoid(aell)
     seriestype --> :shape
@@ -242,9 +232,6 @@ end
                           npoints)
     ell.center[1] .+ x, ell.center[2] .+ y
 end
-
-polar(ell::EllipsoidAtOrigin) = PolarEllipsoidAtOrigin(ell.Q)
-polar(ell::PolarEllipsoidAtOrigin) = EllipsoidAtOrigin(ell.Q)
 
 function InteriorDualQuadCone(ell::LiftedEllipsoid)
     Pd = inv(le.P)

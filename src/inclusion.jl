@@ -85,10 +85,10 @@ end
 
 # S ⊆ T <=> polar(T) ⊆ polar(S)
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin,
-                                                                     Sets.PolarConvexPolynomialSublevelSetAtOrigin},
-                                                             <:Union{Sets.PolarEllipsoidAtOrigin,
-                                                                     Sets.PolarConvexPolynomialSublevelSetAtOrigin}},
+                             constraint::InclusionConstraint{<:Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin,
+                                                                                    Sets.ConvexPolynomialSublevelSetAtOrigin}},
+                                                             <:Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin,
+                                                                                    Sets.ConvexPolynomialSublevelSetAtOrigin}}},
                              name::String = "")
     S = constraint.subset
     T = constraint.supset
@@ -125,8 +125,8 @@ function JuMP.add_constraint(model::JuMP.Model,
     end
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
-                                                                     Sets.PolarConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
+                             constraint::InclusionConstraint{<:Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin{JuMP.VariableRef},
+                                                                                    Sets.ConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}}},
                                                              <:Polyhedra.HyperPlane},
                              name::String = "")
     @assert iszero(constraint.supset.β) # Otherwise it is not symmetric around the origin
@@ -142,8 +142,8 @@ function JuMP.add_constraint(model::JuMP.Model,
     @constraint(model, val in MOI.EqualTo(0.0))
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Union{Sets.PolarEllipsoidAtOrigin{JuMP.VariableRef},
-                                                                     Sets.PolarConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}},
+                             constraint::InclusionConstraint{<:Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin{JuMP.VariableRef},
+                                                                                    Sets.ConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}}},
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
     @constraint(model, ScaledPoint(constraint.supset.a, constraint.supset.β) in Sets.polar(constraint.subset))

@@ -8,13 +8,11 @@ function poly_eval(p::AbstractPolynomial{JuMP.AffExpr},
     end
     return aff
 end
-function sublevel_eval(ell::Union{Sets.EllipsoidAtOrigin,
-                                  Sets.PolarEllipsoidAtOrigin},
+function sublevel_eval(ell::Sets.PolarOrNot{<:Sets.EllipsoidAtOrigin},
                        a::AbstractVector)
     return quad_form(ell.Q, a)
 end
-function sublevel_eval(set::Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
-                                  Sets.PolarConvexPolynomialSublevelSetAtOrigin},
+function sublevel_eval(set::Sets.PolarOrNot{<:Sets.ConvexPolynomialSublevelSetAtOrigin},
                        a::AbstractVector)
     return poly_eval(polynomial(set.p), a)
 end
