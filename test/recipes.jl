@@ -2,7 +2,7 @@ using LinearAlgebra
 using Test
 using RecipesBase
 using DynamicPolynomials
-using SetProg
+using SetProg, SetProg.Sets
 
 RecipesBase.is_key_supported(k::Symbol) = true # Plots normally defines this
 function recipe(set)
@@ -19,22 +19,22 @@ end
     Q = [1.0 0.0; 0.0 1.0]
     @testset "Ellipsoid" begin
         @testset "Circle" begin
-            circle = SetProg.Sets.EllipsoidAtOrigin(Symmetric(Q))
+            circle = Sets.EllipsoidAtOrigin(Symmetric(Q))
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
-            recipe_test(SetProg.Sets.polar(circle),
+            recipe_test(Sets.polar(circle),
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
         end
         @testset "Shifted Circle" begin
-            circle = SetProg.Sets.Ellipsoid(Symmetric(Q), [1.0, 2.0])
+            circle = Sets.Ellipsoid(Symmetric(Q), [1.0, 2.0])
             recipe_test(circle,
                         [2.0, 1.0, 0.0, 1.0], [2.0, 3.0, 2.0, 1.0])
         end
         @testset "Scaled circle" begin
-            scaled_circle = SetProg.Sets.EllipsoidAtOrigin(Symmetric(2Q))
+            scaled_circle = Sets.EllipsoidAtOrigin(Symmetric(2Q))
             recipe_test(scaled_circle,
                         [1/√2, 0.0, -1/√2, 0.0], [0.0, 1/√2, 0.0, -1/√2])
-            recipe_test(SetProg.Sets.polar(scaled_circle),
+            recipe_test(Sets.polar(scaled_circle),
                         [√2, 0.0, -√2, 0.0], [0.0, √2, 0.0, -√2])
         end
     end
@@ -43,10 +43,10 @@ end
         @testset "Circle" begin
             p = SetProg.MatPolynomial{Float64}((i, j) -> convert(Float64, i == j),
                                                monovec([x, y]))
-            circle = SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
+            circle = Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
-            hr = recipe(SetProg.Sets.polar(circle))[1]
+            hr = recipe(Sets.polar(circle))[1]
             @test !hashyperplanes(hr)
             hss = collect(halfspaces(hr))
             @test hss[1].a ≈ [1.0, 0.0]
@@ -61,10 +61,10 @@ end
         @testset "Scaled circle" begin
             p = SetProg.MatPolynomial{Float64}((i, j) -> 2convert(Float64, i == j),
                                                monovec([x, y]))
-            circle = SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
+            circle = Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
                         [1/√2, 0.0, -1/√2, 0.0], [0.0, 1/√2, 0.0, -1/√2])
-            hr = recipe(SetProg.Sets.polar(circle))[1]
+            hr = recipe(Sets.polar(circle))[1]
             @test !hashyperplanes(hr)
             hss = collect(halfspaces(hr))
             @test hss[1].a ≈ [1/√2, 0.0]
@@ -81,9 +81,8 @@ end
                 q = SetProg.MatPolynomial(Float64[0 0 0
                                                   0 1 0
                                                   0 0 1], monovec([z, x, y]))
-                shifted_circle = SetProg.Sets.DualConvexPolynomialCone(2, q,
-                                                                       zeros(2), z,
-                                                                       [x, y])
+                dual = Sets.PerspectiveConvexPolynomialSet(2, q, zeros(2), z, [x, y])
+                shifted_circle = Sets.perspective_dual(dual)
                 hr = recipe(shifted_circle)[1]
                 @test !hashyperplanes(hr)
                 hss = collect(halfspaces(hr))
@@ -100,9 +99,8 @@ end
                 q = SetProg.MatPolynomial(Float64[0 0 0
                                                   0 2 0
                                                   0 0 2], monovec([z, x, y]))
-                shifted_circle = SetProg.Sets.DualConvexPolynomialCone(2, q,
-                                                                       zeros(2), z,
-                                                                       [x, y])
+                dual = Sets.PerspectiveConvexPolynomialSet(2, q, zeros(2), z, [x, y])
+                shifted_circle = Sets.perspective_dual(dual)
                 hr = recipe(shifted_circle)[1]
                 @test !hashyperplanes(hr)
                 hss = collect(halfspaces(hr))
@@ -120,9 +118,8 @@ end
                 q = SetProg.MatPolynomial([1/2 0 0
                                            0   1 0
                                            0   0 1], monovec([z, x, y]))
-                shifted_circle = SetProg.Sets.DualConvexPolynomialCone(2, q,
-                                                                       zeros(2), z,
-                                                                       [x, y])
+                dual = Sets.PerspectiveConvexPolynomialSet(2, q, zeros(2), z, [x, y])
+                shifted_circle = Sets.perspective_dual(dual)
                 hr = recipe(shifted_circle)[1]
                 @test !hashyperplanes(hr)
                 hss = collect(halfspaces(hr))

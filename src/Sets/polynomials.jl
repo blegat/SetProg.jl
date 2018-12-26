@@ -2,7 +2,7 @@ using Polyhedra
 using SumOfSquares
 
 """
-    struct DualPolynomialSet{T} <: AbstractSet{T}
+    struct PerspectivePolynomialSet{T} <: AbstractSet{T}
         degree::Int
         p::DynamicPolynomials.Polynomial{true, T}
         h::Vector{Float64}
@@ -13,7 +13,7 @@ using SumOfSquares
 Sets whose perspective-dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}``
 where `p` is a homogeneous polynomial of degree `degree`.
 """
-struct DualPolynomialSet{T} <: AbstractSet{T}
+struct PerspectivePolynomialSet{T} <: AbstractSet{T}
     degree::Int
     p::DynamicPolynomials.Polynomial{true, T}
     h::Vector{Float64}
@@ -21,8 +21,8 @@ struct DualPolynomialSet{T} <: AbstractSet{T}
     x::Vector{SpaceVariable}
 end
 
-perspective_variable(set::DualPolynomialSet) = set.z
-space_variables(set::DualPolynomialSet) = set.x
+perspective_variable(set::PerspectivePolynomialSet) = set.z
+space_variables(set::PerspectivePolynomialSet) = set.x
 
 """
     struct ConvexPolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomial{T}}
@@ -100,7 +100,7 @@ end
 end
 
 """
-    struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
+    struct PerspectiveConvexPolynomialSet{T, U} <: AbstractSet{T}
         degree::Int
         p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
                             DynamicPolynomials.MonomialVector{true}}
@@ -111,7 +111,7 @@ Set whose dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` or
 ``H \\{\\, (z, x) \\mid q(z, x) \\le z^{\\texttt{degree}} \\,\\}`` where `p` and
 `q` are homogeneous polynomials of degree `degree`.
 """
-struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
+struct PerspectiveConvexPolynomialSet{T, U} <: AbstractSet{T}
     degree::Int
     q::MatPolynomial{T, DynamicPolynomials.Monomial{true},
                         DynamicPolynomials.MonomialVector{true}}
@@ -121,33 +121,38 @@ struct DualConvexPolynomialCone{T, U} <: AbstractSet{T}
     z::SpaceVariable
     x::Vector{SpaceVariable}
 end
-function DualConvexPolynomialCone(degree::Integer, q::MatPolynomial, h::Vector,
-                                  z, x)
+function PerspectiveConvexPolynomialSet(degree::Integer, q::MatPolynomial, h::Vector,
+                                        z, x)
     H = _householder(h)
     y = [z; x]
     p = (q - z^degree)(y => H * y)
-    return DualConvexPolynomialCone(degree, q, p, h, H, z, x)
+    return PerspectiveConvexPolynomialSet(degree, q, p, h, H, z, x)
 end
-dimension(d::DualConvexPolynomialCone) = length(d.x)
-perspective_variable(set::DualConvexPolynomialCone) = set.z
-space_variables(set::DualConvexPolynomialCone) = set.x
-function Polyhedra.project(set::DualConvexPolynomialCone, I)
+dimension(d::PerspectiveConvexPolynomialSet) = length(d.x)
+perspective_variable(set::PerspectiveConvexPolynomialSet) = set.z
+space_variables(set::PerspectiveConvexPolynomialSet) = set.x
+function Polyhedra.project(set::PerspectiveDual{<:PerspectiveConvexPolynomialSet},
+                           I)
     project(set, [I])
 end
-function Polyhedra.project(set::DualConvexPolynomialCone{T},
+function Polyhedra.project(set::PerspectiveDualOf{<:PerspectiveConvexPolynomialSet{T}},
                            I::AbstractVector) where T
     J = setdiff(1:dimension(set), I)
-    DualPolynomialSet(set.degree, subs(set.p, set.x[J] => zeros(T, length(J))),
-                      set.h[I], set.z, set.x[I])
+    dual = perspective_dual(set)
+    proj = PerspectivePolynomialSet(dual.degree,
+                                    subs(dual.p,
+                                         dual.x[J] => zeros(T, length(J))),
+                                    dual.h[I], dual.z, dual.x[I])
+    return perspective_dual(proj)
 end
 
-function scaling_function(set::Union{DualConvexPolynomialCone,
-                                     DualPolynomialSet})
-    @assert length(set.x) == 2
-    vars = [set.z; set.x]
+function scaling_function(set::PerspectiveDualOf{<:Union{PerspectiveConvexPolynomialSet,
+                                                         PerspectivePolynomialSet}})
+    @assert length(space_variables(set)) == 2
+    vars = [perspective_variable(set); space_variables(set)]
     # z is a halfspace of the primal so a ray of the dual
     z = [1.0, 0.0, 0.0]
-    in_set(Δ::Vector) = set.p(vars => z + Δ) < 0
+    in_set(Δ::Vector) = set.set.p(vars => z + Δ) < 0
     @assert in_set(zeros(3))
     return (Δz, Δx, Δy) -> begin
         Δ = [Δz, Δx, Δy]
@@ -175,13 +180,13 @@ function scaling_function(set::Union{DualConvexPolynomialCone,
     end
 end
 
-@recipe function f(set::Union{DualConvexPolynomialCone{T},
-                              DualPolynomialSet{T}}; npoints=64) where T
+@recipe function f(set::PerspectiveDual{T, <:Union{PerspectiveConvexPolynomialSet{T},
+                                                   PerspectivePolynomialSet{T}}}; npoints=64) where T
     seriestype --> :shape
     legend --> false
     # z is a halfspace of the primal so a ray of the dual
     z = [1.0, 0.0, 0.0]
-    h1, h2 = set.h
+    h1, h2 = set.set.h
     # a is a ray of the primal so a halfspace of the dual
     a = [1, h1, h2]
     b = [h1, -1, 0]

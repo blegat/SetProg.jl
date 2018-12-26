@@ -73,11 +73,13 @@ function l1_integral(set::Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin,
                      vertex)
     return l1_integral(Sets.polar(set), 1 ./ vertex)
 end
-function l1_integral(set::Sets.DualQuadCone, vertex)
-    return l1_integral(Sets.polar(Sets.EllipsoidAtOrigin(set.Q)), vertex)
+function l1_integral(set::Sets.PerspectiveDualOf{<:Sets.PerspectiveEllipsoid},
+                     vertex)
+    return l1_integral(Sets.polar(Sets.EllipsoidAtOrigin(set.set.Q)), vertex)
 end
-function l1_integral(set::Sets.DualConvexPolynomialCone, vertex)
-    return rectangle_integrate(subs(set.q, set.z => 0), 1 ./ vertex)
+function l1_integral(set::Sets.PerspectiveDualOf{<:Sets.PerspectiveConvexPolynomialSet},
+                     vertex)
+    return rectangle_integrate(subs(set.set.q, set.set.z => 0), 1 ./ vertex)
 end
 
 objective_sense(model::JuMP.Model, ::L1Heuristic) = data(model).objective_sense

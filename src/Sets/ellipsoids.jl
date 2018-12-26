@@ -116,22 +116,22 @@ function _HPH(D, d, δ, H)
     HPH = H * P * H
 end
 
-abstract type DualQuadCone{T, S} <: AbstractEllipsoid{T} end
+abstract type PerspectiveEllipsoid{T, S} <: AbstractEllipsoid{T} end
 
 # The first variable is the perspective variable z
-perspective_variable(ell::DualQuadCone) = variables(ell.p)[1]
-space_variables(ell::DualQuadCone) = variables(ell.p)[2:end]
-convexity_proof(ell::DualQuadCone) = ell.Q
+perspective_variable(ell::PerspectiveEllipsoid) = variables(ell.p)[1]
+space_variables(ell::PerspectiveEllipsoid) = variables(ell.p)[2:end]
+convexity_proof(ell::PerspectiveEllipsoid) = ell.Q
 
 """
-    struct CenterDualQuadCone{T}
+    struct PerspectiveCenterEllipsoid{T}
         p::DynamicPolynomials.Polynomial{true}
         Q::Symmetric{T, Matrix{T}}
         h::Vector{Float64} # h is an center-like point
         H::Matrix{Float64}
     end
 
-Set whose dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` where `p` is a
+Set ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` where `p` is a
 quadratic forms given by:
 ```math
 p(y) =
@@ -144,22 +144,22 @@ H y
 ```
 where ``y = (z, x)``.
 """
-struct CenterDualQuadCone{T, S} <: DualQuadCone{T, S}
+struct PerspectiveCenterEllipsoid{T, S} <: PerspectiveEllipsoid{T, S}
     p::DynamicPolynomials.Polynomial{true}
     Q::Symmetric{T, Matrix{T}}
     h::Vector{Float64} # h is an center-like point
     H::Matrix{Float64}
 end
-function CenterDualQuadCone(Q::Symmetric, y, h::Vector)
+function PerspectiveCenterEllipsoid(Q::Symmetric, y, h::Vector)
     H = _householder(h)
     p = y' * _HPH(Q, zeros(length(h)), -1.0, H) * y
-    CenterDualQuadCone(p, Q, h, H)
+    PerspectiveCenterEllipsoid(p, Q, h, H)
 end
-_HPH(q::CenterDualQuadCone) = _HPH(q.Q, zeros(size(q.Q, 1)), -1.0, q.H)
-samecenter(q1::CenterDualQuadCone, q2::CenterDualQuadCone) = q1.h == q2.h
+_HPH(q::PerspectiveCenterEllipsoid) = _HPH(q.Q, zeros(size(q.Q, 1)), -1.0, q.H)
+samecenter(q1::PerspectiveCenterEllipsoid, q2::PerspectiveCenterEllipsoid) = q1.h == q2.h
 
 """
-    struct InteriorDualQuadCone{T}
+    struct PerspectiveInteriorEllipsoid{T}
         p::DynamicPolynomials.Polynomial{true}
         Q::Symmetric{T, Matrix{T}}
         b::Vector{S}
@@ -180,7 +180,7 @@ y^\\top H^\\top
 H y
 ```
 """
-struct InteriorDualQuadCone{T, S} <: DualQuadCone{T, S}
+struct PerspectiveInteriorEllipsoid{T, S} <: PerspectiveEllipsoid{T, S}
     p::DynamicPolynomials.Polynomial{true, S}
     Q::Symmetric{T, Matrix{T}}
     b::Vector{T}
@@ -188,17 +188,21 @@ struct InteriorDualQuadCone{T, S} <: DualQuadCone{T, S}
     h::Vector{Float64} # h is an interior point
     H::Matrix{Float64}
 end
-function InteriorDualQuadCone(Q::Symmetric, b::Vector, β, y, h::Vector)
+function PerspectiveInteriorEllipsoid(Q::Symmetric, b::Vector, β, y, h::Vector)
     H = _householder(h)
     p = y' * _HPH(Q, b, β, H) * y
-    InteriorDualQuadCone(p, Q, b, β, h, H)
+    PerspectiveInteriorEllipsoid(p, Q, b, β, h, H)
 end
-_HPH(q::InteriorDualQuadCone) = _HPH(q.Q, q.b, q.β, q.H)
-samecenter(::InteriorDualQuadCone, ::InteriorDualQuadCone) = false
+_HPH(q::PerspectiveInteriorEllipsoid) = _HPH(q.Q, q.b, q.β, q.H)
+samecenter(::PerspectiveInteriorEllipsoid, ::PerspectiveInteriorEllipsoid) = false
 
-LiftedEllipsoid(qc::DualQuadCone) = LiftedEllipsoid(inv(_HPH(qc)))
-Ellipsoid(qc::DualQuadCone) = Ellipsoid(LiftedEllipsoid(qc))
-function Polyhedra.project(ell::DualQuadCone, I)
+function LiftedEllipsoid(qc::PerspectiveDualOf{<:PerspectiveEllipsoid})
+    return LiftedEllipsoid(inv(_HPH(perspective_dual(qc))))
+end
+function Ellipsoid(qc::PerspectiveDualOf{<:PerspectiveEllipsoid})
+    return Ellipsoid(LiftedEllipsoid(qc))
+end
+function Polyhedra.project(ell::PerspectiveDualOf{<:PerspectiveEllipsoid}, I)
     return project(Ellipsoid(ell), I)
 end
 
@@ -233,7 +237,7 @@ end
     ell.center[1] .+ x, ell.center[2] .+ y
 end
 
-function InteriorDualQuadCone(ell::LiftedEllipsoid)
+function PerspectiveInteriorEllipsoid(ell::LiftedEllipsoid)
     Pd = inv(le.P)
     H = SetProg.Sets._householder(h[state])
     HPdH = H * Pd * H
@@ -242,5 +246,5 @@ function InteriorDualQuadCone(ell::LiftedEllipsoid)
     # Therefore, the S-procedure's λ for the constraints will be different.
     B, b, β, λ = Bbβλ(HPdH)
     ps[state] = y' * _HPH(B/λ, b/λ, β/λ, H) * y
-    error("TODO: LiftedEllipsoid -> InteriorDualQuadCone")
+    error("TODO: LiftedEllipsoid -> PerspectiveInteriorEllipsoid")
 end

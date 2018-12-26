@@ -49,7 +49,7 @@ Function `f(x)` such that `set` is the 1-sublevel set of `f`, i.e.
 function gauge1 end
 
 """
-    struct PerspectiveDual{S}
+    struct PerspectiveDual{T, S <: AbstractSet{T}} <: AbstractSet{T}
         set::S
     end
 
@@ -58,6 +58,8 @@ Set determined by the dual of the perspective cone of `set`.
 struct PerspectiveDual{T, S <: AbstractSet{T}} <: AbstractSet{T}
     set::S
 end
+
+const PerspectiveDualOf{S} = PerspectiveDual{<:Any, S}
 
 """
     perspective_dual(set::AbstractSet)

@@ -16,8 +16,9 @@ function sublevel_eval(set::Sets.PolarOrNot{<:Sets.ConvexPolynomialSublevelSetAt
                        a::AbstractVector)
     return poly_eval(polynomial(set.p), a)
 end
-function sublevel_eval(model, set::Union{Sets.DualQuadCone,
-                                         Sets.DualConvexPolynomialCone},
+function sublevel_eval(model,
+                       set::Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                           Sets.PerspectiveConvexPolynomialSet}},
                        a::AbstractVector, β)
     d = data(model)
     x = Sets.space_variables(set)
@@ -30,5 +31,5 @@ function sublevel_eval(model, set::Union{Sets.DualQuadCone,
     else
         scaling = 1.0
     end
-    return set.p(z => -β / scaling, x => a / scaling)
+    return set.set.p(z => -β / scaling, x => a / scaling)
 end

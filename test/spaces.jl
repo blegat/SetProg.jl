@@ -1,6 +1,6 @@
 using LinearAlgebra, Test
 using DynamicPolynomials
-using SetProg
+using SetProg, SetProg.Sets
 const MOI = SetProg.JuMP.MOI
 
 @testset "Spaces" begin
@@ -9,7 +9,8 @@ const MOI = SetProg.JuMP.MOI
     β = 1.0
     h = [0.0, 0.0]
     @polyvar x y z
-    ◯ = SetProg.Sets.InteriorDualQuadCone(B, b, β, [z, x, y], h)
+    dual = Sets.PerspectiveInteriorCone(B, b, β, [z, x, y], h)
+    ◯ = Sets.perspective_dual(dual)
     mock = MOI.Utilities.MockOptimizer(JuMP.JuMPMOIModel{Float64}())
     model = JuMP.direct_model(mock);
     Q = [1.0, 0.0, 1.0]

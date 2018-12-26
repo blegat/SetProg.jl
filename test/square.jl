@@ -58,15 +58,17 @@ const MOI = JuMP.MOI
                                 mock -> MOI.Utilities.mock_optimize!(mock, [Q; β; b; t]),
                                 1.0,
                                 ◯ -> begin
-                                    @test ◯ isa Sets.InteriorDualQuadCone{Float64,Float64}
-                                    z, x, y = variables(◯.p)
-                                    @test ◯.p == z^2 + x^2 + y^2
-                                    @test ◯.Q == Symmetric([1.0 0.0; 0.0 1.0])
-                                    @test ◯.b == [0.0, 0.0]
-                                    @test ◯.β == 1.0
-                                    @test ◯.H ≈ [-1.0 0.0 0.0
-                                                  0.0 1.0 0.0
-                                                  0.0 0.0 1.0]
+                                    @test ◯ isa Sets.PerspectiveDual{Float64, Sets.PerspectiveInteriorEllipsoid{Float64, Float64}}
+                                    z = Sets.perspective_variable(◯)
+                                    x, y = Sets.space_variables(◯)
+                                    ◯_dual = Sets.perspective_dual(◯)
+                                    @test ◯_dual.p == z^2 + x^2 + y^2
+                                    @test ◯_dual.Q == Symmetric([1.0 0.0; 0.0 1.0])
+                                    @test ◯_dual.b == [0.0, 0.0]
+                                    @test ◯_dual.β == 1.0
+                                    @test ◯_dual.H ≈ [-1.0 0.0 0.0
+                                                       0.0 1.0 0.0
+                                                       0.0 0.0 1.0]
                                 end)
                 end
                 @testset "PolySet" begin
@@ -83,9 +85,11 @@ const MOI = JuMP.MOI
                                 end,
                                 8/3,
                                 ◯ -> begin
-                                    @test ◯ isa Sets.DualConvexPolynomialCone{Float64,Float64}
-                                    z, x, y = variables(◯.p)
-                                    @test ◯.p == -z^2 + x^2 + y^2
+                                    @test ◯ isa Sets.PerspectiveDual{Float64, Sets.PerspectiveConvexPolynomialSet{Float64, Float64}}
+                                    z = Sets.perspective_variable(◯)
+                                    x, y = Sets.space_variables(◯)
+                                    ◯_dual = Sets.perspective_dual(◯)
+                                    @test ◯_dual.p == -z^2 + x^2 + y^2
                                 end)
                 end
             end

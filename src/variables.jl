@@ -31,19 +31,19 @@ function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
     end
     return Ellipsoid(point, symmetric, dimension, false)
 end
-function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef},
-                        point::CenterPoint, y::Vector)
+function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
+                                     point::CenterPoint, y::Vector)
     @constraint(model, Q in PSDCone())
-    return Sets.CenterDualQuadCone(Q, y, point.h)
+    return Sets.perspective_dual(Sets.PerspectiveCenterEllipsoid(Q, y, point.h))
 end
-function dual_quad_cone(model, Q::Symmetric{JuMP.VariableRef},
-                        point::InteriorPoint, y::Vector)
+function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
+                                     point::InteriorPoint, y::Vector)
     n = LinearAlgebra.checksquare(Q)
     @assert n == length(point.h)
     β = @variable(model, base_name="β")
     b = @variable(model, [1:length(point.h)], base_name="b")
     @constraint(model, Symmetric([β+1 b'; b Q]) in PSDCone())
-    return Sets.InteriorDualQuadCone(Q, b, β, y, point.h)
+    return Sets.perspective_dual(Sets.PerspectiveInteriorEllipsoid(Q, b, β, y, point.h))
 end
 function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
                       space_dimension, space_polyvars)
@@ -67,9 +67,9 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
             if ell.point === nothing
                 throw(ArgumentError("Specify a point for nonsymmetric ellipsoid, e.g. `Ellipsoid(point=InteriorPoint([1.0, 0.0]))"))
             end
-            return dual_quad_cone(model, Q, ell.point,
-                                  [data(model).perspective_polyvar;
-                                   space_polyvars])
+            return polar_perspective_ellipsoid(model, Q, ell.point,
+                                               [data(model).perspective_polyvar;
+                                                space_polyvars])
         end
     end
 end
@@ -142,9 +142,9 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
                 if set.point === nothing
                     throw(ArgumentError("Specify a point for nonsymmetric polyset, e.g. `PolySet(point=InteriorPoint([1.0, 0.0]))"))
                 end
-                return Sets.DualConvexPolynomialCone(set.degree, p, set.point.h,
-                                                     d.perspective_polyvar,
-                                                     space_polyvars)
+                return Sets.perspective_dual(Sets.PerspectiveConvexPolynomialSet(set.degree, p, set.point.h,
+                                                                                 d.perspective_polyvar,
+                                                                                 space_polyvars))
             end
         end
     else
@@ -162,20 +162,24 @@ end
 function JuMP.value(set::Sets.Polar)
     return Sets.polar(JuMP.value(Sets.polar(set)))
 end
-function JuMP.value(set::Sets.CenterDualQuadCone)
-    return Sets.CenterDualQuadCone(JuMP.value(set.p),
-                                   Symmetric(JuMP.value.(set.Q)), set.h, set.H)
+function JuMP.value(set::Sets.PerspectiveDual)
+    return Sets.perspective_dual(JuMP.value(Sets.perspective_dual(set)))
 end
-function JuMP.value(set::Sets.InteriorDualQuadCone)
-    return Sets.InteriorDualQuadCone(JuMP.value(set.p),
-                                     Symmetric(JuMP.value.(set.Q)),
-                                     JuMP.value.(set.b),
-                                     JuMP.value(set.β), set.h, set.H)
+function JuMP.value(set::Sets.PerspectiveCenterEllipsoid)
+    return Sets.PerspectiveCenterEllipsoid(JuMP.value(set.p),
+                                           Symmetric(JuMP.value.(set.Q)), set.h,
+                                           set.H)
 end
-function JuMP.value(set::Sets.DualConvexPolynomialCone)
-    return Sets.DualConvexPolynomialCone(set.degree, JuMP.value(set.q),
-                                         JuMP.value(set.p), set.h, set.H, set.z,
-                                         set.x)
+function JuMP.value(set::Sets.PerspectiveInteriorEllipsoid)
+    return Sets.PerspectiveInteriorEllipsoid(JuMP.value(set.p),
+                                             Symmetric(JuMP.value.(set.Q)),
+                                             JuMP.value.(set.b),
+                                             JuMP.value(set.β), set.h, set.H)
+end
+function JuMP.value(set::Sets.PerspectiveConvexPolynomialSet)
+    return Sets.PerspectiveConvexPolynomialSet(set.degree, JuMP.value(set.q),
+                                    JuMP.value(set.p), set.h, set.H, set.z,
+                                    set.x)
 end
 
 ### VariableRef ###

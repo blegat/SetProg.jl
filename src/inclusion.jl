@@ -70,25 +70,34 @@ function JuMP.add_constraint(model::JuMP.Model,
     @constraint(model, q - p in SOSCone())
 end
 
-# S-procedure: Q ⊆ P <=> Q* ⊇ P* <= p - q is SOS
+# S-procedure: Q ⊆ P <=> q - p is SOS
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Union{Sets.DualQuadCone,
-                                                                     Sets.DualPolynomialSet},
-                                                             <:Union{Sets.DualQuadCone,
-                                                                     Sets.DualPolynomialSet}},
+                             constraint::InclusionConstraint{<:Union{Sets.PerspectiveEllipsoid,
+                                                                     Sets.PerspectivePolynomialSet},
+                                                             <:Union{Sets.PerspectiveEllipsoid,
+                                                                     Sets.PerspectivePolynomialSet}},
                              name::String = "")
     q = constraint.subset.p
     p = constraint.supset.p
-    @constraint(model, p - q in SOSCone()) # TODO λ
+    @constraint(model, q - p in SOSCone()) # TODO λ
 end
 
+# S ⊆ T <=> T* ⊇ S*
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                                                              Sets.PerspectivePolynomialSet}},
+                                                             <:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                                                              Sets.PerspectivePolynomialSet}}},
+                             name::String = "")
+    S = constraint.subset
+    T = constraint.supset
+    @constraint(model, Sets.perspective_dual(T) ⊆ Sets.perspective_dual(S))
+end
 
 # S ⊆ T <=> polar(T) ⊆ polar(S)
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin,
-                                                                                    Sets.ConvexPolynomialSublevelSetAtOrigin}},
-                                                             <:Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin,
-                                                                                    Sets.ConvexPolynomialSublevelSetAtOrigin}}},
+                             constraint::InclusionConstraint{<:Sets.Polar,
+                                                             <:Sets.Polar},
                              name::String = "")
     S = constraint.subset
     T = constraint.supset
@@ -133,8 +142,8 @@ function JuMP.add_constraint(model::JuMP.Model,
     @constraint(model, Line(constraint.supset.a) in Sets.polar(constraint.subset))
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Union{Sets.DualQuadCone,
-                                                                     Sets.DualConvexPolynomialCone},
+                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                                                              Sets.PerspectiveConvexPolynomialSet}},
                                                              <:Polyhedra.HyperPlane},
                              name::String = "")
     val = sublevel_eval(model, constraint.subset, constraint.supset.a,
@@ -149,8 +158,8 @@ function JuMP.add_constraint(model::JuMP.Model,
     @constraint(model, ScaledPoint(constraint.supset.a, constraint.supset.β) in Sets.polar(constraint.subset))
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Union{Sets.DualQuadCone,
-                                                                     Sets.DualConvexPolynomialCone},
+                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                                                              Sets.PerspectiveConvexPolynomialSet}},
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
     val = sublevel_eval(model, constraint.subset, constraint.supset.a,

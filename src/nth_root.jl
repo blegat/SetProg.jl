@@ -43,7 +43,7 @@ function ellipsoid_root_volume(model::JuMP.Model, Q::AbstractMatrix)
 end
 
 function root_volume(model::JuMP.Model, ell::Union{Sets.PolarOrNot{<:Sets.EllipsoidAtOrigin},
-                                                   Sets.DualQuadCone})
+                                                   Sets.PerspectiveDualOf{<:Sets.PerspectiveEllipsoid}})
     return ellipsoid_root_volume(model, Sets.convexity_proof(ell))
 end
 

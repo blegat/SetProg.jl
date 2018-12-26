@@ -52,20 +52,24 @@ function apply_map(model::JuMP.AbstractModel,
 end
 
 """
-    apply_map(li::LinearImage{Sets.InteriorDualQuadCone})
+    apply_map(model::JuMP.AbstractModel,
+              li::LinearImage{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                               Sets.PerspectiveConvexPolynomialSet}}})
 
 The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
 and given ..., we have
 ...
 """
-function apply_map(model, li::LinearImage{<:Union{Sets.InteriorDualQuadCone,
-                                                  Sets.DualConvexPolynomialCone}})
+function apply_map(model::JuMP.AbstractModel,
+                   li::LinearImage{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                                    Sets.PerspectiveConvexPolynomialSet}}})
     d = data(model)
     old_vars = Sets.space_variables(li.set)
     new_vars = space_polyvars(d.spaces, li.space_index)
-    q = subs(li.set.p, old_vars => li.A' * new_vars)
-    return Sets.DualPolynomialSet(2, q, li.A * li.set.h, d.perspective_polyvar,
-                                  new_vars)
+    q = subs(li.set.set.p, old_vars => li.A' * new_vars)
+    dual = Sets.PerspectivePolynomialSet(2, q, li.A * li.set.set.h,
+                                         d.perspective_polyvar, new_vars)
+    return Sets.perspective_dual(dual)
 end
 
 # FIXME, for Sets.AbstractSet, we should apply it directly
