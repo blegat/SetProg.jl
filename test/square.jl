@@ -15,9 +15,9 @@ function mock(mock_optimize!::Function)
     return mock
 end
 
-function square_test(optimizer::MOI.AbstractOptimizer, config, inner::Bool,
-                     variable::SetProg.AbstractVariable, metric::Function,
-                     objective_value, set_test)
+function square_test(optimizer::MOI.AbstractOptimizer, config::MOIT.TestConfig,
+                     inner::Bool, variable::SetProg.AbstractVariable,
+                     metric::Function, objective_value, set_test)
     MOI.empty!(optimizer)
     model = JuMP.direct_model(optimizer)
 
@@ -63,8 +63,8 @@ function john_nonhomogeneous_ell_square_test(optimizer, config)
                     @test ◯_dual.b ≈ [0.0, 0.0] atol=config.atol rtol=config.rtol
                     @test ◯_dual.β ≈ -1.0 atol=config.atol rtol=config.rtol
                     @test ◯_dual.H ≈ [-1.0 0.0 0.0
-                                      0.0 1.0 0.0
-                                      0.0 0.0 1.0] atol=config.atol rtol=config.rtol
+                                       0.0 1.0 0.0
+                                       0.0 0.0 1.0] atol=config.atol rtol=config.rtol
                 end)
 end
 
@@ -88,7 +88,8 @@ function löwner_homogeneous_square_test(optimizer, config)
                 nth_root, 0.5,
                 ◯ -> begin
                     @test ◯ isa Sets.EllipsoidAtOrigin
-                    @test ◯.Q ≈ Symmetric([0.5 0.0; 0.0 0.5]) atol=config.atol rtol=config.rtol
+                    @test ◯.Q ≈ Symmetric([0.5 0.0
+                                           0.0 0.5]) atol=config.atol rtol=config.rtol
                 end)
 end
 
