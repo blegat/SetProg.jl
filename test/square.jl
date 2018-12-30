@@ -93,35 +93,50 @@ function löwner_homogeneous_square_test(optimizer, config)
                 end)
 end
 
+const quartic_inner_poly = [3.1518541833100864, -0.1617384194869734]
+const quartic_inner_obj = 6.447419478140056
+const quartic_inner_α = 5.6567546886722795
+const quartic_inner_convexity = [12.0, 0.0, quartic_inner_α, 0.0, quartic_inner_poly[1]+2quartic_inner_poly[2],
+                                 quartic_inner_α, 8.48516455194103, 0.0, 0.0, 12.0]
+
 function quartic_inner_homogeneous_square_test(optimizer, config)
     square_test(optimizer, config, true,
                 PolySet(symmetric=true, degree=4, dimension=2, convex=true),
-                nth_root, 1.0,
+                nth_root, quartic_inner_obj,
                 ◯ -> begin
                     @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}}
                     ◯_polar = Sets.polar(◯)
                     @test ◯_polar.degree == 4
                     x, y = variables(◯_polar.p)
-                    @test polynomial(◯_polar.p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4
+                    @test polynomial(◯_polar.p) ≈ x^4 + quartic_inner_convexity[5]*x^2*y^2 + y^4 atol=config.atol rtol=config.rtol
                     convexity_proof = Sets.convexity_proof(◯)
-                    @test convexity_proof.n == 6
-                    @test convexity_proof.Q == ones(21)
+                    @test convexity_proof.n == 4
+                    @test convexity_proof.Q ≈ quartic_inner_convexity atol=config.atol rtol=config.rtol
                 end)
 end
+
+const quartic_outer_β = 0.30177574048813055
+const quartic_outer_γ = 0.5936049698923986
+const quartic_outer_λ = -0.09857757888257276
+const quartic_outer_obj = 1.611854896946893
+const quartic_outer_α = 0.7928996242545062
+const quartic_outer_convexity = [3.621308885857567, 0.0, quartic_outer_α, 0.0, 0.08578956499151169,
+                                 quartic_outer_α, 1.5, 0.0, 0.0, 3.6212933687704307]
+
 
 function quartic_outer_homogeneous_square_test(optimizer, config)
     square_test(optimizer, config, false,
                 PolySet(symmetric=true, degree=4, dimension=2, convex=true),
                 nth_root,
-                1.0,
+                quartic_outer_obj,
                 ◯ -> begin
                     @test ◯ isa Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}
                     @test ◯.degree == 4
                     x, y = variables(◯.p)
-                    @test polynomial(◯.p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4
+                    @test polynomial(◯.p) ≈ quartic_outer_β*x^4 + (quartic_outer_γ+2quartic_outer_λ)*x^2*y^2 + quartic_outer_β*y^4 atol=config.atol rtol=config.rtol
                     convexity_proof = Sets.convexity_proof(◯)
-                    @test convexity_proof.n == 6
-                    @test convexity_proof.Q == ones(21)
+                    @test convexity_proof.n == 4
+                    @test convexity_proof.Q ≈ quartic_outer_convexity atol=config.atol rtol=config.rtol
                 end)
 end
 
@@ -168,15 +183,19 @@ end
     @testset "Quartic" begin
         @testset "Inner" begin
             # The PSD matrix for the variable  is 3 x 3 so 3 * (3+1) / 2 = 6
-            # The PSD matrix for the convexity is 6 x 6 so 6 * (6+1) / 2 = 21
+            # The PSD matrix for the convexity is 4 x 4 so 4 * (5+1) / 2 = 10
             # entries
             # 1 variable for t
-            # hence 28 variables
-            quartic_inner_homogeneous_square_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, ones(28))),
+            # hence 17 variables
+            sol = [1.0; 0.0; quartic_inner_poly; 0.0; 1.0;
+                   quartic_inner_convexity; quartic_inner_obj]
+            quartic_inner_homogeneous_square_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, sol)),
                                                   config)
         end
         @testset "Outer" begin
-            quartic_outer_homogeneous_square_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, ones(28))),
+            sol = [quartic_outer_β; 0.0; quartic_outer_γ; quartic_outer_λ; 0.0; quartic_outer_β;
+                   quartic_outer_convexity; quartic_outer_obj]
+            quartic_outer_homogeneous_square_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, sol)),
                                                   config)
         end
     end

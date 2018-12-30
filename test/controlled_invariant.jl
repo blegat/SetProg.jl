@@ -86,9 +86,16 @@ function ci_quad_nonhomogeneous_test(optimizer, config)
                    end)
 end
 
+const ci_quartic_α = -1.4529635030551264
+const ci_quartic_β =  0.25613759221607024
+const ci_quartic_γ = -8.717781018330758
+const ci_quartic_hess = [12.0, ci_quartic_γ, 12.0, ci_quartic_γ, 12.0,
+                         12.0, 12.0, ci_quartic_γ, ci_quartic_γ, 12.0]
+
+const ci_quartic_obj = 0.25369938382997853
+
 function ci_quartic_homogeneous_test(optimizer, config)
-    α = -8.7398984946
-    η = -8.7397089279
+    α = 2.905927006110253
     ci_square_test(optimizer, config, true,
                    PolySet(symmetric=true, degree=4, convex=true),
                    set -> L1_heuristic(set, [1.0, 1.0]),
@@ -97,13 +104,11 @@ function ci_quartic_homogeneous_test(optimizer, config)
                        @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}}
                        @test Sets.polar(◯).degree == 4
                        x, y = variables(Sets.polar(◯).p)
-                       q = x^4 - 2.9132x^3*y + 6x^2*y^2 - 2.9132x*y^3 + y^4
+                       q = x^4 - α*x^3*y + 6x^2*y^2 - α*x*y^3 + y^4
                        @test polynomial(Sets.polar(◯).p) ≈ q atol=config.atol rtol=config.rtol
                        convexity_proof = Sets.convexity_proof(◯)
-                       @test convexity_proof.n == 6
-                       hessian = [0.0; 0.0; 12.0; 0.0; α; 12.0; 0.0; α; 12.0; 12.0;
-                                  0.0; 12.0; η; η; 12.0; zeros(6)]
-                       @test convexity_proof.Q ≈ hessian atol=config.atol rtol=config.rtol
+                       @test convexity_proof.n == 4
+                       @test convexity_proof.Q ≈ ci_quartic_hess atol=config.atol rtol=config.rtol
                    end)
 end
 
@@ -147,14 +152,8 @@ end
         # entries
         # 1 variable for t
         # hence 28 variables
-        α = -8.7398984946
-        β = -1.4566
-        ϵ =  0.2521560726
-        δ =  6 - 2ϵ
-        ξ =  0.258304355
-        η = -8.7397089279
-        sol = [1.0; β; δ; ϵ; β; 1.0; 0.0; 0.0; 12.0; 0.0; α; 12.0; 0.0; α; 12.0;
-               12.0; 0.0; 12.0; η; η; 12.0; zeros(6); ξ]
+        sol = [1.0; ci_quartic_α; 6 - 2ci_quartic_β; ci_quartic_β; ci_quartic_α; 1.0;
+               ci_quartic_hess; ci_quartic_obj]
         ci_quartic_homogeneous_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, sol)),
                                     config)
     end
