@@ -8,17 +8,17 @@ function poly_eval(p::AbstractPolynomial{JuMP.AffExpr},
     end
     return aff
 end
-function sublevel_eval(ell::Sets.PolarOrNot{<:Sets.EllipsoidAtOrigin},
+function sublevel_eval(ell::Sets.EllipsoidAtOrigin,
                        a::AbstractVector)
     return quad_form(ell.Q, a)
 end
-function sublevel_eval(set::Sets.PolarOrNot{<:Sets.ConvexPolynomialSublevelSetAtOrigin},
+function sublevel_eval(set::Sets.ConvexPolynomialSublevelSetAtOrigin,
                        a::AbstractVector)
     return poly_eval(polynomial(set.p), a)
 end
 function sublevel_eval(model,
-                       set::Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
-                                                           Sets.PerspectiveConvexPolynomialSet}},
+                       set::Union{Sets.PerspectiveEllipsoid,
+                                  Sets.PerspectiveConvexPolynomialSet},
                        a::AbstractVector, β)
     d = data(model)
     x = Sets.space_variables(set)
@@ -31,5 +31,5 @@ function sublevel_eval(model,
     else
         scaling = 1.0
     end
-    return set.set.p(z => -β / scaling, x => a / scaling)
+    return set.p(z => -β / scaling, x => a / scaling)
 end

@@ -134,37 +134,30 @@ function JuMP.add_constraint(model::JuMP.Model,
     end
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin{JuMP.VariableRef},
-                                                                                    Sets.ConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}}},
+                             constraint::InclusionConstraint{<:Sets.PolarOf,
                                                              <:Polyhedra.HyperPlane},
                              name::String = "")
     @assert iszero(constraint.supset.β) # Otherwise it is not symmetric around the origin
     @constraint(model, Line(constraint.supset.a) in Sets.polar(constraint.subset))
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
-                                                                                              Sets.PerspectiveConvexPolynomialSet}},
+                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf,
                                                              <:Polyhedra.HyperPlane},
                              name::String = "")
-    val = sublevel_eval(model, constraint.subset, constraint.supset.a,
-                        constraint.supset.β)
+    @constraint(model, SymScaledPoint(constraint.supset.a, constraint.supset.β) in Sets.polar(constraint.subset))
     @constraint(model, val in MOI.EqualTo(0.0))
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin{JuMP.VariableRef},
-                                                                                    Sets.ConvexPolynomialSublevelSetAtOrigin{JuMP.VariableRef}}},
+                             constraint::InclusionConstraint{<:Sets.PolarOf,
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
     @constraint(model, ScaledPoint(constraint.supset.a, constraint.supset.β) in Sets.polar(constraint.subset))
 end
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
-                                                                                              Sets.PerspectiveConvexPolynomialSet}},
+                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf,
                                                              <:Polyhedra.HalfSpace},
                              name::String = "")
-    val = sublevel_eval(model, constraint.subset, constraint.supset.a,
-                        constraint.supset.β)
-    @constraint(model, val in MOI.LessThan(0.0))
+    @constraint(model, ScaledPoint(constraint.supset.a, constraint.supset.β) in Sets.perspective_dual(constraint.subset))
 end
 
 ## Polyhedron in Set ##
