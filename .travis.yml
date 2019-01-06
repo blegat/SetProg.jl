@@ -1,0 +1,14 @@
+language: julia
+os:
+    - linux
+julia:
+    - 1.0
+    - 1.1
+notifications:
+    email: false
+before_script:
+  - julia -e 'using Pkg; Pkg.add(PackageSpec(name="JuMP", rev="master"))'
+  - julia -e 'using Pkg; Pkg.add(PackageSpec(name="PolyJuMP", rev="master"))'
+  - julia -e 'using Pkg; Pkg.add(PackageSpec(name="SumOfSquares", rev="master"))'
+after_success:
+    - julia -e 'using Pkg; Pkg.add("Coverage"); cd(Pkg.dir("JuMP")); using Coverage; Codecov.submit(process_folder())'
