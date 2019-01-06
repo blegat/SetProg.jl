@@ -1,6 +1,6 @@
 # SetProg
 
-**This package is still a sketch, functionalities are partially implemented, it also requires [Julia v1.0.3](https://github.com/JuliaLang/julia/pull/30010)**
+**This package is still a sketch, functionalities are partially implemented**
 
 JuMP extension for Set Programming : optimization with set variables and inclusion/containment constraints. This package allows the formulation of a mathematical programming involving both classical variables and constraints supported by JuMP and set variables and constraints.
 
