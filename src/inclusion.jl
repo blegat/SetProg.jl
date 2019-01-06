@@ -7,7 +7,8 @@ function need_variablify(c::InclusionConstraint)
     return need_variablify(c.subset) || need_variablify(c.supset)
 end
 function variablify(c::InclusionConstraint)
-    return InclusionConstraint(variablify(c.subset), variablify(c.supset))
+    return JuMP.build_constraint(error, variablify(c.subset),
+                                 PowerSet(variablify(c.supset)))
 end
 function clear_spaces(c::InclusionConstraint)
     clear_spaces(c.subset)
@@ -30,9 +31,11 @@ end
 struct PowerSet{S}
     set::S
 end
-function JuMP.build_constraint(_error::Function, subset,
-                               supset_powerset::PowerSet)
-    InclusionConstraint(subset, supset_powerset.set)
+
+# Fallback, might be because `subset` or `sup_powerset` is a `VariableRef` or
+# a `Polyhedron` (which is handled by `JuMP.add_constraint`).
+function JuMP.build_constraint(_error::Function, subset, sup_powerset::PowerSet)
+    InclusionConstraint(subset, sup_powerset.set)
 end
 
 ### InclusionConstraint for sets ###
@@ -51,66 +54,68 @@ function set_space(space::Space,
 end
 
 # S-procedure: Q ⊆ P <=> xQx ≤ 1 => xPx ≤ 1 <=> xPx ≤ xQx <=> Q - P is PSD
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.EllipsoidAtOrigin,
-                                                             <:Sets.EllipsoidAtOrigin},
-                             name::String = "")
-    Q = constraint.subset.Q
-    P = constraint.supset.Q
-    @constraint(model, Symmetric(Q - P) in PSDCone())
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.EllipsoidAtOrigin,
+                               sup_powerset::PowerSet{<:Sets.EllipsoidAtOrigin})
+    Q = subset.Q
+    P = sup_powerset.set.Q
+    JuMP.build_constraint(_error, Symmetric(Q - P), PSDCone())
 end
 
 # S-procedure: Q ⊆ P <=> q(x) ≤ 1 => p(x) ≤ 1 <=> p(x) ≤ q(x) <= q - p is SOS
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.ConvexPolynomialSublevelSetAtOrigin,
-                                                             <:Sets.ConvexPolynomialSublevelSetAtOrigin},
-                             name::String = "")
-    q = constraint.subset.p
-    p = constraint.supset.p
-    @constraint(model, q - p in SOSCone())
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.ConvexPolynomialSublevelSetAtOrigin,
+                               sup_powerset::PowerSet{<:Sets.ConvexPolynomialSublevelSetAtOrigin})
+    q = subset.p
+    p = sup_powerset.set.p
+    JuMP.build_constraint(_error, q - p, SOSCone())
 end
 
 # S-procedure: Q ⊆ P <=> q - p is SOS
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Union{Sets.PerspectiveEllipsoid,
-                                                                     Sets.PerspectivePolynomialSet},
-                                                             <:Union{Sets.PerspectiveEllipsoid,
-                                                                     Sets.PerspectivePolynomialSet}},
-                             name::String = "")
-    q = constraint.subset.p
-    p = constraint.supset.p
-    @constraint(model, q - p in SOSCone()) # TODO λ
+function JuMP.build_constraint(_error::Function,
+                               subset::Union{Sets.PerspectiveEllipsoid,
+                                             Sets.PerspectivePolynomialSet},
+                               sup_powerset::PowerSet{<:Union{Sets.PerspectiveEllipsoid,
+                                                              Sets.PerspectivePolynomialSet}},
+                               S_procedure_scaling = nothing)
+    q = subset.p
+    p = sup_powerset.set.p
+    if S_procedure_scaling === nothing
+        s = q - p
+    else
+        s = q - S_procedure_scaling * p
+    end
+    JuMP.build_constraint(_error, s, SOSCone())
 end
 
 # S ⊆ T <=> T* ⊇ S*
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
-                                                                                              Sets.PerspectivePolynomialSet}},
-                                                             <:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
-                                                                                              Sets.PerspectivePolynomialSet}}},
-                             name::String = "")
-    S = constraint.subset
-    T = constraint.supset
-    @constraint(model, Sets.perspective_dual(T) ⊆ Sets.perspective_dual(S))
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                                      Sets.PerspectivePolynomialSet}},
+                               sup_powerset::PowerSet{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                                                                Sets.PerspectivePolynomialSet}}};
+                               kws...)
+    S = subset
+    T = sup_powerset.set
+    JuMP.build_constraint(_error, Sets.perspective_dual(T), PowerSet(Sets.perspective_dual(S)); kws...)
 end
 
 # S ⊆ T <=> polar(T) ⊆ polar(S)
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.Polar,
-                                                             <:Sets.Polar},
-                             name::String = "")
-    S = constraint.subset
-    T = constraint.supset
-    @constraint(model, Sets.polar(T) ⊆ Sets.polar(S))
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.Polar,
+                               sup_powerset::PowerSet{<:Sets.Polar})
+    S = subset
+    T = sup_powerset.set
+    JuMP.build_constraint(_error, Sets.polar(T), PowerSet(Sets.polar(S)))
 end
 
 # See [LTJ18]
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:LinearImage{S},
-                                                             <:LinearImage{T}},
-                             name::String = "") where {S <: Sets.AbstractSet,
-                                                       T <: Sets.AbstractSet}
-    @constraint(model, apply_map(model, constraint.subset) ⊆ apply_map(model, constraint.supset))
+function JuMP.build_constraint(_error::Function,
+                               subset::LinearImage{S},
+                               sup_powerset::PowerSet{<:LinearImage{T}}) where {S <: Sets.AbstractSet,
+                                                                                T <: Sets.AbstractSet}
+    JuMP.build_constraint(_error, apply_map(subset),
+                          PowerSet(apply_map(sup_powerset.set)))
 end
 
 ## Set in Polyhedron ##
@@ -133,31 +138,23 @@ function JuMP.add_constraint(model::JuMP.Model,
         @constraint(model, ◯ ⊆ hs)
     end
 end
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PolarOf,
-                                                             <:Polyhedra.HyperPlane},
-                             name::String = "")
-    @assert iszero(constraint.supset.β) # Otherwise it is not symmetric around the origin
-    @constraint(model, Line(constraint.supset.a) in Sets.polar(constraint.subset))
+function JuMP.build_constraint(_error::Function, subset::Sets.PolarOf,
+                               sup_powerset::PowerSet{<:Polyhedra.HyperPlane})
+    @assert iszero(sup_powerset.set.β) # Otherwise it is not symmetric around the origin
+    JuMP.build_constraint(_error, Line(sup_powerset.set.a),
+                          Sets.polar(subset))
 end
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf,
-                                                             <:Polyhedra.HyperPlane},
-                             name::String = "")
-    @constraint(model, SymScaledPoint(constraint.supset.a, constraint.supset.β) in Sets.polar(constraint.subset))
-    @constraint(model, val in MOI.EqualTo(0.0))
+function JuMP.build_constraint(_error::Function, subset::Sets.PerspectiveDualOf,
+                               sup_powerset::PowerSet{<:Polyhedra.HyperPlane})
+    JuMP.build_constraint(_error, SymScaledPoint(sup_powerset.set.a, sup_powerset.set.β), Sets.polar(subset))
 end
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PolarOf,
-                                                             <:Polyhedra.HalfSpace},
-                             name::String = "")
-    @constraint(model, ScaledPoint(constraint.supset.a, constraint.supset.β) in Sets.polar(constraint.subset))
+function JuMP.build_constraint(_error::Function, subset::Sets.PolarOf,
+                               sup_powerset::PowerSet{<:Polyhedra.HalfSpace})
+    JuMP.build_constraint(_error, ScaledPoint(sup_powerset.set.a, sup_powerset.set.β), Sets.polar(subset))
 end
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.PerspectiveDualOf,
-                                                             <:Polyhedra.HalfSpace},
-                             name::String = "")
-    @constraint(model, ScaledPoint(constraint.supset.a, constraint.supset.β) in Sets.perspective_dual(constraint.subset))
+function JuMP.build_constraint(_error::Function, subset::Sets.PerspectiveDualOf,
+                               sup_powerset::PowerSet{<:Polyhedra.HalfSpace})
+    JuMP.build_constraint(_error, ScaledPoint(sup_powerset.set.a, sup_powerset.set.β), Sets.perspective_dual(subset))
 end
 
 ## Polyhedron in Set ##

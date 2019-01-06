@@ -16,13 +16,11 @@ function sublevel_eval(set::Sets.ConvexPolynomialSublevelSetAtOrigin,
                        a::AbstractVector)
     return poly_eval(polynomial(set.p), a)
 end
-function sublevel_eval(model,
-                       set::Union{Sets.PerspectiveEllipsoid,
+function sublevel_eval(set::Union{Sets.PerspectiveEllipsoid,
                                   Sets.PerspectiveConvexPolynomialSet},
                        a::AbstractVector, β)
-    d = data(model)
     x = Sets.space_variables(set)
-    z = d.perspective_polyvar
+    z = Sets.perspective_variable(set)
     # Avoid large values, with high degree polynomials, it might cause issues
     if false
         scale_a = norm(a)
