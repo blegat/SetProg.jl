@@ -1,4 +1,4 @@
-# SetProgramming
+# SetProg
 
 **This package is still a sketch, functionalities are partially implemented, it also requires [Julia v1.0.3](https://github.com/JuliaLang/julia/pull/30010)**
 
