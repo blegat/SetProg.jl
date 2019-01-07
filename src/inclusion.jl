@@ -79,8 +79,17 @@ function s_procedure(model, subset, supset; S_procedure_scaling = nothing)
     p = supset.p
     if S_procedure_scaling === nothing
         S_procedure_scaling = @variable(model)
+        # We want to avoid creating a non-convex problem. If one of `p` and `q`
+        # is a polynomial with constant coefficients, we multiply the variable
+        # by this one
+        if MultivariatePolynomials.coefficienttype(q) <: Number
+            s = S_procedure_scaling * q - p
+        else
+            s = q - S_procedure_scaling * p
+        end
+    else
+        s = q - S_procedure_scaling * p
     end
-    s = q - S_procedure_scaling * p
     return JuMP.build_constraint(error, s, SOSCone())
 end
 
