@@ -33,7 +33,12 @@ function ci_square_test(optimizer::MOI.AbstractOptimizer, config::MOIT.TestConfi
     Δt = 0.5
     A = [1.0 Δt]
     E = [1.0 0.0]
-    @constraint(model, A * ◯ ⊆ E * ◯)
+
+    if variable.symmetric
+        @constraint(model, A * ◯ ⊆ E * ◯)
+    else
+        @constraint(model, A * ◯ ⊆ E * ◯, S_procedure_scaling = 1.0)
+    end
 
     @objective(model, inner ? MOI.MAX_SENSE : MOI.MIN_SENSE,
                metric(volume(◯)))

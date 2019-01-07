@@ -1,14 +1,15 @@
 ### InclusionConstraint ###
-struct InclusionConstraint{SubSetType, SupSetType} <: SetConstraint
+struct InclusionConstraint{SubSetType, SupSetType, KWT} <: SetConstraint
     subset::SubSetType
     supset::SupSetType
+    kws::KWT
 end
 function need_variablify(c::InclusionConstraint)
     return need_variablify(c.subset) || need_variablify(c.supset)
 end
 function variablify(c::InclusionConstraint)
     return JuMP.build_constraint(error, variablify(c.subset),
-                                 PowerSet(variablify(c.supset)))
+                                 PowerSet(variablify(c.supset)); c.kws...)
 end
 function clear_spaces(c::InclusionConstraint)
     clear_spaces(c.subset)
@@ -34,8 +35,9 @@ end
 
 # Fallback, might be because `subset` or `sup_powerset` is a `VariableRef` or
 # a `Polyhedron` (which is handled by `JuMP.add_constraint`).
-function JuMP.build_constraint(_error::Function, subset, sup_powerset::PowerSet)
-    InclusionConstraint(subset, sup_powerset.set)
+function JuMP.build_constraint(_error::Function, subset, sup_powerset::PowerSet;
+                               kws...)
+    InclusionConstraint(subset, sup_powerset.set, kws)
 end
 
 ### InclusionConstraint for sets ###
@@ -72,20 +74,27 @@ function JuMP.build_constraint(_error::Function,
 end
 
 # S-procedure: Q ⊆ P <=> q - p is SOS
-function JuMP.build_constraint(_error::Function,
-                               subset::Union{Sets.PerspectiveEllipsoid,
-                                             Sets.PerspectivePolynomialSet},
-                               sup_powerset::PowerSet{<:Union{Sets.PerspectiveEllipsoid,
-                                                              Sets.PerspectivePolynomialSet}},
-                               S_procedure_scaling = nothing)
+function s_procedure(model, subset, supset; S_procedure_scaling = nothing)
     q = subset.p
-    p = sup_powerset.set.p
+    p = supset.p
     if S_procedure_scaling === nothing
-        s = q - p
-    else
-        s = q - S_procedure_scaling * p
+        S_procedure_scaling = @variable(model)
     end
-    JuMP.build_constraint(_error, s, SOSCone())
+    s = q - S_procedure_scaling * p
+    return JuMP.build_constraint(error, s, SOSCone())
+end
+
+# S-procedure: Q ⊆ P <=> q - p is SOS
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Union{Sets.PerspectiveEllipsoid,
+                                                                     Sets.PerspectivePolynomialSet},
+                                                             <:Union{Sets.PerspectiveEllipsoid,
+                                                                     Sets.PerspectivePolynomialSet}},
+                             name::String = "")
+    return JuMP.add_constraint(model,
+                               s_procedure(model, constraint.subset,
+                                           constraint.supset;
+                                           constraint.kws...), name)
 end
 
 # S ⊆ T <=> T* ⊇ S*
@@ -111,11 +120,11 @@ end
 
 # See [LTJ18]
 function JuMP.build_constraint(_error::Function,
-                               subset::LinearImage{S},
-                               sup_powerset::PowerSet{<:LinearImage{T}}) where {S <: Sets.AbstractSet,
-                                                                                T <: Sets.AbstractSet}
+                               subset::LinearImage{<:Sets.AbstractSet},
+                               sup_powerset::PowerSet{<:LinearImage{<:Sets.AbstractSet}};
+                               kws...)
     JuMP.build_constraint(_error, apply_map(subset),
-                          PowerSet(apply_map(sup_powerset.set)))
+                          PowerSet(apply_map(sup_powerset.set)); kws...)
 end
 
 ## Set in Polyhedron ##
