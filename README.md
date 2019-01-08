@@ -1,5 +1,10 @@
 # SetProg
 
+| **Build Status** | **Social** |
+|:----------------:|:----------:|
+| [![Build Status][build-img]][build-url] [![Build Status][winbuild-img]][winbuild-url] | [![Gitter][gitter-img]][gitter-url] |
+| [![Coveralls branch][coveralls-img]][coveralls-url] [![Codecov branch][codecov-img]][codecov-url] | [<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Discourse_logo.png/799px-Discourse_logo.png" width="64">][discourse-url] |
+
 **This package is still a sketch, functionalities are partially implemented**
 
 JuMP extension for Set Programming : optimization with set variables and inclusion/containment constraints. This package allows the formulation of a mathematical programming involving both classical variables and constraints supported by JuMP and set variables and constraints.
@@ -113,3 +118,13 @@ m = Model(optimizer=optimizer)
 @objective Max vol(S)
 solve()
 ```
+
+[build-img]: https://travis-ci.org/blegat/SetProg.jl.svg?branch=master
+[build-url]: https://travis-ci.org/blegat/SetProg.jl
+[codecov-img]: http://codecov.io/github/blegat/SetProg.jl/coverage.svg?branch=master
+[codecov-url]: http://codecov.io/github/blegat/SetProg.jl?branch=master
+
+[gitter-url]: https://gitter.im/JuliaPolyhedra/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link
+[gitter-img]: https://badges.gitter.im/JuliaPolyhedra/Lobby.svg
+[discourse-url]: https://discourse.julialang.org/c/domain/opt
+
