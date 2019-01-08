@@ -11,7 +11,7 @@ struct Ellipsoid{T} <: AbstractEllipsoid{T}
 end
 Ellipsoid(ell::Ellipsoid) = ell
 function Polyhedra.project(ell::Ellipsoid, I)
-    homogeneous = EllipsoidAtOrigin(project(EllipsoidAtOrigin(ell.Q), I))
+    homogeneous = polar_representation(project(EllipsoidAtOrigin(ell.Q), I))
     return Ellipsoid(homogeneous.Q, ell.center[I])
 end
 

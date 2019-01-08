@@ -29,5 +29,5 @@ function sublevel_eval(set::Union{Sets.PerspectiveEllipsoid,
     else
         scaling = 1.0
     end
-    return set.p(z => -β / scaling, x => a / scaling)
+    return set.p(z => β / scaling, x => a / scaling)
 end
