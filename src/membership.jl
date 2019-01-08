@@ -41,14 +41,39 @@ function JuMP.build_constraint(_error::Function, member,
     MembershipConstraint(member, set)
 end
 
-function JuMP.build_constraint(_error::Function,
-                               member::Point,
-                               set::Sets.PolarOf{<:Sets.EllipsoidAtOrigin})
-    p = member
-    P = [scaling(p) coord(p)'
-         coord(p)   set.set.Q]
-    JuMP.build_constraint(_error, Symmetric(P), PSDCone())
+#  a/β ∈ S∘
+#   S  ⊆ [⟨a/β, x⟩ ≤ 1]
+#   S  ⊆ [⟨a,   x⟩ ≤ β]
+function JuMP.build_constraint(_error::Function, member::Point,
+                               set::Sets.Polar)
+    if set.set isa Sets.AbstractEllipsoid{<:Number}
+        # The `else` will produce an SDP which is less efficiently solved than
+        # a SOC
+        return JuMP.build_constraint(_error, member, Sets.Ellipsoid(set))
+    else
+        return JuMP.build_constraint(_error, Sets.polar(set),
+                                     PowerSet(HalfSpace(coord(member),
+                                                        scaling(member))))
+    end
 end
+
+#          a/β  ∈ τ^{-1}(τ(S)*)
+#        (β, a) ∈ τ(S)*
+#          τ(S) ⊆ [⟨(β, a), (z, x)⟩ ≥ 0]
+#            S  ⊆ [⟨-a, x⟩ ≤ β]
+function JuMP.build_constraint(_error::Function, member::Point,
+                               set::Sets.PerspectiveDual)
+    if set.set isa Sets.AbstractEllipsoid{<:Number}
+        # The `else` will produce an SDP which is less efficiently solved than
+        # a SOC
+        return JuMP.build_constraint(_error, member, Sets.Ellipsoid(set))
+    else
+        return JuMP.build_constraint(_error, Sets.perspective_dual(set),
+                                     PowerSet(HalfSpace(-coord(member),
+                                                        scaling(member))))
+    end
+end
+
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:JuMP.AbstractJuMPScalar},
                                img::Sets.HyperSphere)
@@ -67,7 +92,7 @@ function JuMP.build_constraint(_error::Function,
 end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:JuMP.AbstractJuMPScalar},
-                               set::Sets.PerspectiveDualOrPolarOrNot{<:Sets.AbstractEllipsoid{<:Number}})
+                               set::Sets.AbstractEllipsoid{<:Number})
     ell = Sets.Ellipsoid(set)
     # The eltype of Point is an expression of JuMP variables so we cannot compute
     # (x-c)' * Q * (x-c) <= 1, we need to do
@@ -79,16 +104,16 @@ function JuMP.build_constraint(_error::Function,
                               ell.center)
     JuMP.build_constraint(_error, member, sphere)
 end
- function JuMP.build_constraint(_error::Function,
-                                member::Point{<:JuMP.AbstractJuMPScalar},
-                                set::Sets.EllipsoidAtOrigin{<:JuMP.AbstractJuMPScalar})
-     # The eltype of both `member` and `set` is an expression of JuMP variables
-     # so we cannot use the linear constraint `x' * Q * x <= 1` nor transform it
-     # to SOC. We need to use the SDP constraint:
-     # [ 1 x'     ]
-     # [ x Q^{-1} ] ⪰ 0 so we switch to the polar representation
-     JuMP.build_constraint(_error, member, Sets.polar_representation(set))
- end
+function JuMP.build_constraint(_error::Function,
+                               member::Point{<:JuMP.AbstractJuMPScalar},
+                               set::Sets.EllipsoidAtOrigin{<:JuMP.AbstractJuMPScalar})
+    # The eltype of both `member` and `set` is an expression of JuMP variables
+    # so we cannot use the linear constraint `x' * Q * x <= 1` nor transform it
+    # to SOC. We need to use the SDP constraint:
+    # [ 1 x'     ]
+    # [ x Q^{-1} ] ⪰ 0 so we switch to the polar representation
+    JuMP.build_constraint(_error, member, Sets.polar_representation(set))
+end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:Number},
                                set::Union{Sets.EllipsoidAtOrigin,
@@ -130,4 +155,43 @@ function JuMP.build_constraint(_error::Function,
     p = member
     val = sublevel_eval(set, coord(p), scaling(p))
     JuMP.build_constraint(_error, val, MOI.EqualThan(0.0))
+end
+
+# TODO simplify when https://github.com/JuliaOpt/SumOfSquares.jl/issues/3 is done
+function mat_measure(f, monos)
+    # Takes into account that some monomials are the same so they should
+    # have the same value
+    d = Dict{typeof(exponents(first(monos))), typeof(f(1,1))}()
+    function element(i, j)
+        mono = monos[i] * monos[j]
+        exps = exponents(mono)
+        if !haskey(d, exps)
+            d[exps] = f(i, j)
+        end
+        return d[exps]
+    end
+    return MatMeasure(element, monos)
+end
+function JuMP.add_constraint(model::JuMP.Model,
+        constraint::SetProg.MembershipConstraint{Vector{T},
+                        SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}},
+        name::String = "") where T
+    set = constraint.set
+    @assert iseven(set.degree)
+    monos = monomials(SetProg.Sets.space_variables(set), 0:div(set.degree, 2))
+    U = promote_type(T, Int, JuMP.VariableRef)
+    function variable(i, j)
+        if i == length(monos) && j == length(monos)
+            return one(U)
+        elseif i == length(monos) || j == length(monos)
+            return convert(U, constraint.member[length(monos) - min(i, j)])
+        else
+            return convert(U, JuMP.VariableRef(model))
+        end
+    end
+    ν = mat_measure(variable, monos)
+    @constraint(model, ν.Q.Q in MOI.PositiveSemidefiniteConeTriangle(length(monos)))
+    p = SetProg.Sets.gauge1(set)
+    scalar_product = dot(measure(ν), polynomial(p))
+    @constraint(model, scalar_product in MOI.LessThan(1.0))
 end

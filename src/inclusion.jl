@@ -156,23 +156,31 @@ function JuMP.add_constraint(model::JuMP.Model,
         @constraint(model, ◯ ⊆ hs)
     end
 end
-function JuMP.build_constraint(_error::Function, subset::Sets.PolarOf,
+
+#  S∘ ⊆ [⟨a,   x⟩ ≤ β]
+#  S∘ ⊆ [⟨a/β, x⟩ ≤ 1]
+# a/β ∈ S
+function JuMP.build_constraint(_error::Function, subset::Sets.Polar,
                                sup_powerset::PowerSet{<:Polyhedra.HyperPlane})
     @assert iszero(sup_powerset.set.β) # Otherwise it is not symmetric around the origin
     JuMP.build_constraint(_error, Line(sup_powerset.set.a),
                           Sets.polar(subset))
 end
-function JuMP.build_constraint(_error::Function, subset::Sets.PerspectiveDualOf,
-                               sup_powerset::PowerSet{<:Polyhedra.HyperPlane})
-    JuMP.build_constraint(_error, SymScaledPoint(sup_powerset.set.a, sup_powerset.set.β), Sets.polar(subset))
-end
-function JuMP.build_constraint(_error::Function, subset::Sets.PolarOf,
+function JuMP.build_constraint(_error::Function, subset::Sets.Polar,
                                sup_powerset::PowerSet{<:Polyhedra.HalfSpace})
     JuMP.build_constraint(_error, ScaledPoint(sup_powerset.set.a, sup_powerset.set.β), Sets.polar(subset))
 end
-function JuMP.build_constraint(_error::Function, subset::Sets.PerspectiveDualOf,
+
+# τ^{-1}(τ(S)*) ⊆ [⟨a, x⟩ ≤ β]
+#         τ(S)* ⊆ [⟨(β, -a), (z, x)⟩ ≥ 0]
+#       (β, -a) ∈ τ(S)
+function JuMP.build_constraint(_error::Function, subset::Sets.PerspectiveDual,
+                               sup_powerset::PowerSet{<:Polyhedra.HyperPlane})
+    JuMP.build_constraint(_error, SymScaledPoint(-sup_powerset.set.a, sup_powerset.set.β), Sets.polar(subset))
+end
+function JuMP.build_constraint(_error::Function, subset::Sets.PerspectiveDual,
                                sup_powerset::PowerSet{<:Polyhedra.HalfSpace})
-    JuMP.build_constraint(_error, ScaledPoint(sup_powerset.set.a, sup_powerset.set.β), Sets.perspective_dual(subset))
+    JuMP.build_constraint(_error, ScaledPoint(-sup_powerset.set.a, sup_powerset.set.β), Sets.perspective_dual(subset))
 end
 
 ## Polyhedron in Set ##
@@ -196,4 +204,32 @@ function JuMP.add_constraint(model::JuMP.Model,
     for point in points(□)
         @constraint(model, point in ◯)
     end
+end
+
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.EllipsoidAtOrigin,
+                               sup_powerset::PowerSet{<:HalfSpace})
+    hs = sup_powerset.set
+    P = [hs.β hs.a'
+         hs.a subset.Q]
+    JuMP.build_constraint(_error, Symmetric(P), PSDCone())
+end
+
+#     [p(x) ≤ 1] ⊆ [⟨a, x⟩ ≤ β]
+# <= λ(1 - p(x)) ≤ β - ⟨a, x⟩ (necessary if p is SOS-convex)
+#              0 ≤ λ(p(x) - 1) - ⟨a, x⟩ + β
+# Set `x = 0`: 0 ≤ λ(p(0) - 1) + β
+# hence if p(0) ≤ 1 (i.e. 0 ∈ S), then λ = β / (1 - p(0))
+# Homogeneous case: λ = β
+# Use build_constraint when SumOfSquares#66 if λ = β (e.g. homogeneous)
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
+                                                                     Sets.PerspectiveConvexPolynomialSet},
+                                                             <:HalfSpace},
+                            name::String = "")
+    p = Sets.gauge1(constraint.subset)
+    λ = @variable(model, lower_bound=0.0)
+    x = Sets.space_variables(constraint.subset)
+    hs = dot(constraint.supset.a, x) - constraint.supset.β
+    @constraint(model, λ * (p - 1) - hs in SOSCone())
 end

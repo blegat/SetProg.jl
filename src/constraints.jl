@@ -2,8 +2,14 @@ abstract type SetConstraint  <: JuMP.AbstractConstraint end
 
 ## Loading  ##
 
-need_variablify(set::Union{Polyhedra.Rep, Sets.AbstractSet}) = false
-variablify(set::Union{Polyhedra.Rep, Sets.AbstractSet}) = set
+function need_variablify(set::Union{Polyhedra.Rep, Polyhedra.RepElement,
+                                    Sets.AbstractSet})
+    return false
+end
+function variablify(set::Union{Polyhedra.Rep, Polyhedra.RepElement,
+                               Sets.AbstractSet})
+    return set
+end
 need_variablify(v::VariableRef) = true
 variablify(v::VariableRef) = v.variable
 

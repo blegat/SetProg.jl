@@ -46,6 +46,9 @@ end
 function dimension(set::ConvexPolynomialSublevelSetAtOrigin)
     return nvariables(set.p)
 end
+function gauge1(set::ConvexPolynomialSublevelSetAtOrigin)
+    return set.p
+end
 
 convexity_proof(set::ConvexPolynomialSublevelSetAtOrigin) = set.convexity_proof
 
@@ -107,8 +110,8 @@ end
         q::DynamicPolynomials.Polynomial{true, U}
     end
 
-Set whose dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` or
-``H \\{\\, (z, x) \\mid q(z, x) \\le z^{\\texttt{degree}} \\,\\}`` where `p` and
+Set ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` or
+``\\{\\, (z, x) \\mid q(z, x) \\le z^{\\texttt{degree}} \\,\\}`` where `p` and
 `q` are homogeneous polynomials of degree `degree`.
 """
 struct PerspectiveConvexPolynomialSet{T, U} <: AbstractSet{T}
@@ -131,6 +134,10 @@ end
 dimension(d::PerspectiveConvexPolynomialSet) = length(d.x)
 perspective_variable(set::PerspectiveConvexPolynomialSet) = set.z
 space_variables(set::PerspectiveConvexPolynomialSet) = set.x
+function gauge1(set::PerspectiveConvexPolynomialSet{T}) where T
+    return subs(set.q, perspective_variable(set) => one(T))
+end
+
 function Polyhedra.project(set::PerspectiveDual{<:PerspectiveConvexPolynomialSet},
                            I)
     project(set, [I])
