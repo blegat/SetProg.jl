@@ -50,20 +50,51 @@ function JuMP.build_constraint(_error::Function,
     JuMP.build_constraint(_error, Symmetric(P), PSDCone())
 end
 function JuMP.build_constraint(_error::Function,
-                               member::Point,
-                               set::Sets.EllipsoidAtOrigin{T}) where T <: Number
-    # The eltype of Point is an expression of JuMP variables so we cannot compute
-    # x' * Q * x <= 1, we need to do
-    # [ 1 x'     ]
-    # [ x Q^{-1} ] ⪰ 0 so we switch to the polar representation
-    JuMP.build_constraint(_error, member, Sets.polar_representation(set))
+                               member::Point{<:JuMP.AbstractJuMPScalar},
+                               img::Sets.HyperSphere)
+    JuMP.build_constraint(_error, [scaling(member); coord(member)],
+                          SecondOrderCone())
 end
 function JuMP.build_constraint(_error::Function,
-                               member::Point{T},
+                               member::Point,
+                               img::Sets.LinearPreImage)
+    JuMP.build_constraint(_error, img.A * member, img.set)
+end
+function JuMP.build_constraint(_error::Function,
+                               member::Point,
+                               t::Sets.Translation)
+    JuMP.build_constraint(_error, member - t.c, t.set)
+end
+function JuMP.build_constraint(_error::Function,
+                               member::Point{<:JuMP.AbstractJuMPScalar},
+                               set::Sets.PerspectiveDualOrPolarOrNot{<:Sets.AbstractEllipsoid{<:Number}})
+    ell = Sets.Ellipsoid(set)
+    # The eltype of Point is an expression of JuMP variables so we cannot compute
+    # (x-c)' * Q * (x-c) <= 1, we need to do
+    # transform it to ||L * (x - c)||_2 <= 1
+    U, S, V = svd(ell.Q.data)
+    L = diagm(0 => sqrt.(S)) * V'
+    sphere = Sets.Translation(Sets.LinearPreImage(Sets.HyperSphere(size(L, 1)),
+                                                  L),
+                              ell.center)
+    JuMP.build_constraint(_error, member, sphere)
+end
+ function JuMP.build_constraint(_error::Function,
+                                member::Point{<:JuMP.AbstractJuMPScalar},
+                                set::Sets.EllipsoidAtOrigin{<:JuMP.AbstractJuMPScalar})
+     # The eltype of both `member` and `set` is an expression of JuMP variables
+     # so we cannot use the linear constraint `x' * Q * x <= 1` nor transform it
+     # to SOC. We need to use the SDP constraint:
+     # [ 1 x'     ]
+     # [ x Q^{-1} ] ⪰ 0 so we switch to the polar representation
+     JuMP.build_constraint(_error, member, Sets.polar_representation(set))
+ end
+function JuMP.build_constraint(_error::Function,
+                               member::Point{<:Number},
                                set::Union{Sets.EllipsoidAtOrigin,
-                                          Sets.ConvexPolynomialSublevelSetAtOrigin}) where T <: Number
-    p = member
-    JuMP.build_constraint(_error, sublevel_eval(set, coord(p)), MOI.LessThan(scaling(p)^2))
+                                          Sets.ConvexPolynomialSublevelSetAtOrigin})
+    JuMP.build_constraint(_error, sublevel_eval(set, coord(member)),
+                          MOI.LessThan(scaling(member)^2))
 end
 function JuMP.build_constraint(_error::Function,
                                member::Polyhedra.Line,
@@ -85,17 +116,17 @@ function JuMP.build_constraint(_error::Function,
 end
 
 function JuMP.build_constraint(_error::Function,
-                               member::Point{T},
+                               member::Point{<:Number},
                                set::Union{Sets.PerspectiveEllipsoid,
-                                          Sets.PerspectiveConvexPolynomialSet}) where {T <: Number}
+                                          Sets.PerspectiveConvexPolynomialSet})
     p = member
     val = sublevel_eval(set, coord(p), scaling(p))
     JuMP.build_constraint(_error, val, MOI.LessThan(0.0))
 end
 function JuMP.build_constraint(_error::Function,
-                               member::SymScaledPoint{T},
+                               member::SymScaledPoint{<:Number},
                                set::Union{Sets.PerspectiveEllipsoid,
-                                          Sets.PerspectiveConvexPolynomialSet}) where {T <: Number}
+                                          Sets.PerspectiveConvexPolynomialSet})
     p = member
     val = sublevel_eval(set, coord(p), scaling(p))
     JuMP.build_constraint(_error, val, MOI.EqualThan(0.0))

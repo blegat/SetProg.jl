@@ -61,6 +61,8 @@ end
 
 const PerspectiveDualOf{S} = PerspectiveDual{<:Any, S}
 
+const PerspectiveDualOrPolarOrNot{S} = Union{PerspectiveDualOf{S}, PolarOrNot{S}}
+
 """
     perspective_dual(set::AbstractSet)
 
@@ -101,5 +103,6 @@ convexity_proof(set::Union{Polar, PerspectiveDual}) = convexity_proof(set.set)
 
 include("ellipsoids.jl")
 include("polynomials.jl")
+include("transformations.jl")
 
 end

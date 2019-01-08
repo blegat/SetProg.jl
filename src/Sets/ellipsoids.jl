@@ -1,6 +1,10 @@
 abstract type AbstractEllipsoid{T} <: AbstractSet{T} end
 dimension(ell::AbstractEllipsoid) = LinearAlgebra.checksquare(ell.Q)
 
+struct HyperSphere <: AbstractEllipsoid{Bool}
+    dim::Int
+end
+
 struct Ellipsoid{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
     center::Vector{T}
@@ -226,7 +230,8 @@ function primal_contour(f::Function, npoints::Int)
     return x, y
 end
 
-@recipe function f(aell::PolarOrNot{<:AbstractEllipsoid}; npoints=64)
+@recipe function f(aell::PerspectiveDualOrPolarOrNot{<:AbstractEllipsoid};
+                   npoints=64)
     @assert dimension(aell) == 2
     ell = Ellipsoid(aell)
     seriestype --> :shape
