@@ -81,8 +81,7 @@ end
                 q = SetProg.MatPolynomial(Float64[0 0 0
                                                   0 1 0
                                                   0 0 1], monovec([z, x, y]))
-                dual = Sets.PerspectiveConvexPolynomialSet(2, q, zeros(2), z, [x, y])
-                shifted_circle = Sets.perspective_dual(dual)
+                shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
                 hr = recipe(shifted_circle)[1]
                 @test !hashyperplanes(hr)
                 hss = collect(halfspaces(hr))
@@ -99,8 +98,7 @@ end
                 q = SetProg.MatPolynomial(Float64[0 0 0
                                                   0 2 0
                                                   0 0 2], monovec([z, x, y]))
-                dual = Sets.PerspectiveConvexPolynomialSet(2, q, zeros(2), z, [x, y])
-                shifted_circle = Sets.perspective_dual(dual)
+                shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
                 hr = recipe(shifted_circle)[1]
                 @test !hashyperplanes(hr)
                 hss = collect(halfspaces(hr))
@@ -118,8 +116,7 @@ end
                 q = SetProg.MatPolynomial([1/2 0 0
                                            0   1 0
                                            0   0 1], monovec([z, x, y]))
-                dual = Sets.PerspectiveConvexPolynomialSet(2, q, zeros(2), z, [x, y])
-                shifted_circle = Sets.perspective_dual(dual)
+                shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
                 hr = recipe(shifted_circle)[1]
                 @test !hashyperplanes(hr)
                 hss = collect(halfspaces(hr))

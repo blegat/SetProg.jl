@@ -73,13 +73,14 @@ function l1_integral(set::Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin,
                      vertex)
     return l1_integral(Sets.polar(set), 1 ./ vertex)
 end
-function l1_integral(set::Sets.PerspectiveDualOf{<:Sets.PerspectiveEllipsoid},
+function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
                      vertex)
     return l1_integral(Sets.polar(Sets.EllipsoidAtOrigin(set.set.Q)), vertex)
 end
-function l1_integral(set::Sets.PerspectiveDualOf{<:Sets.PerspectiveConvexPolynomialSet},
+function l1_integral(set::Sets.HouseDualOf{<:Sets.ConvexPolynomialSet},
                      vertex)
-    return rectangle_integrate(subs(set.set.q, set.set.z => 0), 1 ./ vertex)
+    return rectangle_integrate(subs(set.set.set.q, set.set.set.z => 0),
+                               1 ./ vertex)
 end
 
 objective_sense(model::JuMP.Model, ::L1Heuristic) = data(model).objective_sense

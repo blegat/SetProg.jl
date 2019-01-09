@@ -95,10 +95,8 @@ end
 
 # S-procedure: Q ⊆ P <=> q - p is SOS
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Union{Sets.PerspectiveEllipsoid,
-                                                                     Sets.PerspectivePolynomialSet},
-                                                             <:Union{Sets.PerspectiveEllipsoid,
-                                                                     Sets.PerspectivePolynomialSet}},
+                             constraint::InclusionConstraint{<:Sets.Householder,
+                                                             <:Sets.Householder},
                              name::String = "")
     return JuMP.add_constraint(model,
                                s_procedure(model, constraint.subset,
@@ -108,10 +106,8 @@ end
 
 # S ⊆ T <=> T* ⊇ S*
 function JuMP.build_constraint(_error::Function,
-                               subset::Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
-                                                                      Sets.PerspectivePolynomialSet}},
-                               sup_powerset::PowerSet{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
-                                                                                                Sets.PerspectivePolynomialSet}}};
+                               subset::Sets.HouseDualOf,
+                               sup_powerset::PowerSet{<:Sets.HouseDualOf};
                                kws...)
     S = subset
     T = sup_powerset.set
@@ -212,6 +208,7 @@ function JuMP.build_constraint(_error::Function,
     hs = sup_powerset.set
     P = [hs.β hs.a'
          hs.a subset.Q]
+    @show P
     JuMP.build_constraint(_error, Symmetric(P), PSDCone())
 end
 
@@ -224,12 +221,25 @@ end
 # Use build_constraint when SumOfSquares#66 if λ = β (e.g. homogeneous)
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
-                                                                     Sets.PerspectiveConvexPolynomialSet},
+                                                                     Sets.ConvexPolynomialSet},
                                                              <:HalfSpace},
                             name::String = "")
     p = Sets.gauge1(constraint.subset)
     λ = @variable(model, lower_bound=0.0)
     x = Sets.space_variables(constraint.subset)
     hs = dot(constraint.supset.a, x) - constraint.supset.β
-    @constraint(model, λ * (p - 1) - hs in SOSCone())
+    cref = @constraint(model, λ * (p - 1) - hs in SOSCone())
+    return cref
+end
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.Householder,
+                               sup_powerset::PowerSet{<:HalfSpace})
+    # 0 ≤ βz + ⟨-a, x⟩
+    x = [sup_powerset.set.β; -sup_powerset.set.a]
+    H = Sets._householder(subset.h)
+    # The householder transformation is symmetric and orthogonal so no need to
+    # worry about whether we should invert or transpose H
+    y = H * x
+    JuMP.build_constraint(_error, subset.set,
+                          PowerSet(HalfSpace(y[2:end], -y[1])))
 end

@@ -71,13 +71,46 @@ Return the set determined by the dual of the perspective cone of `set`.
 perspective_dual(set::AbstractSet) = PerspectiveDual(set)
 perspective_dual(set::PerspectiveDual) = set.set
 
+function scaling_function(set::PerspectiveDual)
+    @assert length(space_variables(set)) == 2
+    vars = [perspective_variable(set); space_variables(set)]
+    # z is a halfspace of the primal so a ray of the dual
+    z = [1.0, 0.0, 0.0]
+    in_set(Δ::Vector) = perspective_gauge0(set.set)(vars => z + Δ) < 0
+    @assert in_set(zeros(3))
+    return (Δz, Δx, Δy) -> begin
+        Δ = [Δz, Δx, Δy]
+        _in_set(λ::Real) = in_set(Δ * λ)
+        λ = 1.0
+        while _in_set(λ)
+            if λ > 1e10
+                error("Error in plotting : the `InteriorPoint` seems to be on the boundary")
+            end
+            λ *= 2
+        end
+        λmin = 0.0
+        λmax = λ
+        # Binary search. Invariant: in_set(λmin) and !in_set(λmax)
+        while abs(λmin - λmax) > 1e-8
+            λ = (λmin + λmax) / 2
+            if _in_set(λ)
+                λmin = λ
+            else
+                λmax = λ
+            end
+        end
+        λ = (λmin + λmax) / 2
+        return 1 / λ
+    end
+end
+
 # TODO rename space_dimension to avoid confusion with Polyhedra.dimension
 """
     dimension(set::AbstractSet)
 
 Return the dimension of the space where the set `set` is defined.
 """
-function dimension end
+dimension(set::AbstractSet) = length(space_variables(set))
 
 function dimension(set::Union{Polar, PerspectiveDual})
     return dimension(set.set)
@@ -98,11 +131,15 @@ end
 function perspective_variable(set::Union{Polar, PerspectiveDual})
     return perspective_variable(set.set)
 end
+function perspective_gauge0 end
+function perspective_gauge1 end
 
 convexity_proof(set::Union{Polar, PerspectiveDual}) = convexity_proof(set.set)
 
+struct UnknownSet{T} <: AbstractSet{T} end
+include("transformations.jl")
+
 include("ellipsoids.jl")
 include("polynomials.jl")
-include("transformations.jl")
 
 end

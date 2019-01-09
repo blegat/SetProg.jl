@@ -16,9 +16,7 @@ function sublevel_eval(set::Sets.ConvexPolynomialSublevelSetAtOrigin,
                        a::AbstractVector)
     return poly_eval(polynomial(set.p), a)
 end
-function sublevel_eval(set::Union{Sets.PerspectiveEllipsoid,
-                                  Sets.PerspectiveConvexPolynomialSet},
-                       a::AbstractVector, β)
+function sublevel_eval(set::Sets.Householder, a::AbstractVector, β)
     x = Sets.space_variables(set)
     z = Sets.perspective_variable(set)
     # Avoid large values, with high degree polynomials, it might cause issues
@@ -29,5 +27,5 @@ function sublevel_eval(set::Union{Sets.PerspectiveEllipsoid,
     else
         scaling = 1.0
     end
-    return set.p(z => β / scaling, x => a / scaling)
+    return Sets.perspective_gauge0(set)(z => β / scaling, x => a / scaling)
 end

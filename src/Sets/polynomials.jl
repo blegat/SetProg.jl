@@ -2,29 +2,6 @@ using Polyhedra
 using SumOfSquares
 
 """
-    struct PerspectivePolynomialSet{T} <: AbstractSet{T}
-        degree::Int
-        p::DynamicPolynomials.Polynomial{true, T}
-        h::Vector{Float64}
-        z::SpaceVariable
-        x::Vector{SpaceVariable}
-    end
-
-Sets whose perspective-dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}``
-where `p` is a homogeneous polynomial of degree `degree`.
-"""
-struct PerspectivePolynomialSet{T} <: AbstractSet{T}
-    degree::Int
-    p::DynamicPolynomials.Polynomial{true, T}
-    h::Vector{Float64}
-    z::SpaceVariable
-    x::Vector{SpaceVariable}
-end
-
-perspective_variable(set::PerspectivePolynomialSet) = set.z
-space_variables(set::PerspectivePolynomialSet) = set.x
-
-"""
     struct ConvexPolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomial{T}}
         degree::Int
         p::P
@@ -103,107 +80,29 @@ end
 end
 
 """
-    struct PerspectiveConvexPolynomialSet{T, U} <: AbstractSet{T}
+    struct ConvexPolynomialSet{T} <: AbstractSet{T}
         degree::Int
-        p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+        q::MatPolynomial{T, DynamicPolynomials.Monomial{true},
                             DynamicPolynomials.MonomialVector{true}}
-        q::DynamicPolynomials.Polynomial{true, U}
+        z::SpaceVariable
+        x::Vector{SpaceVariable}
     end
 
 Set ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` or
-``\\{\\, (z, x) \\mid q(z, x) \\le z^{\\texttt{degree}} \\,\\}`` where `p` and
-`q` are homogeneous polynomials of degree `degree`.
+``H \\{\\, (z, x) \\mid q(z, x) \\le z^{\\texttt{degree}} \\,\\}`` where `p` and
+`q` are homogeneous polynomials of degree `degree` and `H` is a householder
+matrix.
 """
-struct PerspectiveConvexPolynomialSet{T, U} <: AbstractSet{T}
+struct ConvexPolynomialSet{T} <: AbstractSet{T}
     degree::Int
     q::MatPolynomial{T, DynamicPolynomials.Monomial{true},
                         DynamicPolynomials.MonomialVector{true}}
-    p::DynamicPolynomials.Polynomial{true, U}
-    h::Vector{Float64}
-    H::Matrix{Float64}
     z::SpaceVariable
     x::Vector{SpaceVariable}
 end
-function PerspectiveConvexPolynomialSet(degree::Integer, q::MatPolynomial, h::Vector,
-                                        z, x)
-    H = _householder(h)
-    y = [z; x]
-    p = (q - z^degree)(y => H * y)
-    return PerspectiveConvexPolynomialSet(degree, q, p, h, H, z, x)
-end
-dimension(d::PerspectiveConvexPolynomialSet) = length(d.x)
-perspective_variable(set::PerspectiveConvexPolynomialSet) = set.z
-space_variables(set::PerspectiveConvexPolynomialSet) = set.x
-function gauge1(set::PerspectiveConvexPolynomialSet{T}) where T
+perspective_gauge0(set) = set.q - set.z^set.degree
+perspective_variable(set::ConvexPolynomialSet) = set.z
+space_variables(set::ConvexPolynomialSet) = set.x
+function gauge1(set::ConvexPolynomialSet{T}) where T
     return subs(set.q, perspective_variable(set) => one(T))
-end
-
-function Polyhedra.project(set::PerspectiveDual{<:PerspectiveConvexPolynomialSet},
-                           I)
-    project(set, [I])
-end
-function Polyhedra.project(set::PerspectiveDualOf{<:PerspectiveConvexPolynomialSet{T}},
-                           I::AbstractVector) where T
-    J = setdiff(1:dimension(set), I)
-    dual = perspective_dual(set)
-    proj = PerspectivePolynomialSet(dual.degree,
-                                    subs(dual.p,
-                                         dual.x[J] => zeros(T, length(J))),
-                                    dual.h[I], dual.z, dual.x[I])
-    return perspective_dual(proj)
-end
-
-function scaling_function(set::PerspectiveDualOf{<:Union{PerspectiveConvexPolynomialSet,
-                                                         PerspectivePolynomialSet}})
-    @assert length(space_variables(set)) == 2
-    vars = [perspective_variable(set); space_variables(set)]
-    # z is a halfspace of the primal so a ray of the dual
-    z = [1.0, 0.0, 0.0]
-    in_set(Δ::Vector) = set.set.p(vars => z + Δ) < 0
-    @assert in_set(zeros(3))
-    return (Δz, Δx, Δy) -> begin
-        Δ = [Δz, Δx, Δy]
-        _in_set(λ::Real) = in_set(Δ * λ)
-        λ = 1.0
-        while _in_set(λ)
-            if λ > 1e10
-                error("Error in plotting : the `InteriorPoint` seems to be on the boundary")
-            end
-            λ *= 2
-        end
-        λmin = 0.0
-        λmax = λ
-        # Binary search. Invariant: in_set(λmin) and !in_set(λmax)
-        while abs(λmin - λmax) > 1e-8
-            λ = (λmin + λmax) / 2
-            if _in_set(λ)
-                λmin = λ
-            else
-                λmax = λ
-            end
-        end
-        λ = (λmin + λmax) / 2
-        return 1 / λ
-    end
-end
-
-@recipe function f(set::PerspectiveDual{T, <:Union{PerspectiveConvexPolynomialSet{T},
-                                                   PerspectivePolynomialSet{T}}}; npoints=64) where T
-    seriestype --> :shape
-    legend --> false
-    # z is a halfspace of the primal so a ray of the dual
-    z = [1.0, 0.0, 0.0]
-    h1, h2 = set.set.h
-    # a is a ray of the primal so a halfspace of the dual
-    a = [1, h1, h2]
-    b = [h1, -1, 0]
-    @assert abs(dot(a, b)) < 1e-8
-    c = [h2 * (1 - h1^2) / (1 + h1^2), h1*h2 / (1 + h1^2), -1]
-    @assert abs(dot(b, c)) < 1e-8
-    @assert abs(dot(a, c)) < 1e-8
-    polyhedron = dual_contour(scaling_function(set), npoints, T,
-                              z, b, c, true)
-    # We fix z to 1.0 and eliminate it, this is cheap for H-rep
-    pp = fixandeliminate(polyhedron, 1, 1.0)
-    pp
 end

@@ -97,116 +97,38 @@ function Ellipsoid(ell::LiftedEllipsoid)
     Ellipsoid(Symmetric(Q), c)
 end
 
-"""
-    householder(x)
 
-Householder reflection
-```math
-I - 2 v v^T / (v^T v)
-```
-It is symmetric and orthogonal.
-"""
-function householder(x)
-    y = copy(x)
-    t = LinearAlgebra.reflector!(y)
-    v = [1; y[2:end]]
-    I - t * v * v'
-end
-_householder(h) = householder([1.0; h]) # We add 1, for perspective variable z
-
-function _HPH(D, d, δ, H)
+function _HPH(D, d, δ)
     P = [δ d'
          d D]
-    HPH = H * P * H
 end
 
-abstract type PerspectiveEllipsoid{T, S} <: AbstractEllipsoid{T} end
-
-# The first variable is the perspective variable z
-perspective_variable(ell::PerspectiveEllipsoid) = variables(ell.p)[1]
-space_variables(ell::PerspectiveEllipsoid) = variables(ell.p)[2:end]
-convexity_proof(ell::PerspectiveEllipsoid) = ell.Q
+_HPH(ell::EllipsoidAtOrigin) = _HPH(ell.Q, zeros(size(q.Q, 1)), -1.0)
 
 """
-    struct PerspectiveCenterEllipsoid{T}
-        p::DynamicPolynomials.Polynomial{true}
-        Q::Symmetric{T, Matrix{T}}
-        h::Vector{Float64} # h is an center-like point
-        H::Matrix{Float64}
-    end
-
-Set ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` where `p` is a
-quadratic forms given by:
-```math
-p(y) =
-y^\\top H^\\top
-\\begin{bmatrix}
-  -1 & 0\\
-   0 & Q
-\\end{bmatrix}
-H y
-```
-where ``y = (z, x)``.
-"""
-struct PerspectiveCenterEllipsoid{T, S} <: PerspectiveEllipsoid{T, S}
-    p::DynamicPolynomials.Polynomial{true}
-    Q::Symmetric{T, Matrix{T}}
-    h::Vector{Float64} # h is an center-like point
-    H::Matrix{Float64}
-end
-function PerspectiveCenterEllipsoid(Q::Symmetric, y, h::Vector)
-    H = _householder(h)
-    p = y' * _HPH(Q, zeros(length(h)), -1.0, H) * y
-    PerspectiveCenterEllipsoid(p, Q, h, H)
-end
-_HPH(q::PerspectiveCenterEllipsoid) = _HPH(q.Q, zeros(size(q.Q, 1)), -1.0, q.H)
-samecenter(q1::PerspectiveCenterEllipsoid, q2::PerspectiveCenterEllipsoid) = q1.h == q2.h
-
-"""
-    struct PerspectiveInteriorEllipsoid{T}
-        p::DynamicPolynomials.Polynomial{true}
+    struct ShiftedEllipsoid{T}
         Q::Symmetric{T, Matrix{T}}
         b::Vector{S}
         β::S
-        h::Vector{Float64} # h is an interior point
-        H::Matrix{Float64}
     end
 
-Set whose dual is ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` where `p` is a
-quadratic forms given by:
-```math
-p =
-y^\\top H^\\top
-\\begin{bmatrix}
-  \\beta & b^\\top\\
-  b & Q
-\\end{bmatrix}
-H y
-```
+Set ``\\{\\, x \\mid x^\\top Q x + 2 b^\\top x + \\beta \\le 0 \\,\\}``.
 """
-struct PerspectiveInteriorEllipsoid{T, S} <: PerspectiveEllipsoid{T, S}
-    p::DynamicPolynomials.Polynomial{true, S}
+struct ShiftedEllipsoid{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
     b::Vector{T}
     β::T
-    h::Vector{Float64} # h is an interior point
-    H::Matrix{Float64}
 end
-function PerspectiveInteriorEllipsoid(Q::Symmetric, b::Vector, β, y, h::Vector)
-    H = _householder(h)
-    p = y' * _HPH(Q, b, β, H) * y
-    PerspectiveInteriorEllipsoid(p, Q, b, β, h, H)
-end
-_HPH(q::PerspectiveInteriorEllipsoid) = _HPH(q.Q, q.b, q.β, q.H)
-samecenter(::PerspectiveInteriorEllipsoid, ::PerspectiveInteriorEllipsoid) = false
+_HPH(q::ShiftedEllipsoid) = _HPH(q.Q, q.b, q.β)
+convexity_proof(ell::ShiftedEllipsoid) = ell.Q
 
-function LiftedEllipsoid(qc::PerspectiveDualOf{<:PerspectiveEllipsoid})
+function LiftedEllipsoid(qc::HouseDualOf{<:AbstractEllipsoid})
     return LiftedEllipsoid(inv(_HPH(perspective_dual(qc))))
 end
-function Ellipsoid(qc::PerspectiveDualOf{<:PerspectiveEllipsoid})
+function Ellipsoid(qc::HouseDualOf{<:AbstractEllipsoid})
     return Ellipsoid(LiftedEllipsoid(qc))
 end
-function Polyhedra.project(ell::PerspectiveDualOf{<:PerspectiveEllipsoid}, I)
+function Polyhedra.project(ell::HouseDualOf{<:AbstractEllipsoid}, I)
     return project(Ellipsoid(ell), I)
 end
 
@@ -244,12 +166,12 @@ end
 
 function PerspectiveInteriorEllipsoid(ell::LiftedEllipsoid)
     Pd = inv(le.P)
-    H = SetProg.Sets._householder(h[state])
+    H = _householder(h[state])
     HPdH = H * Pd * H
     # HPdH is not like a solution what would be obtained by solving the program
     # since the λ computed for unlifting it is maybe not one.
     # Therefore, the S-procedure's λ for the constraints will be different.
     B, b, β, λ = Bbβλ(HPdH)
-    ps[state] = y' * _HPH(B/λ, b/λ, β/λ, H) * y
+    ps[state] = y' * H * _HPH(B/λ, b/λ, β/λ) * H * y
     error("TODO: LiftedEllipsoid -> PerspectiveInteriorEllipsoid")
 end

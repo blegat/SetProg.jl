@@ -38,6 +38,8 @@ JuMP.function_string(print_mode, c::MembershipConstraint) = string(c.member)
 JuMP.in_set_string(print_mode, c::MembershipConstraint) = string(JuMP.math_symbol(print_mode, :in), c.set)
 function JuMP.build_constraint(_error::Function, member,
                                set::Sets.AbstractSet)
+    @show member
+    @show set
     MembershipConstraint(member, set)
 end
 
@@ -63,7 +65,8 @@ end
 #            S  ⊆ [⟨-a, x⟩ ≤ β]
 function JuMP.build_constraint(_error::Function, member::Point,
                                set::Sets.PerspectiveDual)
-    if set.set isa Sets.AbstractEllipsoid{<:Number}
+    if set.set isa Union{Sets.AbstractEllipsoid{<:Number},
+                         Sets.Householder{<:Number, <:Sets.AbstractEllipsoid{<:Number}}}
         # The `else` will produce an SDP which is less efficiently solved than
         # a SOC
         return JuMP.build_constraint(_error, member, Sets.Ellipsoid(set))
@@ -142,16 +145,14 @@ end
 
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:Number},
-                               set::Union{Sets.PerspectiveEllipsoid,
-                                          Sets.PerspectiveConvexPolynomialSet})
+                               set::Sets.Householder)
     p = member
     val = sublevel_eval(set, coord(p), scaling(p))
     JuMP.build_constraint(_error, val, MOI.LessThan(0.0))
 end
 function JuMP.build_constraint(_error::Function,
                                member::SymScaledPoint{<:Number},
-                               set::Union{Sets.PerspectiveEllipsoid,
-                                          Sets.PerspectiveConvexPolynomialSet})
+                               set::Sets.Householder)
     p = member
     val = sublevel_eval(set, coord(p), scaling(p))
     JuMP.build_constraint(_error, val, MOI.EqualThan(0.0))

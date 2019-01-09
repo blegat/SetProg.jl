@@ -64,17 +64,17 @@ function ci_ell_nonhomogeneous_test(optimizer, config)
                    Ellipsoid(point=SetProg.InteriorPoint([0.0, 0.0])),
                    nth_root, √15/4,
                    ◯ -> begin
-                       @test ◯ isa Sets.PerspectiveDual{Float64, Sets.PerspectiveInteriorEllipsoid{Float64,Float64}}
+                       @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ShiftedEllipsoid{Float64}, Float64}}
                        z = Sets.perspective_variable(◯)
                        x, y = Sets.space_variables(◯)
                        ◯_dual = Sets.perspective_dual(◯)
                        @test ◯_dual.p ≈ -z^2 + x^2 - x*y/2 + y^2 atol=config.atol rtol=config.rtol
-                       @test ◯_dual.Q ≈ Symmetric([1.0 -1/4; -1/4 1.0]) atol=config.atol rtol=config.rtol
-                       @test ◯_dual.b ≈ [0.0, 0.0] atol=config.atol rtol=config.rtol
-                       @test ◯_dual.β ≈ -1.0 atol=config.atol rtol=config.rtol
-                       @test ◯_dual.H ≈ [-1.0 0.0 0.0
-                                          0.0 1.0 0.0
-                                          0.0 0.0 1.0] atol=config.atol rtol=config.rtol
+                       @test ◯_dual.set.Q ≈ Symmetric([1.0 -1/4; -1/4 1.0]) atol=config.atol rtol=config.rtol
+                       @test ◯_dual.set.b ≈ [0.0, 0.0] atol=config.atol rtol=config.rtol
+                       @test ◯_dual.set.β ≈ -1.0 atol=config.atol rtol=config.rtol
+                       @test Sets._householder(◯_dual.h) ≈ [-1.0 0.0 0.0
+                                                             0.0 1.0 0.0
+                                                             0.0 0.0 1.0] atol=config.atol rtol=config.rtol
                    end)
 end
 
@@ -83,7 +83,7 @@ function ci_quad_nonhomogeneous_test(optimizer, config)
                    PolySet(degree=2, convex=true, point=SetProg.InteriorPoint([0.0, 0.0])),
                    set -> L1_heuristic(set, [1.0, 1.0]), 8/3,
                    ◯ -> begin
-                       @test ◯ isa Sets.PerspectiveDual{Float64, Sets.PerspectiveConvexPolynomialSet{Float64,Float64}}
+                       @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ConvexPolynomialSet{Float64}, Float64}}
                        z = Sets.perspective_variable(◯)
                        x, y = Sets.space_variables(◯)
                        ◯_dual = Sets.perspective_dual(◯)
