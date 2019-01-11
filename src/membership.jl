@@ -51,7 +51,7 @@ function JuMP.build_constraint(_error::Function, member::Point,
     if set.set isa Sets.AbstractEllipsoid{<:Number}
         # The `else` will produce an SDP which is less efficiently solved than
         # a SOC
-        return JuMP.build_constraint(_error, member, Sets.Ellipsoid(set))
+        return JuMP.build_constraint(_error, member, Sets.ellipsoid(set))
     else
         return JuMP.build_constraint(_error, Sets.polar(set),
                                      PowerSet(HalfSpace(coord(member),

@@ -208,7 +208,6 @@ function JuMP.build_constraint(_error::Function,
     hs = sup_powerset.set
     P = [hs.β hs.a'
          hs.a subset.Q]
-    @show P
     JuMP.build_constraint(_error, Symmetric(P), PSDCone())
 end
 
@@ -225,7 +224,7 @@ function JuMP.add_constraint(model::JuMP.Model,
                                                              <:HalfSpace},
                             name::String = "")
     p = Sets.gauge1(constraint.subset)
-    λ = @variable(model, lower_bound=0.0)
+    λ = @variable(model, lower_bound=0.0, base_name = "λ")
     x = Sets.space_variables(constraint.subset)
     hs = dot(constraint.supset.a, x) - constraint.supset.β
     cref = @constraint(model, λ * (p - 1) - hs in SOSCone())

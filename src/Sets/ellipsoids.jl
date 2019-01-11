@@ -5,16 +5,6 @@ struct HyperSphere <: AbstractEllipsoid{Bool}
     dim::Int
 end
 
-struct Ellipsoid{T} <: AbstractEllipsoid{T}
-    Q::Symmetric{T, Matrix{T}}
-    center::Vector{T}
-end
-Ellipsoid(ell::Ellipsoid) = ell
-function Polyhedra.project(ell::Ellipsoid, I)
-    homogeneous = polar_representation(project(EllipsoidAtOrigin(ell.Q), I))
-    return Ellipsoid(homogeneous.Q, ell.center[I])
-end
-
 """
     struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
         Q::Symmetric{T, Matrix{T}}
@@ -23,16 +13,14 @@ end
 struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
 end
-function Ellipsoid(ell::EllipsoidAtOrigin)
-    Ellipsoid(ell.Q, zeros(eltype(ell.Q), dimension(ell)))
-end
+ellipsoid(ell::EllipsoidAtOrigin) = ell
 function Polyhedra.project(ell::EllipsoidAtOrigin, I)
     return project(polar_representation(ell), I)
 end
 convexity_proof(ell::EllipsoidAtOrigin) = ell.Q
 
-function Ellipsoid(ell::PolarOf{<:EllipsoidAtOrigin})
-    Ellipsoid(polar_representation(ell))
+function ellipsoid(ell::PolarOf{<:EllipsoidAtOrigin})
+    ellipsoid(polar_representation(ell))
 end
 function polar_representation(ell::PolarOf{<:EllipsoidAtOrigin})
     EllipsoidAtOrigin(inv(ell.set.Q))
@@ -50,18 +38,17 @@ struct LiftedEllipsoid{T}
 end
 dimension(ell::LiftedEllipsoid) = LinearAlgebra.checksquare(ell.P) - 1
 
-function perspective_variables(ell::Union{Ellipsoid, EllipsoidAtOrigin,
-                                          LiftedEllipsoid})
+function perspective_variables(ell::Union{EllipsoidAtOrigin, LiftedEllipsoid})
     return nothing
 end
-function space_variables(ell::Union{Ellipsoid, EllipsoidAtOrigin,
-                                    LiftedEllipsoid})
+function space_variables(ell::Union{EllipsoidAtOrigin, LiftedEllipsoid})
     return nothing
 end
 
-function LiftedEllipsoid(ell::Ellipsoid)
-    md = ell.Q * ell.c
-    δ = ell.c' * md-1
+function LiftedEllipsoid(t::Translation{<:EllipsoidAtOrigin})
+    ell = t.set
+    md = ell.Q * t.c
+    δ = t.c' * md-1
     d = -md
     D = ell.Q
     P = [δ d'
@@ -79,7 +66,7 @@ function Bbβλ(P)
     @assert λ >= 0
     B, b, β, λ
 end
-function Ellipsoid(ell::LiftedEllipsoid)
+function ellipsoid(ell::LiftedEllipsoid)
     # P is
     # λ * [c'Qc-1  -c'Q
     #         -Qc   Q]
@@ -94,7 +81,7 @@ function Ellipsoid(ell::LiftedEllipsoid)
     B, b, β, λ = Bbβλ(ell.P)
     c = -(B \ b)
     Q = B / λ
-    Ellipsoid(Symmetric(Q), c)
+    Translation(EllipsoidAtOrigin(Symmetric(Q)), c)
 end
 
 
@@ -125,43 +112,12 @@ convexity_proof(ell::ShiftedEllipsoid) = ell.Q
 function LiftedEllipsoid(qc::HouseDualOf{<:AbstractEllipsoid})
     return LiftedEllipsoid(inv(_HPH(perspective_dual(qc))))
 end
-function Ellipsoid(qc::HouseDualOf{<:AbstractEllipsoid})
-    return Ellipsoid(LiftedEllipsoid(qc))
+function ellipsoid(qc::HouseDualOf{<:AbstractEllipsoid})
+    return ellipsoid(LiftedEllipsoid(qc))
 end
-function Polyhedra.project(ell::HouseDualOf{<:AbstractEllipsoid}, I)
-    return project(Ellipsoid(ell), I)
-end
-
-"""
-    primal_contour(f::Function, npoints::Int)
-
-Return `npoints` points with equally spaced angles of the 1-sublevel set of the
-homogeneous function `f(x, y)`.
-"""
-function primal_contour(f::Function, npoints::Int)
-    x = Vector{Float64}(undef, npoints)
-    y = Vector{Float64}(undef, npoints)
-    for (i, α) in enumerate(range(0, stop=2π - 2π/npoints, length=npoints))
-        x0 = cos(α)
-        y0 = sin(α)
-        r = f(x0, y0)
-        # f is homogeneous so f(x0/r, y0/r) = 1
-        x[i] = x0 / r
-        y[i] = y0 / r
-    end
-    return x, y
-end
-
-@recipe function f(aell::PerspectiveDualOrPolarOrNot{<:AbstractEllipsoid};
-                   npoints=64)
-    @assert dimension(aell) == 2
-    ell = Ellipsoid(aell)
-    seriestype --> :shape
-    legend --> false
-    Q = ell.Q
-    x, y = primal_contour((x, y) -> sqrt(x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2]),
-                          npoints)
-    ell.center[1] .+ x, ell.center[2] .+ y
+function Polyhedra.project(ell::HouseDualOf{<:AbstractEllipsoid},
+                           I::AbstractVector)
+    return project(ellipsoid(ell), I)
 end
 
 function PerspectiveInteriorEllipsoid(ell::LiftedEllipsoid)

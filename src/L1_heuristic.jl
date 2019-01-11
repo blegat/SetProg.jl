@@ -75,7 +75,8 @@ function l1_integral(set::Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin,
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
                      vertex)
-    return l1_integral(Sets.polar(Sets.EllipsoidAtOrigin(set.set.Q)), vertex)
+    return l1_integral(Sets.polar(Sets.EllipsoidAtOrigin(set.set.set.Q)),
+                       vertex)
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.ConvexPolynomialSet},
                      vertex)

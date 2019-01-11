@@ -1,13 +1,18 @@
 # A^{-1} * S
-struct LinearPreImage{S, T, MT <: AbstractMatrix{T}}
+struct LinearPreImage{S, T, MT <: AbstractMatrix{T}} <: AbstractSet{T}
     set::S
     A::MT
 end
 
 # S + c
-struct Translation{S, T, VT <: AbstractVector{T}}
+struct Translation{S, T, VT <: AbstractVector{T}} <: AbstractSet{T}
     set::S
     c::VT
+end
+dimension(t::Translation) = length(t.c)
+space_variables(t::Translation) = space_variables(t.set)
+function Polyhedra.project(t::Translation, I)
+    return Translation(Polyhedra.project(t.set, I), t.c[I])
 end
 
 """
@@ -39,7 +44,9 @@ perspective_variable(set::Householder) = set.z
 space_variables(set::Householder) = set.x
 convexity_proof(set::Householder) = convexity_proof(set.set)
 
-function Polyhedra.project(set::Householder,
+const HouseDualOf{S, T, U} = PerspectiveDualOf{Householder{T, S, U}}
+
+function Polyhedra.project(set::HouseDualOf,
                            I)
     project(set, [I])
 end
@@ -53,30 +60,7 @@ function Polyhedra.project(set::PerspectiveDualOf{Householder{T, S, U}},
     return perspective_dual(proj)
 end
 
-@recipe function f(set::PerspectiveDual{T, <:Householder};
-                   npoints=64) where T
-    seriestype --> :shape
-    legend --> false
-    # z is a halfspace of the primal so a ray of the dual
-    z = [1.0, 0.0, 0.0]
-    h1, h2 = set.set.h
-    # a is a ray of the primal so a halfspace of the dual
-    a = [1, h1, h2]
-    b = [h1, -1, 0]
-    @assert abs(dot(a, b)) < 1e-8
-    c = [h2 * (1 - h1^2) / (1 + h1^2), h1*h2 / (1 + h1^2), -1]
-    @assert abs(dot(b, c)) < 1e-8
-    @assert abs(dot(a, c)) < 1e-8
-    polyhedron = dual_contour(scaling_function(set), npoints, T,
-                              z, b, c, true)
-    # We fix z to 1.0 and eliminate it, this is cheap for H-rep
-    pp = fixandeliminate(polyhedron, 1, 1.0)
-    pp
-end
-
 function _HPH(set::Householder)
     H = _householder(set.h)
     return H * _HPH(set.set) * H
 end
-
-const HouseDualOf{S, T, U} = PerspectiveDualOf{Householder{T, S, U}}

@@ -26,7 +26,8 @@ end
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
         end
         @testset "Shifted Circle" begin
-            circle = Sets.Ellipsoid(Symmetric(Q), [1.0, 2.0])
+            circle = Sets.Translation(Sets.EllipsoidAtOrigin(Symmetric(Q)),
+                                      [1.0, 2.0])
             recipe_test(circle,
                         [2.0, 1.0, 0.0, 1.0], [2.0, 3.0, 2.0, 1.0])
         end

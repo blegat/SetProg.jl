@@ -29,12 +29,6 @@ end
 
 convexity_proof(set::ConvexPolynomialSublevelSetAtOrigin) = set.convexity_proof
 
-@recipe function f(set::ConvexPolynomialSublevelSetAtOrigin; npoints=64)
-    seriestype --> :shape
-    legend --> false
-    primal_contour(scaling_function(set), npoints)
-end
-
 function scaling_function(set::ConvexPolynomialSublevelSetAtOrigin)
     # We convert the MatPolynomial to a polynomial to avoid having to do the
     # conversion for every substitution.
@@ -43,40 +37,6 @@ function scaling_function(set::ConvexPolynomialSublevelSetAtOrigin)
     @assert length(vars) == 2
     vx, vy = vars
     return (x, y) -> p(vx => x, vy => y)^(1 / set.degree)
-end
-
-"""
-    dual_contour(f::Function, nhalfspaces::Int, T::Type)
-
-Return a polytope of `nhalfspaces` halfspaces defined by normal vectors of
-equally spaced angles for the polar of the 1-sublevel set of the homogeneous
-function `f(x, y)`.
-"""
-function dual_contour(f::Function, nhalfspaces::Int, ::Type{T},
-                      point::Vector{T} = [0.0, 0.0],
-                      x_axis::Vector{T} = [1.0, 0.0],
-                      y_axis::Vector{T} = [0.0, 1.0],
-                      cone = false) where T
-    h = hrep(Polyhedra.HyperPlane{T, Vector{T}}[],
-             Polyhedra.HalfSpace{T, Vector{T}}[], d=length(x_axis))
-    for α in range(0, stop=2π - 2π/nhalfspaces, length=nhalfspaces)
-        ray = x_axis * cos(α) + y_axis * sin(α)
-        λ = f(ray...)
-        # We have f(ray/λ) = 1 so the halfspace is
-        # (point + ray / λ) ⋅ x ≤ 1 for non-cone
-        # (point + ray / λ) ⋅ x ≥ 0 for coen
-        a = point + ray / λ
-        intersect!(h, HalfSpace(cone ? -a : a, cone ? zero(T) : one(T)))
-    end
-    return polyhedron(h)
-end
-
-
-
-@recipe function f(set::PolarOf{ConvexPolynomialSublevelSetAtOrigin{T}}; npoints=64) where T
-    seriestype --> :shape
-    legend --> false
-    dual_contour(scaling_function(polar(set)), npoints, T)
 end
 
 """

@@ -141,5 +141,6 @@ include("transformations.jl")
 
 include("ellipsoids.jl")
 include("polynomials.jl")
+include("recipe.jl")
 
 end
