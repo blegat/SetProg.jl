@@ -47,17 +47,8 @@ end
             circle = Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
-            hr = recipe(Sets.polar(circle))[1]
-            @test !hashyperplanes(hr)
-            hss = collect(halfspaces(hr))
-            @test hss[1].a ≈ [1.0, 0.0]
-            @test hss[1].β ≈ 1.0
-            @test hss[2].a ≈ [0.0, 1.0]
-            @test hss[2].β ≈ 1.0
-            @test hss[3].a ≈ [-1.0, 0.0]
-            @test hss[3].β ≈ 1.0
-            @test hss[4].a ≈ [0.0, -1.0]
-            @test hss[4].β ≈ 1.0
+            recipe_test(Sets.polar(circle),
+                        [-1.0, 1.0, 1.0, -1.0, -1.0], [1.0, 1.0, -1.0, -1.0, 1.0])
         end
         @testset "Scaled circle" begin
             p = SetProg.MatPolynomial{Float64}((i, j) -> 2convert(Float64, i == j),
@@ -65,17 +56,10 @@ end
             circle = Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
                         [1/√2, 0.0, -1/√2, 0.0], [0.0, 1/√2, 0.0, -1/√2])
+            recipe_test(Sets.polar(circle),
+                        [-√2, √2,  √2, -√2, -√2],
+                        [ √2, √2, -√2, -√2,  √2])
             hr = recipe(Sets.polar(circle))[1]
-            @test !hashyperplanes(hr)
-            hss = collect(halfspaces(hr))
-            @test hss[1].a ≈ [1/√2, 0.0]
-            @test hss[1].β ≈ 1.0
-            @test hss[2].a ≈ [0.0, 1/√2]
-            @test hss[2].β ≈ 1.0
-            @test hss[3].a ≈ [-1/√2, 0.0]
-            @test hss[3].β ≈ 1.0
-            @test hss[4].a ≈ [0.0, -1/√2]
-            @test hss[4].β ≈ 1.0
         end
         @testset "Non-homogeneous Circle" begin
             @testset "Basic" begin
@@ -83,34 +67,18 @@ end
                                                   0 1 0
                                                   0 0 1], monovec([z, x, y]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
-                hr = recipe(shifted_circle)[1]
-                @test !hashyperplanes(hr)
-                hss = collect(halfspaces(hr))
-                @test hss[1].a ≈ [1.0, 0.0]
-                @test hss[1].β ≈ 1.0
-                @test hss[2].a ≈ [0.0, 1.0]
-                @test hss[2].β ≈ 1.0
-                @test hss[3].a ≈ [-1.0, 0.0]
-                @test hss[3].β ≈ 1.0
-                @test hss[4].a ≈ [0.0, -1.0]
-                @test hss[4].β ≈ 1.0
+                recipe_test(shifted_circle,
+                            [-1.0, 1.0, 1.0, -1.0, -1.0],
+                            [1.0, 1.0, -1.0, -1.0, 1.0])
             end
             @testset "Scaled" begin
                 q = SetProg.MatPolynomial(Float64[0 0 0
                                                   0 2 0
                                                   0 0 2], monovec([z, x, y]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
-                hr = recipe(shifted_circle)[1]
-                @test !hashyperplanes(hr)
-                hss = collect(halfspaces(hr))
-                @test hss[1].a ≈ [1/√2, 0.0]
-                @test hss[1].β ≈ 1.0
-                @test hss[2].a ≈ [0.0, 1/√2]
-                @test hss[2].β ≈ 1.0
-                @test hss[3].a ≈ [-1/√2, 0.0]
-                @test hss[3].β ≈ 1.0
-                @test hss[4].a ≈ [0.0, -1/√2]
-                @test hss[4].β ≈ 1.0
+                recipe_test(shifted_circle,
+                           [-√2, √2,  √2, -√2, -√2],
+                           [ √2, √2, -√2, -√2,  √2])
             end
             @testset "z-Scaled" begin
                 # z: -1/2 + 1 = 1/2
@@ -118,17 +86,9 @@ end
                                            0   1 0
                                            0   0 1], monovec([z, x, y]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
-                hr = recipe(shifted_circle)[1]
-                @test !hashyperplanes(hr)
-                hss = collect(halfspaces(hr))
-                @test hss[1].a ≈ [1/√2, 0.0]
-                @test hss[1].β ≈ 1.0
-                @test hss[2].a ≈ [0.0, 1/√2]
-                @test hss[2].β ≈ 1.0
-                @test hss[3].a ≈ [-1/√2, 0.0]
-                @test hss[3].β ≈ 1.0
-                @test hss[4].a ≈ [0.0, -1/√2]
-                @test hss[4].β ≈ 1.0
+				recipe_test(shifted_circle,
+							[-√2, √2,  √2, -√2, -√2],
+							[ √2, √2, -√2, -√2,  √2])
             end
         end
     end

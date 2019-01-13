@@ -46,18 +46,17 @@ convexity_proof(set::Householder) = convexity_proof(set.set)
 
 const HouseDualOf{S, T, U} = PerspectiveDualOf{Householder{T, S, U}}
 
-function Polyhedra.project(set::HouseDualOf,
-                           I)
-    project(set, [I])
+function Polyhedra.project(set::Polar{T}, I) where T
+    return polar(zero_eliminate(polar(set), setdiff(1:dimension(set), I)))
 end
-function Polyhedra.project(set::PerspectiveDualOf{Householder{T, S, U}},
-                           I::AbstractVector) where {T, S, U}
-    J = setdiff(1:dimension(set), I)
-    dual = perspective_dual(set)
-    p = subs(dual.p,
-             dual.x[J] => zeros(T, length(J)))
-    proj = Householder(UnknownSet{T}(), p, dual.h[I], dual.z, dual.x[I])
-    return perspective_dual(proj)
+
+function zero_eliminate(set::Householder, I, v)
+    p = subs(set.p, set.x[I] => v)
+    return Householder(UnknownSet{T}(), p, set.h[I], set.z, set.x[I])
+end
+function Polyhedra.project(set::PerspectiveDual{T}, I) where T
+    return perspective_dual(zero_eliminate(perspective_dual(set),
+                                           setdiff(1:dimension(set), I)))
 end
 
 function _HPH(set::Householder)

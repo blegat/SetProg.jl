@@ -58,7 +58,9 @@ end
 # S-procedure: Q ⊆ P <=> xQx ≤ 1 => xPx ≤ 1 <=> xPx ≤ xQx <=> Q - P is PSD
 function JuMP.build_constraint(_error::Function,
                                subset::Sets.EllipsoidAtOrigin,
-                               sup_powerset::PowerSet{<:Sets.EllipsoidAtOrigin})
+                               sup_powerset::PowerSet{<:Sets.EllipsoidAtOrigin};
+                               S_procedure_scaling = nothing)
+    @assert S_procedure_scaling === nothing || isone(S_procedure_scaling)
     Q = subset.Q
     P = sup_powerset.set.Q
     JuMP.build_constraint(_error, Symmetric(Q - P), PSDCone())
@@ -67,7 +69,9 @@ end
 # S-procedure: Q ⊆ P <=> q(x) ≤ 1 => p(x) ≤ 1 <=> p(x) ≤ q(x) <= q - p is SOS
 function JuMP.build_constraint(_error::Function,
                                subset::Sets.ConvexPolynomialSublevelSetAtOrigin,
-                               sup_powerset::PowerSet{<:Sets.ConvexPolynomialSublevelSetAtOrigin})
+                               sup_powerset::PowerSet{<:Sets.ConvexPolynomialSublevelSetAtOrigin};
+                               S_procedure_scaling = nothing)
+    @assert S_procedure_scaling === nothing || isone(S_procedure_scaling)
     q = subset.p
     p = sup_powerset.set.p
     JuMP.build_constraint(_error, q - p, SOSCone())
@@ -117,10 +121,11 @@ end
 # S ⊆ T <=> polar(T) ⊆ polar(S)
 function JuMP.build_constraint(_error::Function,
                                subset::Sets.Polar,
-                               sup_powerset::PowerSet{<:Sets.Polar})
+                               sup_powerset::PowerSet{<:Sets.Polar}; kws...)
     S = subset
     T = sup_powerset.set
-    JuMP.build_constraint(_error, Sets.polar(T), PowerSet(Sets.polar(S)))
+    JuMP.build_constraint(_error, Sets.polar(T), PowerSet(Sets.polar(S));
+                          kws...)
 end
 
 # See [LTJ18]

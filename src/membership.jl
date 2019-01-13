@@ -69,7 +69,7 @@ function JuMP.build_constraint(_error::Function, member::Point,
                          Sets.Householder{<:Number, <:Sets.AbstractEllipsoid{<:Number}}}
         # The `else` will produce an SDP which is less efficiently solved than
         # a SOC
-        return JuMP.build_constraint(_error, member, Sets.Ellipsoid(set))
+        return JuMP.build_constraint(_error, member, Sets.ellipsoid(set))
     else
         return JuMP.build_constraint(_error, Sets.perspective_dual(set),
                                      PowerSet(HalfSpace(-coord(member),
@@ -96,7 +96,7 @@ end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:JuMP.AbstractJuMPScalar},
                                set::Sets.AbstractEllipsoid{<:Number})
-    ell = Sets.Ellipsoid(set)
+    ell = Sets.ellipsoid(set)
     # The eltype of Point is an expression of JuMP variables so we cannot compute
     # (x-c)' * Q * (x-c) <= 1, we need to do
     # transform it to ||L * (x - c)||_2 <= 1

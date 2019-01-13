@@ -26,6 +26,25 @@ end
 function gauge1(set::ConvexPolynomialSublevelSetAtOrigin)
     return set.p
 end
+function zero_eliminate(set::ConvexPolynomialSublevelSetAtOrigin, I)
+    vars = space_variables(set)[I]
+    @show set.p.x
+    K = findall(mono -> all(var -> iszero(degree(mono, var)), vars),
+                set.p.x)
+    @show set.p.x[K]
+    @show typeof(set.p.x[K])
+    M = set.p.Q[K, K]
+    Q = SumOfSquares.SymMatrix([M[i, j] for j in 1:length(K) for i in 1:j],
+                               length(K))
+    monos = set.p.x[K]
+    J = setdiff(1:dimension(set), I)
+    monos = DynamicPolynomials.MonomialVector(monos.vars[J],
+                                             Vector{Int}[z[J] for z in monos.Z])
+    p = SumOfSquares.MatPolynomial(Q, monos)
+    @show polynomial(p)
+    @show subs(set.p, vars => zeros(length(vars)))
+    return ConvexPolynomialSublevelSetAtOrigin(set.degree, p, nothing)
+end
 
 convexity_proof(set::ConvexPolynomialSublevelSetAtOrigin) = set.convexity_proof
 

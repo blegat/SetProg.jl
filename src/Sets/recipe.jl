@@ -44,28 +44,30 @@ function dual_contour(f::Function, nhalfspaces::Int, ::Type{T},
     return polyhedron(h)
 end
 
-function contour(ell::PerspectiveDualOrPolarOrNot{<:AbstractEllipsoid};
-                 kws...)
-    return contour(ellipsoid(ell); kws...)
+function Polyhedra.planar_contour(ell::PerspectiveDualOrPolarOrNot{<:AbstractEllipsoid};
+                           kws...)
+    return Polyhedra.planar_contour(ellipsoid(ell); kws...)
 end
 
-function contour(ell::EllipsoidAtOrigin; npoints=64)
+function Polyhedra.planar_contour(ell::EllipsoidAtOrigin; npoints=64)
     @assert dimension(ell) == 2
     Q = ell.Q
     return primal_contour((x, y) -> sqrt(x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2]),
                           npoints)
 end
 
-function contour(set::ConvexPolynomialSublevelSetAtOrigin; npoints=64)
+function Polyhedra.planar_contour(set::ConvexPolynomialSublevelSetAtOrigin; npoints=64)
     return primal_contour(scaling_function(set), npoints)
 end
 
-function contour(set::PolarOf{ConvexPolynomialSublevelSetAtOrigin{T}};
+function Polyhedra.planar_contour(set::PolarOf{ConvexPolynomialSublevelSetAtOrigin{T}};
                  npoints=64) where T
-    return dual_contour(scaling_function(polar(set)), npoints, T)
+    return Polyhedra.planar_contour(dual_contour(scaling_function(polar(set)),
+                                                 npoints, T))
 end
 
-function contour(set::PerspectiveDual{T, <:Householder}; npoints=64) where T
+function Polyhedra.planar_contour(set::PerspectiveDual{T, <:Householder};
+                           npoints=64) where T
     @assert dimension(set) == 2
     # z is a halfspace of the primal so a ray of the dual
     z = [1.0, 0.0, 0.0]
@@ -80,12 +82,12 @@ function contour(set::PerspectiveDual{T, <:Householder}; npoints=64) where T
     polyhedron = dual_contour(scaling_function(set), npoints, T,
                               z, b, c, true)
     # We fix z to 1.0 and eliminate it, this is cheap for H-rep
-    return fixandeliminate(polyhedron, 1, 1.0)
+    return Polyhedra.planar_contour(fixandeliminate(polyhedron, 1, 1.0))
 end
 
-function contour(t::Translation; kws...)
+function Polyhedra.planar_contour(t::Translation; kws...)
     @assert dimension(t) == 2
-    x, y = contour(t.set; kws...)
+    x, y = Polyhedra.planar_contour(t.set; kws...)
     return x .+ t.c[1], y .+ t.c[2]
 end
 
@@ -93,5 +95,5 @@ end
     @assert dimension(set) == 2
     seriestype --> :shape
     legend --> false
-    contour(set; npoints=npoints)
+    Polyhedra.planar_contour(set; npoints=npoints)
 end
