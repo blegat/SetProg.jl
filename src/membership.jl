@@ -95,17 +95,19 @@ function JuMP.build_constraint(_error::Function,
 end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:JuMP.AbstractJuMPScalar},
-                               set::Sets.AbstractEllipsoid{<:Number})
-    ell = Sets.ellipsoid(set)
-    # The eltype of Point is an expression of JuMP variables so we cannot compute
-    # (x-c)' * Q * (x-c) <= 1, we need to do
-    # transform it to ||L * (x - c)||_2 <= 1
+                               ell::Sets.EllipsoidAtOrigin{<:Number})
+    # The eltype of Point is an expression of JuMP variables so we cannot
+    # compute (x-c)' * Q * (x-c) <= 1, we need to transform it to
+    # ||L * (x - c)||_2 <= 1
     U, S, V = svd(ell.Q.data)
     L = diagm(0 => sqrt.(S)) * V'
-    sphere = Sets.Translation(Sets.LinearPreImage(Sets.HyperSphere(size(L, 1)),
-                                                  L),
-                              ell.center)
+    sphere = Sets.LinearPreImage(Sets.HyperSphere(size(L, 1)), L)
     JuMP.build_constraint(_error, member, sphere)
+end
+function JuMP.build_constraint(_error::Function,
+                               member::Point{<:JuMP.AbstractJuMPScalar},
+                               set::Sets.AbstractEllipsoid{<:Number})
+    JuMP.build_constraint(_error, member, Sets.ellipsoid(set))
 end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:JuMP.AbstractJuMPScalar},
