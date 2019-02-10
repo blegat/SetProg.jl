@@ -50,11 +50,12 @@ function Polyhedra.project(set::Polar{T}, I) where T
     return polar(zero_eliminate(polar(set), setdiff(1:dimension(set), I)))
 end
 
-function zero_eliminate(set::Householder, I, v)
-    p = subs(set.p, set.x[I] => v)
-    return Householder(UnknownSet{T}(), p, set.h[I], set.z, set.x[I])
+function zero_eliminate(set::Householder{T}, I) where T
+    J = setdiff(1:dimension(set), I)
+    p = subs(set.p, set.x[I] => zeros(T, length(I)))
+    return Householder(UnknownSet{T}(), p, set.h[J], set.z, set.x[J])
 end
-function Polyhedra.project(set::PerspectiveDual{T}, I) where T
+function Polyhedra.project(set::PerspectiveDual, I)
     return perspective_dual(zero_eliminate(perspective_dual(set),
                                            setdiff(1:dimension(set), I)))
 end
