@@ -142,6 +142,7 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
     if set.convex
         if set.symmetric
             monos = monomials(space_polyvars, div(set.degree, 2))
+            # TODO No need for the poly to be SOS, see Lemma 6.33 of [BPT12]
             p = @variable(model, variable_type=SOSPoly(monos))
             cref = constrain_convex(model, p, space_polyvars)
             slack = SumOfSquares.PolyJuMP.getdelegate(cref).slack
