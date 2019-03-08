@@ -42,7 +42,7 @@ end
     @testset "Polynomial" begin
         @polyvar z x y
         @testset "Circle" begin
-            p = SetProg.MatPolynomial{Float64}((i, j) -> convert(Float64, i == j),
+            p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
                                                monovec([x, y]))
             circle = Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
@@ -51,7 +51,7 @@ end
                         [-1.0, 1.0, 1.0, -1.0, -1.0], [1.0, 1.0, -1.0, -1.0, 1.0])
         end
         @testset "Scaled circle" begin
-            p = SetProg.MatPolynomial{Float64}((i, j) -> 2convert(Float64, i == j),
+            p = SetProg.GramMatrix{Float64}((i, j) -> 2convert(Float64, i == j),
                                                monovec([x, y]))
             circle = Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
             recipe_test(circle,
@@ -63,7 +63,7 @@ end
         end
         @testset "Non-homogeneous Circle" begin
             @testset "Basic" begin
-                q = SetProg.MatPolynomial(Float64[0 0 0
+                q = SetProg.GramMatrix(Float64[0 0 0
                                                   0 1 0
                                                   0 0 1], monovec([z, x, y]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
@@ -72,7 +72,7 @@ end
                             [1.0, 1.0, -1.0, -1.0, 1.0])
             end
             @testset "Scaled" begin
-                q = SetProg.MatPolynomial(Float64[0 0 0
+                q = SetProg.GramMatrix(Float64[0 0 0
                                                   0 2 0
                                                   0 0 2], monovec([z, x, y]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
@@ -82,7 +82,7 @@ end
             end
             @testset "z-Scaled" begin
                 # z: -1/2 + 1 = 1/2
-                q = SetProg.MatPolynomial([1/2 0 0
+                q = SetProg.GramMatrix([1/2 0 0
                                            0   1 0
                                            0   0 1], monovec([z, x, y]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])

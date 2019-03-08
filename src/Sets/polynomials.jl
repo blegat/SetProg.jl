@@ -12,7 +12,7 @@ of degree `degree`.
 """
 struct ConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
     degree::Int
-    p::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+    p::GramMatrix{T, DynamicPolynomials.Monomial{true},
                      DynamicPolynomials.MonomialVector{true}}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
@@ -37,14 +37,14 @@ function zero_eliminate(set::ConvexPolynomialSublevelSetAtOrigin, I)
     J = setdiff(1:dimension(set), I)
     monos = DynamicPolynomials.MonomialVector(monos.vars[J],
                                              Vector{Int}[z[J] for z in monos.Z])
-    p = SumOfSquares.MatPolynomial(Q, monos)
+    p = SumOfSquares.GramMatrix(Q, monos)
     return ConvexPolynomialSublevelSetAtOrigin(set.degree, p, nothing)
 end
 
 convexity_proof(set::ConvexPolynomialSublevelSetAtOrigin) = set.convexity_proof
 
 function scaling_function(set::ConvexPolynomialSublevelSetAtOrigin)
-    # We convert the MatPolynomial to a polynomial to avoid having to do the
+    # We convert the GramMatrix to a polynomial to avoid having to do the
     # conversion for every substitution.
     p = polynomial(set.p)
     vars = variables(p)
@@ -56,7 +56,7 @@ end
 """
     struct ConvexPolynomialSet{T} <: AbstractSet{T}
         degree::Int
-        q::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+        q::GramMatrix{T, DynamicPolynomials.Monomial{true},
                             DynamicPolynomials.MonomialVector{true}}
         z::SpaceVariable
         x::Vector{SpaceVariable}
@@ -69,7 +69,7 @@ matrix.
 """
 struct ConvexPolynomialSet{T} <: AbstractSet{T}
     degree::Int
-    q::MatPolynomial{T, DynamicPolynomials.Monomial{true},
+    q::GramMatrix{T, DynamicPolynomials.Monomial{true},
                         DynamicPolynomials.MonomialVector{true}}
     z::SpaceVariable
     x::Vector{SpaceVariable}
