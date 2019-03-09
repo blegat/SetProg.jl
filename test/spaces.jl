@@ -11,7 +11,7 @@ const MOI = SetProg.JuMP.MOI
     @polyvar x y z
     dual = Sets.PerspectiveInteriorCone(B, b, β, [z, x, y], h)
     ◯ = Sets.perspective_dual(dual)
-    mock = MOI.Utilities.MockOptimizer(JuMP.JuMPMOIModel{Float64}())
+    mock = MOI.Utilities.MockOptimizer(JuMP._MOIModel{Float64}())
     model = JuMP.direct_model(mock);
     Q = [1.0, 0.0, 1.0]
     t = 1.0

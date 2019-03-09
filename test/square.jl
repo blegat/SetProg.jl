@@ -10,7 +10,7 @@ const MOI = JuMP.MOI
 const MOIT = MOI.Test
 
 function mock(mock_optimize!::Function)
-    mock = MOI.Utilities.MockOptimizer(JuMP.JuMPMOIModel{Float64}())
+    mock = MOI.Utilities.MockOptimizer(JuMP._MOIModel{Float64}())
     MOI.Utilities.set_mock_optimize!(mock, mock_optimize!)
     return mock
 end
