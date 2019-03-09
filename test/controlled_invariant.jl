@@ -6,14 +6,7 @@ using Polyhedra
 using MultivariatePolynomials
 
 using JuMP
-const MOI = JuMP.MOI
 const MOIT = MOI.Test
-
-function mock(mock_optimize!::Function)
-    mock = MOI.Utilities.MockOptimizer(JuMP._MOIModel{Float64}())
-    MOI.Utilities.set_mock_optimize!(mock, mock_optimize!)
-    return mock
-end
 
 function ci_square_test(optimizer::MOI.AbstractOptimizer, config::MOIT.TestConfig,
                         inner::Bool, variable::SetProg.AbstractVariable,
@@ -126,14 +119,14 @@ end
         Q = [1.0, -1/4, 1.0]
         t = √15/4
         @testset "Homogeneous" begin
-            ci_ell_homogeneous_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; t])),
+            ci_ell_homogeneous_test(bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; t])),
                                     config)
         end
         @testset "Non-homogeneous" begin
             @testset "Ellipsoid" begin
                 β = -1.0
                 b = [0.0, 0.0]
-                ci_ell_nonhomogeneous_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; β; b; zeros(3); t])),
+                ci_ell_nonhomogeneous_test(bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; β; b; zeros(3); t])),
                                            config)
             end
             @testset "PolySet" begin
@@ -141,7 +134,7 @@ end
                 b = [0.0, 0.0]
                 Q = [1.0, -0.4933095968, 1.0]
 
-                ci_quad_nonhomogeneous_test(mock(mock -> begin
+                ci_quad_nonhomogeneous_test(bridged_mock(mock -> begin
                                                      # β+1 b[1] b[2]
                                                      #  .  Q[1] Q[2]
                                                      #  .   .   Q[3]
@@ -159,7 +152,7 @@ end
         # hence 28 variables
         sol = [1.0; ci_quartic_α; 6 - 2ci_quartic_β; ci_quartic_β; ci_quartic_α; 1.0;
                ci_quartic_hess; ci_quartic_obj]
-        ci_quartic_homogeneous_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, sol)),
+        ci_quartic_homogeneous_test(bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, sol)),
                                     config)
     end
 end

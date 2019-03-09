@@ -1,5 +1,23 @@
 using Test
 using SetProg
+const MOIT = MOI.Test
+
+function _model(optimizer::MOI.AbstractOptimizer)
+    MOI.empty!(optimizer)
+    return direct_model(optimizer)
+end
+
+function _model(factory::OptimizerFactory)
+    return Model(factory)
+end
+
+function bridged_mock(mock_optimize!::Function...;
+                      model = JuMP._MOIModel{Float64}())
+    mock = MOI.Utilities.MockOptimizer(model)
+    bridged = MOI.Bridges.full_bridge_optimizer(mock, Float64)
+    MOI.Utilities.set_mock_optimize!(mock, mock_optimize!...)
+    return bridged
+end
 
 @testset "apply_matrix" begin
     SetProg.@polyvar x[1:2]

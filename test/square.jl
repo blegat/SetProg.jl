@@ -6,14 +6,7 @@ using Polyhedra
 using MultivariatePolynomials
 
 using JuMP
-const MOI = JuMP.MOI
 const MOIT = MOI.Test
-
-function mock(mock_optimize!::Function)
-    mock = MOI.Utilities.MockOptimizer(JuMP._MOIModel{Float64}())
-    MOI.Utilities.set_mock_optimize!(mock, mock_optimize!)
-    return mock
-end
 
 function square_test(optimizer::MOI.AbstractOptimizer, config::MOIT.TestConfig,
                      inner::Bool, variable::SetProg.AbstractVariable,
@@ -150,20 +143,20 @@ end
             Q = [1.0, 0.0, 1.0]
             t = 1.0
             @testset "Homogeneous" begin
-                john_homogeneous_square_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; t])),
+                john_homogeneous_square_test(bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; t])),
                                              config)
             end
             @testset "Non-homogeneous" begin
                 @testset "Ellipsoid" begin
                     β = -1.0
                     b = [0.0, 0.0]
-                    john_nonhomogeneous_ell_square_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; β; b; t])),
+                    john_nonhomogeneous_ell_square_test(bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; β; b; t])),
                                                         config)
                 end
                 @testset "PolySet" begin
                     β = 1.0
                     b = [0.0, 0.0]
-                    john_nonhomogeneous_quad_square_test(mock(mock -> begin
+                    john_nonhomogeneous_quad_square_test(bridged_mock(mock -> begin
                                                                   # β-1 b[1] b[2]
                                                                   #  .  Q[1] Q[2]
                                                                   #  .   .   Q[3]
@@ -176,7 +169,7 @@ end
             # Q = [√2  0
             #       0 √2]
             # t = √det(Q) = 2                                                                  Q11  Q12  Q22  t
-            löwner_homogeneous_square_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, [0.5, 0.0, 0.5, 0.5])),
+            löwner_homogeneous_square_test(bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [0.5, 0.0, 0.5, 0.5])),
                                            config)
         end
     end
@@ -189,13 +182,13 @@ end
             # hence 17 variables
             sol = [1.0; 0.0; quartic_inner_poly; 0.0; 1.0;
                    quartic_inner_convexity; quartic_inner_obj]
-            quartic_inner_homogeneous_square_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, sol)),
+            quartic_inner_homogeneous_square_test(bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, sol)),
                                                   config)
         end
         @testset "Outer" begin
             sol = [quartic_outer_β; 0.0; quartic_outer_γ; quartic_outer_λ; 0.0; quartic_outer_β;
                    quartic_outer_convexity; quartic_outer_obj]
-            quartic_outer_homogeneous_square_test(mock(mock -> MOI.Utilities.mock_optimize!(mock, sol)),
+            quartic_outer_homogeneous_square_test(bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, sol)),
                                                   config)
         end
     end
