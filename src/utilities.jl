@@ -38,7 +38,7 @@ end
 
 
 # computes p ∘ A or more precisely p(variables(p) => A * new_vars)
-function apply_matrix(p::SumOfSquares.MatPolynomial,
+function apply_matrix(p::SumOfSquares.GramMatrix,
                       A::AbstractMatrix, new_vars, d)
     vars = variables(p)
     # We have x' Q x and we want y' Q y where y is obtained by substituting
@@ -60,5 +60,5 @@ function apply_matrix(p::SumOfSquares.MatPolynomial,
         end
     end
     new_Q = [quad_form(M[:, i], p.Q, M[:, j]) for j in 1:new_n for i in 1:j]
-    return MatPolynomial(SymMatrix(new_Q, new_n), z)
+    return GramMatrix(SymMatrix(new_Q, new_n), z)
 end
