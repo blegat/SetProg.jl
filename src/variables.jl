@@ -129,7 +129,22 @@ end
 
 function constrain_convex(model, p, vars)
     hessian = differentiate(p, vars, 2)
-    return @constraint(model, hessian in SOSMatrixCone())
+    # We do not just do `@constraint(model, p in SOSConvex())` as we would
+    # like to have access to the PSD matrix of variables for the det volume heuristic
+    y = [MultivariatePolynomials.similarvariable(eltype(hessian), gensym()) for i in 1:LinearAlgebra.checksquare(hessian)]
+    q = dot(y, hessian * y)
+    X = SumOfSquares.monomials_half_newton_polytope(MultivariatePolynomials.monomials(q), (y,))
+    # If `X` is empty, we will need the following bridge
+    JuMP.add_bridge(model, SumOfSquares.EmptyBridge)
+    # If `length(X)` is 2, we will need the following bridge
+    JuMP.add_bridge(model, SumOfSquares.PositiveSemidefinite2x2Bridge)
+    set = SumOfSquares.matrix_cone(MOI.PositiveSemidefiniteConeTriangle,
+                                   length(X))
+    Q = @variable(model, [1:MOI.dimension(set)])
+    @constraint(model, Q in set)
+    s = SumOfSquares.build_gram_matrix(Q, X)
+    @constraint(model, q == s)
+    return MultivariateMoments.getmat(s)
 end
 
 function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
@@ -144,9 +159,7 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
             monos = monomials(space_polyvars, div(set.degree, 2))
             # TODO No need for the poly to be SOS, see Lemma 6.33 of [BPT12]
             p = @variable(model, variable_type=SOSPoly(monos))
-            cref = constrain_convex(model, p, space_polyvars)
-            slack = SumOfSquares.PolyJuMP.getdelegate(cref).slack
-            convexity_proof = MultivariateMoments.getmat(slack)
+            convexity_proof = constrain_convex(model, p, space_polyvars)
             if space == PrimalSpace
                 return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
             else
@@ -157,8 +170,8 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
             monos = monomials(lift_space_variables(d, space_polyvars),
                               div(set.degree, 2))
             p = @variable(model, variable_type=SOSPoly(monos))
-            cref = constrain_convex(model, subs(p, d.perspective_polyvar => 1),
-                                    space_polyvars)
+            constrain_convex(model, subs(p, d.perspective_polyvar => 1),
+                             space_polyvars)
             if space == PrimalSpace
                 error("Non-symmetric PolySet in PrimalSpace not implemented yet")
             else

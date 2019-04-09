@@ -1,6 +1,5 @@
-include("utilities.jl")
+include("apply.jl")
 include("variables.jl")
 include("L1_heuristic.jl")
 include("recipes.jl")
-include("square.jl")
-include("controlled_invariant.jl")
+include("mock_tests.jl")

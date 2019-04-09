@@ -1,15 +1,12 @@
-include("square.jl")
-include("controlled_invariant.jl")
-
-using MathOptInterfaceMosek
+include("solver_preamble.jl")
+using MosekTools
+factory = with_optimizer(Mosek.Optimizer, QUIET=true)
+config = MOI.Test.TestConfig(atol=1e-3, rtol=1e-3)
 @testset "Mosek" begin
-    optimizer = MOI.Bridges.full_bridge_optimizer(MosekOptimizer(QUIET = true),
-                                                  Float64)
-    config = MOIT.TestConfig(atol=1e-3, rtol=1e-3, query=false)
     @testset "Square" begin
-        squaretest(optimizer, config)
+        Tests.square_test(factory, config)
     end
-    @testset "Controlled Invariant in Square" begin
-        citest(optimizer, config)
-    end
+#    @testset "Controlled Invariant in Square" begin
+#        Tests.ci_test(factory, config)
+#    end
 end
