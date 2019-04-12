@@ -1,9 +1,9 @@
 abstract type AbstractScalarFunction <: JuMP.AbstractJuMPScalar end
 
-struct Volume{V <: SetProg.VariableRef} <: AbstractScalarFunction
+struct Volume{V <: SetVariableRef} <: AbstractScalarFunction
     variable::V
 end
-Polyhedra.volume(variable::SetProg.VariableRef) = Volume(variable)
+Polyhedra.volume(variable::SetVariableRef) = Volume(variable)
 
 function JuMP.set_objective(model::JuMP.Model,
                             sense::MOI.OptimizationSense,

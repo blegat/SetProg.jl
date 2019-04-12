@@ -2,7 +2,7 @@
 @enum State Loading Modeling
 
 mutable struct Data
-    variables::Set{VariableRef}
+    variables::Set{SetVariableRef}
     constraints::Dict{ConstraintIndex, SetConstraint}
     names::Dict{ConstraintIndex, String}
     last_index::Int
@@ -100,7 +100,7 @@ end
 
 function data(model::JuMP.Model)
     if !haskey(model.ext, :SetProg)
-        model.ext[:SetProg] = Data(Set{VariableRef}(),
+        model.ext[:SetProg] = Data(Set{SetVariableRef}(),
                                    Dict{ConstraintIndex, SetConstraint}(),
                                    Dict{ConstraintIndex, String}(), 0,
                                    MOI.FEASIBILITY_SENSE, nothing, nothing,

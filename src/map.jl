@@ -70,6 +70,6 @@ function apply_map(li::LinearImage{<:Sets.PerspectiveDualOf{<:Sets.Householder{T
 end
 
 # FIXME, for Sets.AbstractSet, we should apply it directly
-function Base.:(*)(A::AbstractMatrix, set::Union{VariableRef, Sets.AbstractSet})
+function Base.:(*)(A::AbstractMatrix, set::Union{SetVariableRef, Sets.AbstractSet})
     return LinearImage(set, A, nothing, nothing)
 end

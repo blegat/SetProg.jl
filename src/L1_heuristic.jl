@@ -1,4 +1,4 @@
-struct L1Heuristic{V <: SetProg.VariableRef} <: AbstractScalarFunction
+struct L1Heuristic{V <: SetVariableRef} <: AbstractScalarFunction
     variable::V
     rectangle_vertex::Vector{Float64}
 end

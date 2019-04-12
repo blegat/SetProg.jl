@@ -10,8 +10,8 @@ function variablify(set::Union{Polyhedra.Rep, Polyhedra.RepElement,
                                Sets.AbstractSet})
     return set
 end
-need_variablify(v::VariableRef) = true
-variablify(v::VariableRef) = v.variable
+need_variablify(v::SetVariableRef) = true
+variablify(v::SetVariableRef) = v.variable
 
 function load(model::JuMP.Model, constraint::SetConstraint)
     @assert need_variablify(constraint)

@@ -1,4 +1,4 @@
-struct RootVolume{V <: SetProg.VariableRef} <: AbstractScalarFunction
+struct RootVolume{V <: SetVariableRef} <: AbstractScalarFunction
     variable::V
 end
 Base.copy(rv::RootVolume) = rv

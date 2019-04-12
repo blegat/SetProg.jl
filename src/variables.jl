@@ -212,8 +212,8 @@ function JuMP.value(set::Sets.ConvexPolynomialSet)
     return Sets.ConvexPolynomialSet(set.degree, JuMP.value(set.q), set.z, set.x)
 end
 
-### VariableRef ###
-mutable struct VariableRef{M <: JuMP.AbstractModel,
+### SetVariableRef ###
+mutable struct SetVariableRef{M <: JuMP.AbstractModel,
                            S <: AbstractVariable} <: JuMP.AbstractVariableRef
     model::M
     set::S
@@ -221,25 +221,25 @@ mutable struct VariableRef{M <: JuMP.AbstractModel,
     variable::Union{Nothing, Sets.AbstractSet{JuMP.VariableRef}}
     space_index::Union{Nothing, SpaceIndex}
 end
-JuMP.name(vref::VariableRef) = vref.name
+JuMP.name(vref::SetVariableRef) = vref.name
 function JuMP.build_variable(_error, info::JuMP.VariableInfo, set::AbstractVariable)
     @assert !info.has_lb && !info.has_ub && !info.has_fix && !info.binary && !info.integer && !info.has_start
     return set
 end
 function JuMP.add_variable(model::JuMP.AbstractModel, set::AbstractVariable, name::String)
-    vref = VariableRef(model, set, name, nothing, nothing)
+    vref = SetVariableRef(model, set, name, nothing, nothing)
     d = data(model)
     @assert d.state == Modeling
     push!(d.variables, vref)
     return vref
 end
-JuMP.value(vref::VariableRef) = JuMP.value(vref.variable)
+JuMP.value(vref::SetVariableRef) = JuMP.value(vref.variable)
 
-function clear_spaces(vref::VariableRef)
+function clear_spaces(vref::SetVariableRef)
     vref.space_index = nothing
 end
-function Sets.perspective_variable(::VariableRef) end
-function create_spaces(vref::VariableRef, spaces::Spaces)
+function Sets.perspective_variable(::SetVariableRef) end
+function create_spaces(vref::SetVariableRef, spaces::Spaces)
     if vref.space_index === nothing
         if vref.set.dimension === nothing
             vref.space_index = new_space(spaces)
@@ -249,9 +249,9 @@ function create_spaces(vref::VariableRef, spaces::Spaces)
     end
     return vref.space_index
 end
-space_index(vref::VariableRef) = vref.space_index
+space_index(vref::SetVariableRef) = vref.space_index
 
-function load(model::JuMP.AbstractModel, vref::VariableRef)
+function load(model::JuMP.AbstractModel, vref::SetVariableRef)
     d = data(model)
     vref.variable = variable_set(model, vref.set, d.space,
                                  space_dimension(d.spaces, vref.space_index),

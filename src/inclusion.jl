@@ -33,7 +33,7 @@ struct PowerSet{S}
     set::S
 end
 
-# Fallback, might be because `subset` or `sup_powerset` is a `VariableRef` or
+# Fallback, might be because `subset` or `sup_powerset` is a `SetVariableRef` or
 # a `Polyhedron` (which is handled by `JuMP.add_constraint`).
 function JuMP.build_constraint(_error::Function, subset, sup_powerset::PowerSet;
                                kws...)
@@ -50,7 +50,7 @@ end
 # We can always transform  an ellipsoid to primal or dual space so we can handle
 # any space
 function set_space(space::Space,
-                   ::InclusionConstraint{<:VariableRef,
+                   ::InclusionConstraint{<:SetVariableRef,
                                          <:Sets.AbstractEllipsoid{T}}) where T<:Number
     return space
 end
@@ -138,7 +138,7 @@ function JuMP.build_constraint(_error::Function,
 end
 
 ## Set in Polyhedron ##
-function set_space(space::Space, ::InclusionConstraint{<:VariableRef,
+function set_space(space::Space, ::InclusionConstraint{<:SetVariableRef,
                                                        <:Polyhedra.Rep})
     return set_space(space, DualSpace)
 end
@@ -186,7 +186,7 @@ end
 
 ## Polyhedron in Set ##
 function set_space(space::Space, ::InclusionConstraint{<:Polyhedra.Rep,
-                                                       <:VariableRef})
+                                                       <:SetVariableRef})
     return set_space(space, PrimalSpace)
 end
 
