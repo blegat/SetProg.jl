@@ -1,3 +1,6 @@
+using Test
+using SetProg
+
 @testset "apply_matrix" begin
     SetProg.@polyvar x[1:2]
     SetProg.@polyvar y[1:2]
