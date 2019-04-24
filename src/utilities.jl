@@ -1,8 +1,8 @@
 # Efficient implementation a' * Q * b that avoid unnecessary type promotion as
 # well as unnecessary allocation
 function quad_form(a::AbstractVector{<:Real},
-                   Q::Union{Symmetric{JuMP.VariableRef},
-                            SymMatrix{JuMP.VariableRef}},
+                   Q::Union{Symmetric{<:Union{JuMP.AbstractVariableRef, JuMP.GenericAffExpr}},
+                            SymMatrix{<:Union{JuMP.AbstractVariableRef, JuMP.GenericAffExpr}}},
                    b::AbstractVector{<:Real})
     n = length(a)
     @assert n == LinearAlgebra.checksquare(Q)

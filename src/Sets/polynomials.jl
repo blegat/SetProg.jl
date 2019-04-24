@@ -2,6 +2,21 @@ using Polyhedra
 using SumOfSquares
 
 """
+    struct PolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomial{T}}
+        degree::Int
+        p::P
+    end
+
+Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
+of degree `degree`.
+"""
+struct PolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomialLike{T}} <: AbstractSet{T}
+    degree::Int
+    p::GramMatrix{T, DynamicPolynomials.Monomial{true},
+                     DynamicPolynomials.MonomialVector{true}}
+end
+
+"""
     struct ConvexPolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomial{T}}
         degree::Int
         p::P
@@ -57,7 +72,7 @@ end
     struct ConvexPolynomialSet{T} <: AbstractSet{T}
         degree::Int
         q::GramMatrix{T, DynamicPolynomials.Monomial{true},
-                            DynamicPolynomials.MonomialVector{true}}
+                         DynamicPolynomials.MonomialVector{true}}
         z::SpaceVariable
         x::Vector{SpaceVariable}
     end
@@ -70,7 +85,7 @@ matrix.
 struct ConvexPolynomialSet{T} <: AbstractSet{T}
     degree::Int
     q::GramMatrix{T, DynamicPolynomials.Monomial{true},
-                        DynamicPolynomials.MonomialVector{true}}
+                     DynamicPolynomials.MonomialVector{true}}
     z::SpaceVariable
     x::Vector{SpaceVariable}
 end
