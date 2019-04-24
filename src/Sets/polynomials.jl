@@ -10,7 +10,7 @@ using SumOfSquares
 Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
 of degree `degree`.
 """
-struct PolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomialLike{T}} <: AbstractSet{T}
+struct PolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
     degree::Int
     p::GramMatrix{T, DynamicPolynomials.Monomial{true},
                      DynamicPolynomials.MonomialVector{true}}
