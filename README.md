@@ -90,7 +90,7 @@ using CSDP # Optimizer
 factory = with_optimizer(CSDP.Optimizer)
 ```
 
-To compute the maximal ellipsoid contained in a polytope (i.e. [Löwner-John ellipsoid](https://github.com/rdeits/LoewnerJohnEllipsoids.jl))
+To compute the maximal ellipsoid contained in the polytope `P` defined above (i.e. [Löwner-John ellipsoid](https://github.com/rdeits/LoewnerJohnEllipsoids.jl)):
 ```julia
 using JuMP
 model = Model(factory)
@@ -111,7 +111,7 @@ model = Model(factory)
 optimize!(model)
 ```
 
-To compute the maximal invariant ellipsoid contained in a polytope
+To compute the maximal invariant ellipsoid contained in the polytope `P` defined above:
 ```julia
 using JuMP
 model = Model(factory)
@@ -122,7 +122,7 @@ model = Model(factory)
 optimize!(model)
 ```
 
-To compute the maximal algebraic-invariant ellipsoid (i.e. `AS ⊆ ES`) contained in a polytope:
+To compute the maximal algebraic-invariant ellipsoid (i.e. `AS ⊆ ES`) contained in the polytope `P` defined above:
 ```julia
 using JuMP
 model = Model(factory)
