@@ -1,50 +1,31 @@
-mutable struct LinearImage{S, T, MT <: AbstractMatrix{T}}
-    set::S
-    A::MT
-    spaces::Union{Nothing, Spaces}
-    space_index::Union{Nothing, SpaceIndex}
+need_variablify(lm::Sets.LinearImage) = need_variablify(lm.set)
+function variablify(lm::Sets.LinearImage)
+    return Sets.LinearImage(variablify(lm.set), lm.A)
 end
-
-
-need_variablify(lm::LinearImage) = need_variablify(lm.set)
-function variablify(lm::LinearImage)
-    return LinearImage(variablify(lm.set), lm.A, lm.spaces, lm.space_index)
-end
-
-function clear_spaces(li::LinearImage)
-    li.spaces = nothing
-    li.space_index = nothing
-end
-Sets.perspective_variable(li::LinearImage) = Sets.perspective_variable(li.set)
-function create_spaces(li::LinearImage, spaces::Spaces)
-    li.spaces = spaces
-    if li.space_index === nothing
-        li.space_index = new_space(spaces, size(li.A, 1))
-    end
-    return li.space_index
-end
-space_index(li::LinearImage) = li.space_index
 
 """
-    apply_map(li::LinearImage{<:Sets.PolarOf{<:Sets.EllipsoidAtOrigin}})
+    apply_map(li::Sets.LinearImage{<:Sets.PolarOf{<:Sets.EllipsoidAtOrigin}}, new_vars)
 
 The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
 and given ``S^\\circ = \\{\\, x \\mid x^\\top Q x \\le 1\\,\\}``, we have
 ``A^{-\\top}S^\\circ = \\{\\, x \\mid x^\\top AQA^\\top x \\le 1\\,\\}``.
 """
-function apply_map(li::LinearImage{<:Sets.PolarOf{<:Sets.EllipsoidAtOrigin}})
+function apply_map(li::Sets.LinearImage{<:Sets.PolarOf{<:Sets.EllipsoidAtOrigin}}, new_vars)
     return Sets.polar(Sets.EllipsoidAtOrigin(Symmetric(li.A * Sets.polar(li.set).Q * li.A')))
 end
 
+function apply_map(li::Sets.LinearPreImage{<:Sets.EllipsoidAtOrigin}, new_vars)
+    return Sets.EllipsoidAtOrigin(Symmetric(li.A' * li.set.Q * li.A))
+end
+
 """
-    apply_map(li::LinearImage{<:Sets.PolarOf{<:Sets.ConvexPolynomialSublevelSetAtOrigin}})
+    apply_map(li::Sets.LinearImage{<:Sets.PolarOf{<:Sets.ConvexPolynomialSublevelSetAtOrigin}}, new_vars)
 
 The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
 and given ``S^\\circ = \\{\\, x \\mid p(x) \\le 1\\,\\}``, we have
 ``A^{-\\top}S^\\circ = \\{\\, x \\mid x^\\top p(A^\\top x) \\le 1\\,\\}``.
 """
-function apply_map(li::LinearImage{<:Sets.PolarOf{<:Sets.ConvexPolynomialSublevelSetAtOrigin}})
-    new_vars = space_polyvars(li.spaces, li.space_index)
+function apply_map(li::Sets.LinearImage{<:Sets.PolarOf{<:Sets.ConvexPolynomialSublevelSetAtOrigin}}, new_vars)
     deg = Sets.polar(li.set).degree
     @assert iseven(deg)
     q = apply_matrix(Sets.polar(li.set).p, li.A', new_vars,
@@ -52,17 +33,23 @@ function apply_map(li::LinearImage{<:Sets.PolarOf{<:Sets.ConvexPolynomialSubleve
     return Sets.polar(Sets.ConvexPolynomialSublevelSetAtOrigin(deg, q, nothing))
 end
 
+function apply_map(li::Sets.LinearPreImage{<:Sets.ConvexPolynomialSublevelSetAtOrigin}, new_vars)
+    deg = li.set.degree
+    @assert iseven(deg)
+    q = apply_matrix(li.set.p, li.A, new_vars, div(deg, 2))
+    return Sets.ConvexPolynomialSublevelSetAtOrigin(deg, q, nothing)
+end
+
 """
-    apply_map(li::LinearImage{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
-                                                               Sets.PerspectiveConvexPolynomialSet}}})
+    apply_map(li::Sets.LinearImage{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
+                                                                    Sets.PerspectiveConvexPolynomialSet}}}, new_vars)
 
 The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
 and given ..., we have
 ...
 """
-function apply_map(li::LinearImage{<:Sets.PerspectiveDualOf{<:Sets.Householder{T}}}) where T
+function apply_map(li::Sets.LinearImage{<:Sets.PerspectiveDualOf{<:Sets.Householder{T}}}, new_vars) where T
     old_vars = Sets.space_variables(li.set)
-    new_vars = space_polyvars(li.spaces, li.space_index)
     p = subs(Sets.perspective_gauge0(li.set.set), old_vars => li.A' * new_vars)
     dual = Sets.Householder(Sets.UnknownSet{T}(), p, li.A * li.set.set.h,
                             Sets.perspective_variable(li.set), new_vars)
@@ -71,5 +58,5 @@ end
 
 # FIXME, for Sets.AbstractSet, we should apply it directly
 function Base.:(*)(A::AbstractMatrix, set::Union{SetVariableRef, Sets.AbstractSet})
-    return LinearImage(set, A, nothing, nothing)
+    return Sets.LinearImage(set, A)
 end

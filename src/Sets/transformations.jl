@@ -1,4 +1,13 @@
 # A^{-1} * S
+struct LinearImage{S, T, MT <: AbstractMatrix{T}} <: AbstractSet{T}
+    set::S
+    A::MT
+end
+perspective_variable(li::LinearImage) = perspective_variable(li.set)
+space_variables(li::LinearImage) = nothing
+dimension(li::LinearImage) = size(li.A, 1)
+
+# A^{-1} * S
 struct LinearPreImage{S, T, MT <: AbstractMatrix{T}} <: AbstractSet{T}
     set::S
     A::MT

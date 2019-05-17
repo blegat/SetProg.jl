@@ -130,3 +130,19 @@ function apply_matrix(p::SumOfSquares.GramMatrix,
 end
 
 # computes A # μ or more precisely p(variables(p) => A * new_vars)
+
+
+
+function psd_constraint(Q::Symmetric)
+    n = LinearAlgebra.checksquare(Q)
+    q = [Q[i, j] for j in 1:n for i in 1:j]
+    # For n == 0, it will create not constraint, for n == 1, it will simply
+    # be a Nonnegatives constraint and for n == 2 it will be a rotated SOC.
+    set = SumOfSquares.matrix_cone(MOI.PositiveSemidefiniteConeTriangle, n)
+    return PolyJuMP.bridgeable(JuMP.build_constraint(error, q, set),
+                               JuMP.moi_function_type(typeof(q)), typeof(set))
+end
+
+function psd_constraint(model, Q::Symmetric)
+    return JuMP.add_constraint(model, psd_constraint(Q))
+end

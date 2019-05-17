@@ -58,7 +58,8 @@ function print_value(v, atol)
     end
 end
 function inner_variable_value(model, atol=1e-4)
-    inner = _inner(backend(model))
+    #inner = _inner(backend(model))
+    inner = backend(model)
     values = MOI.get(inner, MOI.VariablePrimal(),
                      MOI.get(inner, MOI.ListOfVariableIndices()))
     print("optimize!(mock) = MOIU.mock_optimize!(mock, [")

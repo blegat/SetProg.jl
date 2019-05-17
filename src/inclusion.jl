@@ -22,7 +22,7 @@ end
 function create_spaces(c::InclusionConstraint, spaces::Spaces)
     sub = create_spaces(c.subset, spaces)
     sup = create_spaces(c.supset, spaces)
-    merge_spaces(spaces, sub, sup)
+    return merge_spaces(spaces, sub, sup)
 end
 
 JuMP.function_string(print_mode, c::InclusionConstraint) = string(c.subset)
@@ -43,9 +43,18 @@ end
 ### InclusionConstraint for sets ###
 
 ## Set in Set ##
-function set_space(space::Space, ::InclusionConstraint{<:LinearImage,
-                                                       <:LinearImage})
+# See [LTJ18] B. Legat, P. Tabuada and R. M. Jungers.
+# *Computing controlled invariant sets for hybrid systems with applications to model-predictive control*.
+# 6th IFAC Conference on Analysis and Design of Hybrid Systems ADHS 2018, **2018**.
+function set_space(space::Space, ::InclusionConstraint{<:Sets.LinearImage,
+                                                       <:Sets.LinearImage})
     return set_space(space, DualSpace)
+end
+# AS ⊆ S <=> S ⊆ A^{-1}S so PrimalSpace work
+# AS ⊆ S <=> A^{-T}S∘ ⊆ S∘ so DualSpace work
+function set_space(space::Space, ::InclusionConstraint{<:Sets.LinearImage,
+                                                       <:SetVariableRef})
+    return space
 end
 # We can always transform  an ellipsoid to primal or dual space so we can handle
 # any space
@@ -63,7 +72,7 @@ function JuMP.build_constraint(_error::Function,
     @assert S_procedure_scaling === nothing || isone(S_procedure_scaling)
     Q = subset.Q
     P = sup_powerset.set.Q
-    JuMP.build_constraint(_error, Symmetric(Q - P), PSDCone())
+    return psd_constraint(Symmetric(Q - P))
 end
 
 # S-procedure: Q ⊆ P <=> q(x) ≤ 1 => p(x) ≤ 1 <=> p(x) ≤ q(x) <= q - p is SOS
@@ -130,11 +139,36 @@ end
 
 # See [LTJ18]
 function JuMP.build_constraint(_error::Function,
-                               subset::LinearImage{<:Sets.AbstractSet},
-                               sup_powerset::PowerSet{<:LinearImage{<:Sets.AbstractSet}};
+                               subset::Sets.LinearImage{<:Union{Sets.Polar, Sets.PerspectiveDual}},
+                               sup_powerset::PowerSet{<:Sets.LinearImage{<:Union{Sets.Polar, Sets.PerspectiveDual}}};
                                kws...)
-    JuMP.build_constraint(_error, apply_map(subset),
-                          PowerSet(apply_map(sup_powerset.set)); kws...)
+    dim = Sets.dimension(subset)
+    @polyvar x[1:dim]
+    JuMP.build_constraint(_error, apply_map(subset, x),
+                          PowerSet(apply_map(sup_powerset.set, x)); kws...)
+end
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.AbstractSet,
+                               sup_powerset::PowerSet{<:Sets.LinearPreImage{<:Sets.AbstractSet}};
+                               kws...)
+    x = Sets.space_variables(subset)
+    JuMP.build_constraint(_error, subset,
+                          PowerSet(apply_map(sup_powerset.set, x)); kws...)
+end
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.LinearImage{<:Sets.AbstractSet},
+                               sup_powerset::PowerSet{<:Sets.AbstractSet};
+                               kws...)
+    JuMP.build_constraint(
+        _error, subset.set,
+        PowerSet(Sets.LinearPreImage(sup_powerset.set, subset.A)); kws...)
+end
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.LinearImage{<:Union{Sets.Polar, Sets.PerspectiveDual}},
+                               sup_powerset::PowerSet{<:Sets.AbstractSet};
+                               kws...)
+    x = Sets.space_variables(sup_powerset.set)
+    JuMP.build_constraint(_error, apply_map(subset, x), sup_powerset; kws...)
 end
 
 ## Set in Polyhedron ##
@@ -213,7 +247,7 @@ function JuMP.build_constraint(_error::Function,
     hs = sup_powerset.set
     P = [hs.β hs.a'
          hs.a subset.Q]
-    JuMP.build_constraint(_error, Symmetric(P), PSDCone())
+    return psd_constraint(Symmetric(P))
 end
 
 #     [p(x) ≤ 1] ⊆ [⟨a, x⟩ ≤ β]

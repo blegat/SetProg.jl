@@ -22,7 +22,7 @@ function polar_perspective_ellipsoid(ell, point::HintPoint, z::SpaceVariable,
 end
 function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
                                      point::CenterPoint, z, x)
-    @constraint(model, Q in PSDCone())
+    psd_constraint(model, Q)
     ell = Sets.EllipsoidAtOrigin(Q)
     return polar_perspective_ellipsoid(ell, point, z, x)
 end
@@ -32,7 +32,7 @@ function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
     @assert n == length(point.h)
     β = @variable(model, base_name="β")
     b = @variable(model, [1:length(point.h)], base_name="b")
-    @constraint(model, Symmetric([β+1 b'; b Q]) in PSDCone())
+    psd_constraint(model, Symmetric([β+1 b'; b Q]))
     ell = Sets.ShiftedEllipsoid(Q, b, β)
     return polar_perspective_ellipsoid(ell, point, z, x)
 end

@@ -79,16 +79,17 @@ function ci_quad_nonhomogeneous_test(optimizer, config)
                        z = Sets.perspective_variable(◯)
                        x, y = Sets.space_variables(◯)
                        ◯_dual = Sets.perspective_dual(◯)
-                       @test ◯_dual.p ≈ -z^2 + x^2 - 0.98661919361x*y + y^2 atol=config.atol rtol=config.rtol
+                       # The coefficient of `x*y` does not influence the volume
+                       # and with the values of the other parameters, it should
+                       # simply be in the interval [-2, -0.5].
+                       α = coefficient(◯_dual.p, x*y)
+                       @test α ≥ -2 - 2config.atol - config.rtol
+                       @test α ≤ -0.5 + 0.5config.atol + config.rtol
+                       @test ◯_dual.p ≈ -z^2 + x^2 + α*x*y + y^2 atol=config.atol rtol=config.rtol
                    end)
 end
 
-const ci_quartic_γ = -8.717781018330758
-const ci_quartic_hess = [12.0, ci_quartic_γ, 12.0, ci_quartic_γ, 12.0,
-                         12.0, 12.0, ci_quartic_γ, ci_quartic_γ, 12.0]
-
 function ci_quartic_homogeneous_test(optimizer, config)
-    α = 2.905927006110253
     ci_square_test(optimizer, config, true,
                    PolySet(symmetric=true, degree=4, convex=true),
                    set -> L1_heuristic(set, [1.0, 1.0]),
@@ -97,17 +98,24 @@ function ci_quartic_homogeneous_test(optimizer, config)
                        @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}}
                        @test Sets.polar(◯).degree == 4
                        x, y = variables(Sets.polar(◯).p)
-                       q = x^4 - α*x^3*y + 6x^2*y^2 - α*x*y^3 + y^4
+                       α = coefficient(Sets.polar(◯).p, x^3*y) / 2
+                       q = x^4 + 2α*x^3*y + 6x^2*y^2 + 2α*x*y^3 + y^4
+                       @test all(eigvals(Matrix(Sets.polar(◯).p.Q)) .≥ -config.atol)
                        @test polynomial(Sets.polar(◯).p) ≈ q atol=config.atol rtol=config.rtol
                        convexity_proof = Sets.convexity_proof(◯)
                        @test convexity_proof.n == 4
-                       @test convexity_proof.Q ≈ ci_quartic_hess atol=config.atol rtol=config.rtol
+
+                       hess = 6 * [2.0, α, 2.0, α, 2.0,
+                                   2.0, 2.0, α, α, 2.0]
+                       Hess = SetProg.SumOfSquares.MultivariateMoments.SymMatrix(hess, 4)
+                       @test all(eigvals(Matrix(Hess)) .≥ -config.atol)
+                       @test convexity_proof.Q ≈ hess atol=config.atol rtol=config.rtol
                    end)
 end
 
 const ci_tests = Dict("ci_ell_homogeneous" => ci_ell_homogeneous_test,
-                     "ci_ell_nonhomogeneous" => ci_ell_nonhomogeneous_test,
-                     "ci_quad_nonhomogeneous" => ci_quad_nonhomogeneous_test,
-                     "ci_quartic_homogeneous" => ci_quartic_homogeneous_test)
+                      "ci_ell_nonhomogeneous" => ci_ell_nonhomogeneous_test,
+                      "ci_quad_nonhomogeneous" => ci_quad_nonhomogeneous_test,
+                      "ci_quartic_homogeneous" => ci_quartic_homogeneous_test)
 
 @test_suite ci
