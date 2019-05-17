@@ -24,24 +24,34 @@ In fact, the option to use can be automatically chosen depending on the variable
 ## Variables
 
 The variables can either be
-* a polyhedron;
 * an Ellipsoid or more generally the 1-sublevel set of a polynomial of degree `2d`;
-* a quadratic cone or more generally the 0-sublevel set of a polynomial of degree `2d`
+* a polyhedron (*not yet implemented*);
+* a quadratic cone or more generally the 0-sublevel set of a polynomial of degree `2d` (*not yet implemented*).
 
 ```julia
-@variable m S Polyhedron()
 @variable m S Ellipsoid()
 @variable m S PolySet(d) # 1-sublevel set of a polynomial of degree 2d
 @variable m S PolySet(d, convex=true) # Convex 1-sublevel set of a polynomial of degree 2d
 @variable m S PolySet(d, symmetric=true) # 1-sublevel set of a polynomial of degree 2d symmetric around the origin
-@variable m S PolySet(d, symmetric=true, center=[1, 0]) # 1-sublevel set of a polynomial of degree 2d symmetric around the [1, 0]
+@variable m S PolySet(d, symmetric=true, point=SetProg.CenterPoint([1, 0])) # 1-sublevel set of a polynomial of degree 2d symmetric around the [1, 0]
+```
+
+*not yet implemented*:
+```julia
+@variable m S Polyhedron()
 @variable m S QuadCone()  # Quadratic cone
 @variable m S PolyCone(d) # 0-sublevel set of a polynomial of degree 2d
 ```
 
 ## Expressions
 
-The following operations are allowed
+The following operations are allowed:
+
+| Operation | Description                   |
+|-----------|-------------------------------|
+| A\*S      | Linear mapping                |
+
+But more operations are planned to be added:
 
 | Operation | Description                   |
 |-----------|-------------------------------|
@@ -49,7 +59,6 @@ The following operations are allowed
 | S1 + S2   | Minkowski sum                 |
 | S1 ∩ S2   | Intersection of `S1` and `S2` |
 | S1 ∪ S2   | Union of `S1` and `S2`        |
-| A\*S      | Linear mapping                |
 | polar(S)  | Polar of S                    |
 
 ## Constraints
@@ -61,6 +70,11 @@ The following constraints are implemented
 | x ∈ S     | `x` is contained in `S`  |
 | S1 ⊆ S2   | `S1` is included in `S2` |
 | S1 ⊇ S2   | `S1` is included in `S2` |
+
+But more are planned to be added:
+
+| Operation | Description              |
+|-----------|--------------------------|
 | S1 == S2  | `S1` is equal to `S2`    |
 
 ## Examples
@@ -68,55 +82,55 @@ The following constraints are implemented
 Consider a polytope
 ```julia
 using Polyhedra
-P = @set x + y <= 1 && x >= 0 && y >= 0
+P = HalfSpace([1, 1], 1) ∩ HalfSpace([-1, 0], 0) ∩ HalfSpace([0, -1], 0)
 ```
 Pick an SDP solver (see [here](juliaopt.org) for a list)
 ```julia
 using CSDP # Optimizer
-optimizer = CSDPOptimizer()
+factory = with_optimizer(CSDP.Optimizer)
 ```
 
 To compute the maximal ellipsoid contained in a polytope (i.e. [Löwner-John ellipsoid](https://github.com/rdeits/LoewnerJohnEllipsoids.jl))
 ```julia
 using JuMP
-model = Model(optimizer=optimizer)
-@variable model S Ellipsoid()
-@constraint model S ⊆ P
-@objective model Max vol(S)
-JuMP.optimize!(model)
+model = Model(factory)
+@variable(model, S, Ellipsoid())
+@constraint(model, S ⊆ P)
+@objective(model, Max, nth_root(volume(S)))
+optimize!(model)
 ```
 
-To compute the maximal invariant set contained in a polytope
+To compute the maximal invariant set contained in a polytope (*not yet implemented*):
 ```julia
 using JuMP
-model = Model(optimizer=optimizer)
-@variable model S Polyhedron()
-@constraint model S ⊆ P
-@constraint model A*S ⊆ S # Invariance constraint
-@objective model Max vol(S)
-JuMP.optimize!(model)
+model = Model(factory)
+@variable(model, S, Polyhedron())
+@constraint(model, S ⊆ P)
+@constraint(model, A*S ⊆ S) # Invariance constraint
+@objective(model, Max, volume(S))
+optimize!(model)
 ```
 
 To compute the maximal invariant ellipsoid contained in a polytope
 ```julia
 using JuMP
-model = Model(optimizer=optimizer)
-@variable model  S Ellipsoid()
-@constraint model S ⊆ P
-@constraint model A*S ⊆ S # Invariance constraint
-@objective model Max vol(S)
-JuMP.optimize!(model)
+model = Model(factory)
+@variable(model, S, Ellipsoid())
+@constraint(model, S ⊆ P)
+@constraint(model, A*S ⊆ S) # Invariance constraint
+@objective(model, Max, nth_root(volume(S)))
+optimize!(model)
 ```
 
 To compute the maximal algebraic-invariant ellipsoid (i.e. `AS ⊆ ES`) contained in a polytope:
 ```julia
 using JuMP
-m = Model(optimizer=optimizer)
-@variable m S Ellipsoid()
-@constraint S ⊆ P
-@constraint A*S ⊆ E*S # Invariance constraint
-@objective Max vol(S)
-solve()
+model = Model(factory)
+@variable(model, S, Ellipsoid())
+@constraint(model, S ⊆ P)
+@constraint(model, A*S ⊆ E*S) # Invariance constraint
+@objective(model, Max, L1_heuristic(volume(S), zeros(Polyhedra.fulldim(P))))
+optimize!(model)
 ```
 
 [build-img]: https://travis-ci.org/blegat/SetProg.jl.svg?branch=master
@@ -127,4 +141,3 @@ solve()
 [gitter-url]: https://gitter.im/JuliaPolyhedra/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link
 [gitter-img]: https://badges.gitter.im/JuliaPolyhedra/Lobby.svg
 [discourse-url]: https://discourse.julialang.org/c/domain/opt
-
