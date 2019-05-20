@@ -16,6 +16,10 @@ struct PolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
                      DynamicPolynomials.MonomialVector{true}}
 end
 
+function space_variables(set::PolynomialSublevelSetAtOrigin)
+    return variables(set.p)
+end
+
 """
     struct ConvexPolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomial{T}}
         degree::Int
@@ -58,7 +62,8 @@ end
 
 convexity_proof(set::ConvexPolynomialSublevelSetAtOrigin) = set.convexity_proof
 
-function scaling_function(set::ConvexPolynomialSublevelSetAtOrigin)
+function scaling_function(set::Union{PolynomialSublevelSetAtOrigin,
+                                     ConvexPolynomialSublevelSetAtOrigin})
     # We convert the GramMatrix to a polynomial to avoid having to do the
     # conversion for every substitution.
     p = polynomial(set.p)

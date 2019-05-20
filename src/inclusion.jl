@@ -77,8 +77,10 @@ end
 
 # S-procedure: Q ⊆ P <=> q(x) ≤ 1 => p(x) ≤ 1 <=> p(x) ≤ q(x) <= q - p is SOS
 function JuMP.build_constraint(_error::Function,
-                               subset::Sets.ConvexPolynomialSublevelSetAtOrigin,
-                               sup_powerset::PowerSet{<:Sets.ConvexPolynomialSublevelSetAtOrigin};
+                               subset::Union{Sets.PolynomialSublevelSetAtOrigin,
+                                             Sets.ConvexPolynomialSublevelSetAtOrigin},
+                               sup_powerset::PowerSet{<:Union{Sets.PolynomialSublevelSetAtOrigin,
+                                                              Sets.ConvexPolynomialSublevelSetAtOrigin}};
                                S_procedure_scaling = nothing)
     @assert S_procedure_scaling === nothing || isone(S_procedure_scaling)
     q = subset.p

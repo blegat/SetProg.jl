@@ -33,7 +33,15 @@ function apply_map(li::Sets.LinearImage{<:Sets.PolarOf{<:Sets.ConvexPolynomialSu
     return Sets.polar(Sets.ConvexPolynomialSublevelSetAtOrigin(deg, q, nothing))
 end
 
-function apply_map(li::Sets.LinearPreImage{<:Sets.ConvexPolynomialSublevelSetAtOrigin}, new_vars)
+function apply_map(li::Sets.LinearPreImage{<:Sets.PolynomialSublevelSetAtOrigin},
+                   new_vars)
+    deg = li.set.degree
+    @assert iseven(deg)
+    q = apply_matrix(li.set.p, li.A, new_vars, div(deg, 2))
+    return Sets.PolynomialSublevelSetAtOrigin(deg, q)
+end
+function apply_map(li::Sets.LinearPreImage{<:Sets.ConvexPolynomialSublevelSetAtOrigin},
+                   new_vars)
     deg = li.set.degree
     @assert iseven(deg)
     q = apply_matrix(li.set.p, li.A, new_vars, div(deg, 2))

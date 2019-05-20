@@ -56,7 +56,9 @@ function Polyhedra.planar_contour(ell::EllipsoidAtOrigin; npoints=64)
                           npoints)
 end
 
-function Polyhedra.planar_contour(set::ConvexPolynomialSublevelSetAtOrigin; npoints=64)
+function Polyhedra.planar_contour(set::Union{PolynomialSublevelSetAtOrigin,
+                                             ConvexPolynomialSublevelSetAtOrigin};
+                                  npoints=64)
     return primal_contour(scaling_function(set), npoints)
 end
 

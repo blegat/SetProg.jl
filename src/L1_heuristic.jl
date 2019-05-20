@@ -58,7 +58,9 @@ As developed in [HL12].
 fixed-order controller design*.
 International Journal of Control, **2012**.
 """
-function l1_integral(set::Sets.ConvexPolynomialSublevelSetAtOrigin, vertex)
+function l1_integral(set::Union{Sets.PolynomialSublevelSetAtOrigin,
+                                Sets.ConvexPolynomialSublevelSetAtOrigin},
+                     vertex)
     return rectangle_integrate(set.p, vertex)
 end
 
@@ -84,7 +86,29 @@ function l1_integral(set::Sets.HouseDualOf{<:Sets.ConvexPolynomialSet},
                                1 ./ vertex)
 end
 
-objective_sense(model::JuMP.Model, ::L1Heuristic) = data(model).objective_sense
+function invert_objective_sense(::Union{Sets.Polar,
+                                        Sets.PerspectiveDual})
+    return false
+end
+function invert_objective_sense(::Union{Sets.EllipsoidAtOrigin,
+                                        Sets.PolynomialSublevelSetAtOrigin,
+                                        Sets.ConvexPolynomialSublevelSetAtOrigin})
+    return true
+end
+function objective_sense(model::JuMP.Model, l::L1Heuristic)
+    sense = data(model).objective_sense
+    if invert_objective_sense(l.variable.variable)
+        if sense == MOI.MAX_SENSE
+            return MOI.MIN_SENSE
+        elseif sense == MOI.MIN_SENSE
+            return MOI.MAX_SENSE
+        else
+            error("Unsupported objective sense $sense for `L1_heuristic`.")
+        end
+    else
+        return sense
+    end
+end
 function objective_function(::JuMP.Model, l::L1Heuristic)
     return l1_integral(l.variable.variable, l.rectangle_vertex)
 end

@@ -12,7 +12,8 @@ function sublevel_eval(ell::Sets.EllipsoidAtOrigin,
                        a::AbstractVector)
     return quad_form(ell.Q, a)
 end
-function sublevel_eval(set::Sets.ConvexPolynomialSublevelSetAtOrigin,
+function sublevel_eval(set::Union{Sets.PolynomialSublevelSetAtOrigin,
+                                  Sets.ConvexPolynomialSublevelSetAtOrigin},
                        a::AbstractVector)
     return poly_eval(polynomial(set.p), a)
 end

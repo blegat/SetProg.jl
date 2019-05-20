@@ -51,7 +51,7 @@ function maximal_invariant_ell_homogeneous_test(optimizer, config)
         end)
 end
 
-function maximal_invariant_quad_homogeneous_test(optimizer, config)
+function maximal_convex_invariant_quad_homogeneous_test(optimizer, config)
     invariant_square_test(
         optimizer, config, true,
         PolySet(degree=2, convex=true, symmetric=true),
@@ -77,6 +77,18 @@ end
 function minimal_invariant_quad_homogeneous_test(optimizer, config)
     invariant_square_test(
         optimizer, config, false,
+        PolySet(degree=2, symmetric=true),
+        set -> L1_heuristic(set, ones(2)), 4/3,
+        ◯ -> begin
+            @test ◯ isa Sets.PolynomialSublevelSetAtOrigin{Float64}
+            x, y = Sets.space_variables(◯)
+            @test ◯.p ≈ 0.5x^2 + 0.5y^2 atol=config.atol rtol=config.rtol
+        end)
+end
+
+function minimal_convex_invariant_quad_homogeneous_test(optimizer, config)
+    invariant_square_test(
+        optimizer, config, false,
         PolySet(degree=2, convex=true, symmetric=true),
         nth_root, 1.0,
         ◯ -> begin
@@ -87,8 +99,9 @@ function minimal_invariant_quad_homogeneous_test(optimizer, config)
 end
 
 const invariant_tests = Dict("maximal_invariant_ell_homogeneous_test"  => maximal_invariant_ell_homogeneous_test,
-                             "maximal_invariant_quad_homogeneous_test" => maximal_invariant_quad_homogeneous_test,
+                             "maximal_convex_invariant_quad_homogeneous_test" => maximal_convex_invariant_quad_homogeneous_test,
                              "minimal_invariant_ell_homogeneous_test"  => minimal_invariant_ell_homogeneous_test,
-                             "minimal_invariant_quad_homogeneous_test" => minimal_invariant_quad_homogeneous_test)
+                             "minimal_invariant_quad_homogeneous_test" => minimal_invariant_quad_homogeneous_test,
+                             "minimal_convex_invariant_quad_homogeneous_test" => minimal_convex_invariant_quad_homogeneous_test)
 
 @test_suite invariant

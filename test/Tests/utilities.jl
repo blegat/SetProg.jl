@@ -46,8 +46,6 @@ macro test_suite(setname, subsets=false)
 end
 
 # Utilities for building the mock `optimize!` from the solution of a solver
-_inner(model::MOIU.CachingOptimizer) = _inner(model.optimizer)
-_inner(model::MOIB.LazyBridgeOptimizer) = model.model
 # Variables primal values for inner bridged model
 function print_value(v, atol)
     i = round(v)
@@ -58,7 +56,6 @@ function print_value(v, atol)
     end
 end
 function inner_variable_value(model, atol=1e-4)
-    #inner = _inner(backend(model))
     inner = backend(model)
     values = MOI.get(inner, MOI.VariablePrimal(),
                      MOI.get(inner, MOI.ListOfVariableIndices()))

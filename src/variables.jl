@@ -183,13 +183,27 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
             end
         end
     else
-        error("Non-convex PolySet not implemented yet")
+        if set.symmetric
+            monos = monomials(space_polyvars, div(set.degree, 2))
+            # TODO No need for the poly to be SOS, see Lemma 6.33 of [BPT12]
+            p = @variable(model, variable_type=SOSPoly(monos))
+            if space == PrimalSpace
+                return Sets.PolynomialSublevelSetAtOrigin(set.degree, p)
+            else
+                error("Non-convex PolySet not supported in $space")
+            end
+        else
+            error("Non-convex nonsymmetric PolySet not implemented yet.")
+        end
     end
 end
 _value(convexity_proof::Nothing) = nothing
 function _value(convexity_proof::MultivariateMoments.SymMatrix)
     return MultivariateMoments.SymMatrix(JuMP.value.(convexity_proof.Q),
                                          convexity_proof.n)
+end
+function JuMP.value(set::Sets.PolynomialSublevelSetAtOrigin)
+    return Sets.PolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p))
 end
 function JuMP.value(set::Sets.ConvexPolynomialSublevelSetAtOrigin)
     return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p), _value(set.convexity_proof))

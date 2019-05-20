@@ -122,6 +122,7 @@ end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:Number},
                                set::Union{Sets.EllipsoidAtOrigin,
+                                          Sets.PolynomialSublevelSetAtOrigin,
                                           Sets.ConvexPolynomialSublevelSetAtOrigin})
     JuMP.build_constraint(_error, sublevel_eval(set, coord(member)),
                           MOI.LessThan(scaling(member)^2))
@@ -129,6 +130,7 @@ end
 function JuMP.build_constraint(_error::Function,
                                member::Polyhedra.Line,
                                set::Union{Sets.EllipsoidAtOrigin,
+                                          Sets.PolynomialSublevelSetAtOrigin,
                                           Sets.ConvexPolynomialSublevelSetAtOrigin})
     # We must have (λl)^T Q (λl) ≤ 1 for all λ hence we must have l^T Q l ≤ 0
     # As Q is positive definite, it means l^T Q l = 0
@@ -138,6 +140,7 @@ end
 function JuMP.build_constraint(_error::Function,
                                member::Polyhedra.Ray,
                                set::Union{Sets.EllipsoidAtOrigin,
+                                          Sets.PolynomialSublevelSetAtOrigin,
                                           Sets.ConvexPolynomialSublevelSetAtOrigin})
     # We must have (λl)^T Q (λl) ≤ 1 for all λ > 0 hence we must have l^T Q l ≤ 0
     # As Q is positive definite, it means l^T Q l = 0
@@ -175,10 +178,11 @@ function mat_measure(f, monos)
     end
     return MatMeasure(element, monos)
 end
-function JuMP.add_constraint(model::JuMP.Model,
-        constraint::SetProg.MembershipConstraint{Vector{T},
-                        SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}},
-        name::String = "") where T
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    constraint::SetProg.MembershipConstraint{
+        Vector{T}, SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}},
+    name::String = "") where T
     set = constraint.set
     @assert iseven(set.degree)
     monos = monomials(SetProg.Sets.space_variables(set), 0:div(set.degree, 2))
