@@ -1,0 +1,3 @@
+[deps]
+MosekTools = "1ec41992-ff65-5c91-ac43-2df89e9693a4"
+Polyhedra = "67491407-f73d-577b-9b50-8179a7c68029"
