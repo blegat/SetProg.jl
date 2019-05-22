@@ -5,8 +5,6 @@
 | [![Build Status][build-img]][build-url] | [![Gitter][gitter-img]][gitter-url] |
 | [![Codecov branch][codecov-img]][codecov-url] | [<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Discourse_logo.png/799px-Discourse_logo.png" width="64">][discourse-url] |
 
-**This package is still a sketch, functionalities are partially implemented**
-
 JuMP extension for Set Programming : optimization with set variables and inclusion/containment constraints. This package allows the formulation of a mathematical programming involving both classical variables and constraints supported by JuMP and set variables and constraints.
 
 Three options exist to solve Set Programming:
