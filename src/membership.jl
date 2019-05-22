@@ -162,7 +162,7 @@ function JuMP.build_constraint(_error::Function,
 end
 
 # TODO simplify when https://github.com/JuliaOpt/SumOfSquares.jl/issues/3 is done
-function mat_measure(f, monos)
+function _moment_matrix(f, monos)
     # Takes into account that some monomials are the same so they should
     # have the same value
     d = Dict{typeof(exponents(first(monos))), typeof(f(1,1))}()
@@ -174,7 +174,7 @@ function mat_measure(f, monos)
         end
         return d[exps]
     end
-    return MatMeasure(element, monos)
+    return MomentMatrix(element, monos)
 end
 function JuMP.add_constraint(
     model::JuMP.Model,
@@ -194,7 +194,7 @@ function JuMP.add_constraint(
             return convert(U, JuMP.VariableRef(model))
         end
     end
-    ν = mat_measure(variable, monos)
+    ν = _moment_matrix(variable, monos)
     @constraint(model, ν.Q.Q in MOI.PositiveSemidefiniteConeTriangle(length(monos)))
     p = SetProg.Sets.gauge1(set)
     scalar_product = dot(measure(ν), polynomial(p))
