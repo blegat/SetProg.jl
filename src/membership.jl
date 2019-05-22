@@ -38,8 +38,6 @@ JuMP.function_string(print_mode, c::MembershipConstraint) = string(c.member)
 JuMP.in_set_string(print_mode, c::MembershipConstraint) = string(JuMP.math_symbol(print_mode, :in), c.set)
 function JuMP.build_constraint(_error::Function, member,
                                set::Sets.AbstractSet)
-    @show member
-    @show set
     MembershipConstraint(member, set)
 end
 

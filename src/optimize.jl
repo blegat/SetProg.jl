@@ -4,7 +4,10 @@ function load(model::JuMP.Model, d::Data)
         load(model, variable)
     end
     for (index, constraint) in d.constraints
-        load(model, constraint)
+        cref = load(model, constraint)
+        if cref !== nothing
+            d.transformed_constraints[index] = cref
+        end
     end
     if d.objective !== nothing
         load(model, d.objective)

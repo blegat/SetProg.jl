@@ -56,33 +56,50 @@ struct Ellipsoid <: AbstractVariable
     symmetric::Bool
     dimension::Union{Nothing, Int}
     guaranteed_psd::Bool # Is it already guaranteed that it is PSD ? e.g. by nth_root
+    superset::Union{Sets.EllipsoidAtOrigin, Nothing}
 end
 function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
                    symmetric::Bool=false,
-                   dimension::Union{Int, Nothing}=nothing)
-    if dimension === nothing
-        if point !== nothing
+                   dimension::Union{Int, Nothing}=nothing,
+                   superset::Union{Sets.EllipsoidAtOrigin, Nothing}=nothing)
+    if point !== nothing
+        if dimension === nothing
             dimension = length(point.h)
+        elseif dimension != length(point.h)
+            throw(DimensionMismatch())
         end
     end
-    return Ellipsoid(point, symmetric, dimension, false)
+    if superset !== nothing
+        if dimension === nothing
+            dimension = Sets.dimension(superset)
+        elseif dimension != Sets.dimension(superset)
+            throw(DimensionMismatch())
+        end
+    end
+    return Ellipsoid(point, symmetric, dimension, false, superset)
 end
+Sets.space_variables(::Ellipsoid) = nothing
 
 function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
                       space_dimension, space_polyvars)
     n = space_dimension
     Q = @variable(model, [1:n, 1:n], Symmetric, base_name="Q")
     if !ell.guaranteed_psd
-        @constraint(model, Q in PSDCone())
+        psd_constraint(model, Q)
     end
     if ell.symmetric
         if space == PrimalSpace
+            if ell.superset !== nothing
+                Q = Symmetric(Q + ell.superset.Q)
+            end
             return Sets.EllipsoidAtOrigin(Q)
         else
+            ell.superset === nothing || error("superset not supported in dual space")
             @assert space == DualSpace
             return Sets.polar(Sets.EllipsoidAtOrigin(Q))
         end
     else
+        ell.superset === nothing || error("superset not supported for non-symmetric Ellipsoid")
         if space == PrimalSpace
             error("TODO")
         else
@@ -107,12 +124,16 @@ struct PolySet <: AbstractVariable
     degree::Int
     dimension::Union{Nothing, Int}
     convex::Bool
+    variables::Union{Nothing, Vector{SpaceVariable}}
+    superset::Union{Sets.PolynomialSublevelSetAtOrigin, Nothing}
 end
 function PolySet(; point::Union{Nothing, HintPoint}=nothing,
                  symmetric::Bool=false,
                  degree::Union{Int, Nothing}=nothing,
                  dimension::Union{Int, Nothing}=nothing,
-                 convex::Bool=false)
+                 convex::Bool=false,
+                 variables::Union{Vector{SpaceVariable}, Nothing}=nothing,
+                 superset::Union{Sets.PolynomialSublevelSetAtOrigin, Nothing}=nothing)
     if degree === nothing
         error("Degree of PolySet not specified, use PolySet(degree=..., ...)")
     end
@@ -124,8 +145,21 @@ function PolySet(; point::Union{Nothing, HintPoint}=nothing,
             dimension = length(point.h)
         end
     end
-    return PolySet(point, symmetric, degree, dimension, convex)
+    if superset !== nothing
+        if dimension === nothing
+            dimension = Sets.dimension(superset)
+        elseif dimension != Sets.dimension(superset)
+            throw(DimensionMismatch())
+        end
+        if variables === nothing
+            variables = Sets.space_variables(superset)
+        elseif variables != Sets.space_variables(superset)
+            error("Space variables set does not correspond to superset space variables.")
+        end
+    end
+    return PolySet(point, symmetric, degree, dimension, convex, variables, superset)
 end
+Sets.space_variables(p::PolySet) = p.variables
 
 function constrain_convex(model, p, vars)
     hessian = differentiate(p, vars, 2)
@@ -155,6 +189,7 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
     # lower degree as the polynomial is homogeneous
     @assert iseven(set.degree)
     if set.convex
+        set.superset === nothing || error("superset not supported for convex PolySet")
         if set.symmetric
             monos = monomials(space_polyvars, div(set.degree, 2))
             # TODO No need for the poly to be SOS, see Lemma 6.33 of [BPT12]
@@ -188,6 +223,9 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
             # TODO No need for the poly to be SOS, see Lemma 6.33 of [BPT12]
             p = @variable(model, variable_type=SOSPoly(monos))
             if space == PrimalSpace
+                if set.superset !== nothing
+                    p = SetProg.SumOfSquares.gram_operate(+, set.superset.p, p)
+                end
                 return Sets.PolynomialSublevelSetAtOrigin(set.degree, p)
             else
                 error("Non-convex PolySet not supported in $space")
@@ -228,11 +266,13 @@ end
 
 ### SetVariableRef ###
 mutable struct SetVariableRef{M <: JuMP.AbstractModel,
-                           S <: AbstractVariable} <: JuMP.AbstractVariableRef
+                              S <: AbstractVariable} <: JuMP.AbstractVariableRef
     model::M
     set::S
     name::String
-    variable::Union{Nothing, Sets.AbstractSet{JuMP.VariableRef}}
+    # `variable` is typically `Sets.AbstractSet{JuMP.VariableRef}` but it can
+    # also be `Sets.AbstractSet{JuMP.AffExpr}` with `PolySet(superset = ...)`.
+    variable::Union{Nothing, Sets.AbstractSet}
     space_index::Union{Nothing, SpaceIndex}
 end
 JuMP.name(vref::SetVariableRef) = vref.name
@@ -255,10 +295,14 @@ end
 function Sets.perspective_variable(::SetVariableRef) end
 function create_spaces(vref::SetVariableRef, spaces::Spaces)
     if vref.space_index === nothing
-        if vref.set.dimension === nothing
-            vref.space_index = new_space(spaces)
+        if Sets.space_variables(vref.set) === nothing
+            if vref.set.dimension === nothing
+                vref.space_index = new_space(spaces)
+            else
+                vref.space_index = new_space(spaces, vref.set.dimension)
+            end
         else
-            vref.space_index = new_space(spaces, vref.set.dimension)
+            vref.space_index = new_space(spaces, Sets.space_variables(vref.set))
         end
     end
     return vref.space_index

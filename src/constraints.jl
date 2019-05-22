@@ -47,6 +47,15 @@ end
 function JuMP.constraint_object(cref::SetConstraintRef)
     return data(cref.model).constraints[cref.index]
 end
+function transformed_constraint(cref::SetConstraintRef)
+    return data(cref.model).transformed_constraints[cref.index]
+end
+function JuMP.dual(cref::SetConstraintRef)
+    return JuMP.dual(transformed_constraint(cref))
+end
+function SumOfSquares.moment_matrix(cref::SetConstraintRef)
+    return SumOfSquares.moment_matrix(transformed_constraint(cref))
+end
 
 include("membership.jl")
 include("inclusion.jl")

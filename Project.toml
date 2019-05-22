@@ -18,7 +18,7 @@ SumOfSquares = "4b9e565b-77fc-50a5-a571-1244f986bda1"
 
 [compat]
 JuMP = "0.19"
-SumOfSquares = "0.3"
+SumOfSquares = "~0.3.2"
 julia = "1"
 
 [extras]

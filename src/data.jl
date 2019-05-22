@@ -4,6 +4,7 @@
 mutable struct Data
     variables::Set{SetVariableRef}
     constraints::Dict{ConstraintIndex, SetConstraint}
+    transformed_constraints::Dict{ConstraintIndex, JuMP.ConstraintRef}
     names::Dict{ConstraintIndex, String}
     last_index::Int
     objective_sense::MOI.OptimizationSense
@@ -25,7 +26,7 @@ function set_space(cur::Space, space::Space)
     if space == Undecided || cur == Undecided || cur == space
         return space
     else
-        error("Incompatible constraints/objective")
+        error("Incompatible constraints/objective, some require to do the modeling in the primal space and some in the dual space.")
     end
 end
 function set_space(d::Data, model::JuMP.Model)
@@ -35,6 +36,9 @@ function set_space(d::Data, model::JuMP.Model)
     end
     if d.objective !== nothing
         space = set_space(space, d.objective, model)
+    end
+    if space == Undecided
+        space = PrimalSpace
     end
     d.space = space
 end
@@ -102,6 +106,7 @@ function data(model::JuMP.Model)
     if !haskey(model.ext, :SetProg)
         model.ext[:SetProg] = Data(Set{SetVariableRef}(),
                                    Dict{ConstraintIndex, SetConstraint}(),
+                                   Dict{ConstraintIndex, JuMP.ConstraintRef}(),
                                    Dict{ConstraintIndex, String}(), 0,
                                    MOI.FEASIBILITY_SENSE, nothing, nothing,
                                    nothing, Undecided, Modeling, nothing)
