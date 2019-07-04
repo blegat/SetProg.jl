@@ -4,6 +4,8 @@ dimension(ell::AbstractEllipsoid) = LinearAlgebra.checksquare(ell.Q)
 struct HyperSphere <: AbstractEllipsoid{Bool}
     dim::Int
 end
+dimension(sphere::HyperSphere) = sphere.dim
+polar(sphere::HyperSphere) = sphere
 
 """
     struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}

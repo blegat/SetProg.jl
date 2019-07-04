@@ -19,17 +19,20 @@ end
     Q = [1.0 0.0; 0.0 1.0]
     @testset "Ellipsoid" begin
         @testset "Circle" begin
-            circle = Sets.EllipsoidAtOrigin(Symmetric(Q))
-            recipe_test(circle,
-                        [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
-            recipe_test(Sets.polar(circle),
-                        [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
+            for circle in [Sets.HyperSphere(2),
+                           Sets.EllipsoidAtOrigin(Symmetric(Q))]
+                recipe_test(circle,
+                            [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
+                recipe_test(Sets.polar(circle),
+                            [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
+            end
         end
         @testset "Shifted Circle" begin
-            circle = Sets.Translation(Sets.EllipsoidAtOrigin(Symmetric(Q)),
-                                      [1.0, 2.0])
-            recipe_test(circle,
-                        [2.0, 1.0, 0.0, 1.0], [2.0, 3.0, 2.0, 1.0])
+            for circle in [Sets.HyperSphere(2),
+                           Sets.EllipsoidAtOrigin(Symmetric(Q))]
+                shifted = Sets.Translation(circle, [1.0, 2.0])
+                recipe_test(shifted, [2.0, 1.0, 0.0, 1.0], [2.0, 3.0, 2.0, 1.0])
+            end
         end
         @testset "Scaled circle" begin
             scaled_circle = Sets.EllipsoidAtOrigin(Symmetric(2Q))

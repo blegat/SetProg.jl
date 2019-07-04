@@ -44,6 +44,11 @@ function dual_contour(f::Function, nhalfspaces::Int, ::Type{T},
     return polyhedron(h)
 end
 
+function Polyhedra.planar_contour(sphere::HyperSphere; npoints=64)
+    @assert dimension(sphere) == 2
+    return primal_contour((x, y) -> sqrt(x^2 + y^2), npoints)
+end
+
 function Polyhedra.planar_contour(ell::PerspectiveDualOrPolarOrNot{<:AbstractEllipsoid};
                            kws...)
     return Polyhedra.planar_contour(ellipsoid(ell); kws...)
