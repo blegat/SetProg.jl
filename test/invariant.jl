@@ -24,7 +24,7 @@ const MOIT = MOI.Test
             end
             @testset "Convex Quadratic" begin
                 Tests.maximal_convex_invariant_quad_homogeneous_test(
-                    bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; 2Q; 2t])),
+                    bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [1.0, 1.0, 0.0, 2.0, 0.0, 2.0, 2.0])),
                     config)
             end
         end
@@ -44,12 +44,12 @@ const MOIT = MOI.Test
             @testset "Quadratic" begin
                 @testset "Non-convex" begin
                     Tests.minimal_invariant_quad_homogeneous_test(
-                        bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, Q)),
+                        bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [0.5, 0.5, 0.0])),
                         config)
                 end
                 @testset "Convex" begin
                     Tests.minimal_convex_invariant_quad_homogeneous_test(
-                        bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [Q; 2Q; 2t])),
+                        bridged_mock(mock -> MOI.Utilities.mock_optimize!(mock, [[0.5, 0.5, 0.0]; 2Q; 2t])),
                         config)
                 end
             end

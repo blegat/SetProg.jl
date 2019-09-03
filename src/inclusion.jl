@@ -181,7 +181,7 @@ end
 
 # Ellipsoid #
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.AbstractSet{JuMP.VariableRef},
+                             constraint::InclusionConstraint{<:Sets.AbstractSet{<:JuMP.AbstractJuMPScalar},
                                                              <:Polyhedra.Rep},
                              name::String = "")
     ◯ = constraint.subset
@@ -228,7 +228,7 @@ end
 
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Polyhedra.Rep,
-                                                             <:Sets.AbstractSet{JuMP.VariableRef}},
+                                                             <:Sets.AbstractSet{<:JuMP.AbstractJuMPScalar}},
                              name::String = "")
     □ = constraint.subset
     ◯ = constraint.supset

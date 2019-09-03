@@ -5,13 +5,12 @@ using SetProg
 using Polyhedra
 
 using JuMP
-const MOI = JuMP.MOI
 
 @testset "Algebraic" begin
     □ = polyhedron(HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1))
     @testset "Ellipsoid" begin
         @testset "John" begin
-            mock = MOI.Utilities.MockOptimizer(JuMP._MOIModel{Float64}())
+            mock = MOI.Utilities.MockOptimizer(MOI.Utilities.Model{Float64}())
             model = JuMP.direct_model(mock);
             # Q = [1 0
             #      0 1]
@@ -30,7 +29,7 @@ const MOI = JuMP.MOI
             @test JuMP.value(◯).Q == Symmetric([1.0 0.0; 0.0 1.0])
         end
         @testset "Löwner" begin
-            mock = MOI.Utilities.MockOptimizer(JuMP._MOIModel{Float64}())
+            mock = MOI.Utilities.MockOptimizer(MOI.Utilities.Model{Float64}())
             model = JuMP.direct_model(mock);
             # Q = [√2  0
             #       0 √2]
@@ -51,7 +50,7 @@ const MOI = JuMP.MOI
     end
     @testset "Quartic" begin
         @testset "Inner" begin
-            mock = MOI.Utilities.MockOptimizer(JuMP._MOIModel{Float64}())
+            mock = MOI.Utilities.MockOptimizer(MOI.Utilities.Model{Float64}())
             model = JuMP.direct_model(mock);
             # The PSD matrix for the variable  is 3 x 3 so 3 * (3+1) / 2 = 6
             # The PSD matrix for the convexity is 6 x 6 so 6 * (6+1) / 2 = 21
@@ -78,7 +77,7 @@ const MOI = JuMP.MOI
             @test JuMP.objective_value(model) == 1.0
         end
         @testset "Outer" begin
-            mock = MOI.Utilities.MockOptimizer(JuMP._MOIModel{Float64}())
+            mock = MOI.Utilities.MockOptimizer(MOI.Utilities.Model{Float64}())
             model = JuMP.direct_model(mock);
             MOI.Utilities.set_mock_optimize!(mock, mock -> MOI.Utilities.mock_optimize!(mock, ones(28)))
 
