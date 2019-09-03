@@ -35,6 +35,23 @@ struct ConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
                      DynamicPolynomials.MonomialVector{true}}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
+function ConvexPolynomialSublevelSetAtOrigin(
+    degree::Int,
+    p::GramMatrix{T, DynamicPolynomials.Monomial{true},
+                  DynamicPolynomials.MonomialVector{true}},
+    convexity_proof::SumOfSquares.SymMatrix{T}) where T
+    return ConvexPolynomialSublevelSetAtOrigin{T}(degree, p, convexity_proof)
+end
+function ConvexPolynomialSublevelSetAtOrigin(
+    degree::Int,
+    p::GramMatrix{S, DynamicPolynomials.Monomial{true},
+                  DynamicPolynomials.MonomialVector{true}},
+    convexity_proof::SumOfSquares.SymMatrix{T}) where {S, T}
+    U = promote_type(S, T)
+    _convert(mat) = SumOfSquares.SymMatrix(convert(Vector{U}, mat.Q), mat.n)
+    return ConvexPolynomialSublevelSetAtOrigin{U}(
+        degree, GramMatrix(_convert(p.Q), p.x), _convert(convexity_proof))
+end
 
 function space_variables(set::ConvexPolynomialSublevelSetAtOrigin)
     return variables(set.p)
