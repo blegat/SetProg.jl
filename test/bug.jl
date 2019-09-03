@@ -6,7 +6,7 @@ const MOI = JuMP.MOI
 
 □ = polyhedron(HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1))
 
-mock = MOI.Utilities.MockOptimizer(JuMP._MOIModel{Float64}())
+mock = MOI.Utilities.MockOptimizer(MOI.Utilities.Model{Float64}())
 model = JuMP.direct_model(mock);
 # Q = [1 0
 #      0 1]
