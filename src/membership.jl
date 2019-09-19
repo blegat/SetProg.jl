@@ -122,8 +122,8 @@ function JuMP.build_constraint(_error::Function,
                                set::Union{Sets.EllipsoidAtOrigin,
                                           Sets.PolynomialSublevelSetAtOrigin,
                                           Sets.ConvexPolynomialSublevelSetAtOrigin})
-    JuMP.build_constraint(_error, sublevel_eval(set, coord(member)),
-                          MOI.LessThan(scaling(member)^2))
+    JuMP.build_constraint(_error, sublevel_eval(set, AbstractVector{Float64}(coord(member))),
+                          MOI.LessThan(Float64(scaling(member)^2)))
 end
 function JuMP.build_constraint(_error::Function,
                                member::Polyhedra.Line,

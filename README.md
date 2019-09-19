@@ -82,17 +82,18 @@ Consider a polytope
 using Polyhedra
 P = HalfSpace([1, 1], 1) ∩ HalfSpace([-1, 0], 0) ∩ HalfSpace([0, -1], 0)
 ```
-Pick an SDP solver (see [here](juliaopt.org) for a list)
+Pick an SDP solver (see [here](https://www.juliaopt.org/JuMP.jl/stable/installation/#Getting-Solvers-1) for a list)
 ```julia
 using CSDP # Optimizer
+using JuMP # for `with_optimizer`
 factory = with_optimizer(CSDP.Optimizer)
 ```
 
 To compute the maximal ellipsoid contained in the polytope `P` defined above (i.e. [Löwner-John ellipsoid](https://github.com/rdeits/LoewnerJohnEllipsoids.jl)):
 ```julia
-using JuMP
+using SetProg
 model = Model(factory)
-@variable(model, S, Ellipsoid())
+@variable(model, S, Ellipsoid(symmetric=true))
 @constraint(model, S ⊆ P)
 @objective(model, Max, nth_root(volume(S)))
 optimize!(model)
@@ -100,7 +101,7 @@ optimize!(model)
 
 To compute the maximal invariant set contained in a polytope (*not yet implemented*):
 ```julia
-using JuMP
+using SetProg
 model = Model(factory)
 @variable(model, S, Polyhedron())
 @constraint(model, S ⊆ P)
@@ -111,9 +112,9 @@ optimize!(model)
 
 To compute the maximal invariant ellipsoid contained in the polytope `P` defined above:
 ```julia
-using JuMP
+using SetProg
 model = Model(factory)
-@variable(model, S, Ellipsoid())
+@variable(model, S, Ellipsoid(symmetric=true))
 @constraint(model, S ⊆ P)
 @constraint(model, A*S ⊆ S) # Invariance constraint
 @objective(model, Max, nth_root(volume(S)))
@@ -122,12 +123,12 @@ optimize!(model)
 
 To compute the maximal algebraic-invariant ellipsoid (i.e. `AS ⊆ ES`) contained in the polytope `P` defined above:
 ```julia
-using JuMP
+using SetProg
 model = Model(factory)
-@variable(model, S, Ellipsoid())
+@variable(model, S, Ellipsoid(symmetric=true)))
 @constraint(model, S ⊆ P)
 @constraint(model, A*S ⊆ E*S) # Invariance constraint
-@objective(model, Max, L1_heuristic(volume(S), zeros(Polyhedra.fulldim(P))))
+@objective(model, Max, L1_heuristic(volume(S), ones(Polyhedra.fulldim(P))))
 optimize!(model)
 ```
 
