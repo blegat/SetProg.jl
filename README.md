@@ -103,6 +103,13 @@ We specify in the example that the ellipsoid is symmetric around the origin to
 simplify the computation as the solver does not need to look for the center so
 the SDP problem that need to be solved has a smaller size.
 
+We can visualize the result with [Plots](http://juliaplots.org/) as follows:
+```julia
+using Plots
+plot(diamond)
+plot!(value(S))
+```
+
 To compute the maximal ellipsoid contained in `simplex`, we don't need to specify
 the center but at least an point in the interior of the ellipsoid. The SDP
 formulation used will then determine the center and shape of the ellipsoid
@@ -112,12 +119,21 @@ the sphere of maximal volume in the simplex so one might rightly guess that is i
 in the interior of the maximal ellispoid contained in the simplex.
 ```julia
 using SetProg
+cheby_center, cheby_radius = chebyshevcenter(simplex, factory)
+interior_point = SetProg.InteriorPoint(cheby_center)
+
 model = Model(factory)
-interior_point = chebyshevcenter(simplex, factory)
-@variable(model, S, Ellipsoid(symmetric=interior_point))
+@variable(model, S, Ellipsoid(point=interior_point))
 @constraint(model, S ⊆ simplex)
 @objective(model, Max, nth_root(volume(S)))
 optimize!(model)
+```
+
+We now visualize the result:
+```julia
+using Plots
+plot(simplex)
+plot!(value(S))
 ```
 
 To compute the maximal invariant set contained in a polytope (*not yet implemented*):
