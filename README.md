@@ -80,7 +80,8 @@ But more are planned to be added:
 Consider a polytope
 ```julia
 using Polyhedra
-P = HalfSpace([1, 1], 1) ∩ HalfSpace([-1, 0], 0) ∩ HalfSpace([0, -1], 0)
+diamond = HalfSpace([1, 1], 1) ∩ HalfSpace([-1, -1], 1) ∩ HalfSpace([1, -1], 1) ∩ HalfSpace([-1, 1], 1)
+simplex = HalfSpace([1, 1], 1) ∩ HalfSpace([-1, 0], 0) ∩ HalfSpace([0, -1], 0)
 ```
 Pick an SDP solver (see [here](https://www.juliaopt.org/JuMP.jl/stable/installation/#Getting-Solvers-1) for a list)
 ```julia
@@ -89,12 +90,32 @@ using JuMP # for `with_optimizer`
 factory = with_optimizer(CSDP.Optimizer)
 ```
 
-To compute the maximal ellipsoid contained in the polytope `P` defined above (i.e. [Löwner-John ellipsoid](https://github.com/rdeits/LoewnerJohnEllipsoids.jl)):
+To compute the maximal symmetric ellipsoid contained in the polytope `diamond` defined above (i.e. [Löwner-John ellipsoid](https://github.com/rdeits/LoewnerJohnEllipsoids.jl)):
 ```julia
 using SetProg
 model = Model(factory)
 @variable(model, S, Ellipsoid(symmetric=true))
-@constraint(model, S ⊆ P)
+@constraint(model, S ⊆ diamond)
+@objective(model, Max, nth_root(volume(S)))
+optimize!(model)
+```
+We specify in the example that the ellipsoid is symmetric around the origin to
+simplify the computation as the solver does not need to look for the center so
+the SDP problem that need to be solved has a smaller size.
+
+To compute the maximal ellipsoid contained in `simplex`, we don't need to specify
+the center but at least an point in the interior of the ellipsoid. The SDP
+formulation used will then determine the center and shape of the ellipsoid
+simultaneously in the same SDP. For the interior point, we take the chebyshev
+center of the simplex (which can be found by solving an LP). This the center of
+the sphere of maximal volume in the simplex so one might rightly guess that is is
+in the interior of the maximal ellispoid contained in the simplex.
+```julia
+using SetProg
+model = Model(factory)
+interior_point = chebyshevcenter(simplex, factory)
+@variable(model, S, Ellipsoid(symmetric=interior_point))
+@constraint(model, S ⊆ simplex)
 @objective(model, Max, nth_root(volume(S)))
 optimize!(model)
 ```
@@ -104,29 +125,29 @@ To compute the maximal invariant set contained in a polytope (*not yet implement
 using SetProg
 model = Model(factory)
 @variable(model, S, Polyhedron())
-@constraint(model, S ⊆ P)
+@constraint(model, S ⊆ diamond)
 @constraint(model, A*S ⊆ S) # Invariance constraint
 @objective(model, Max, volume(S))
 optimize!(model)
 ```
 
-To compute the maximal invariant ellipsoid contained in the polytope `P` defined above:
+To compute the maximal invariant ellipsoid contained in the polytope `diamond` defined above:
 ```julia
 using SetProg
 model = Model(factory)
 @variable(model, S, Ellipsoid(symmetric=true))
-@constraint(model, S ⊆ P)
+@constraint(model, S ⊆ diamond)
 @constraint(model, A*S ⊆ S) # Invariance constraint
 @objective(model, Max, nth_root(volume(S)))
 optimize!(model)
 ```
 
-To compute the maximal algebraic-invariant ellipsoid (i.e. `AS ⊆ ES`) contained in the polytope `P` defined above:
+To compute the maximal algebraic-invariant ellipsoid (i.e. `AS ⊆ ES`) contained in the polytope `diamond` defined above:
 ```julia
 using SetProg
 model = Model(factory)
 @variable(model, S, Ellipsoid(symmetric=true)))
-@constraint(model, S ⊆ P)
+@constraint(model, S ⊆ diamond)
 @constraint(model, A*S ⊆ E*S) # Invariance constraint
 @objective(model, Max, L1_heuristic(volume(S), ones(Polyhedra.fulldim(P))))
 optimize!(model)
