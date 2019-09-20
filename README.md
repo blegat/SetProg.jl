@@ -106,12 +106,12 @@ the SDP problem that need to be solved has a smaller size.
 We can visualize the result with [Plots](http://juliaplots.org/) as follows:
 ```julia
 using Plots
-plot(diamond)
+plot(polyhedron(diamond), ratio=1)
 plot!(value(S))
 ```
 
 To compute the maximal ellipsoid contained in `simplex`, we don't need to specify
-the center but at least an point in the interior of the ellipsoid. The SDP
+the center but at least a point in the interior of the ellipsoid. The SDP
 formulation used will then determine the center and shape of the ellipsoid
 simultaneously in the same SDP. For the interior point, we take the chebyshev
 center of the simplex (which can be found by solving an LP). This the center of
@@ -132,7 +132,7 @@ optimize!(model)
 We now visualize the result:
 ```julia
 using Plots
-plot(simplex)
+plot(polyhedron(simplex), ratio=1)
 plot!(value(S))
 ```
 
