@@ -101,7 +101,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
     else
         ell.superset === nothing || error("superset not supported for non-symmetric Ellipsoid")
         if space == PrimalSpace
-            error("TODO")
+            error("Non-symmetric ellipsoid non implemented yet, use `Ellipsoid(symmetric=true)`.")
         else
             @assert space == DualSpace
             if ell.point === nothing
