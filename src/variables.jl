@@ -169,9 +169,9 @@ function constrain_convex(model, p, vars)
     q = dot(y, hessian * y)
     X = SumOfSquares.Certificate.monomials_half_newton_polytope(MultivariatePolynomials.monomials(q), (y,))
     # If `X` is empty, we will need the following bridge
-    JuMP.add_bridge(model, SumOfSquares.EmptyBridge)
+    JuMP.add_bridge(model, SumOfSquares.Bridges.Constraint.EmptyBridge)
     # If `length(X)` is 2, we will need the following bridge
-    JuMP.add_bridge(model, SumOfSquares.PositiveSemidefinite2x2Bridge)
+    JuMP.add_bridge(model, SumOfSquares.Bridges.Constraint.PositiveSemidefinite2x2Bridge)
     set = SumOfSquares.matrix_cone(MOI.PositiveSemidefiniteConeTriangle,
                                    length(X))
     Q = @variable(model, [1:MOI.dimension(set)])
