@@ -7,6 +7,16 @@ perspective_variable(li::LinearImage) = perspective_variable(li.set)
 space_variables(li::LinearImage) = nothing
 dimension(li::LinearImage) = size(li.A, 1)
 
+# A^{-1} * S + b
+struct AffineImage{S, T, MT <: AbstractMatrix{T}, VT <: AbstractVector{T}} <: AbstractSet{T}
+    set::S
+    A::MT
+    b::VT
+end
+perspective_variable(ai::AffineImage) = perspective_variable(ai.set)
+space_variables(ai::AffineImage) = nothing
+dimension(ai::AffineImage) = size(ai.A, 1)
+
 # A^{-1} * S
 struct LinearPreImage{S, T, MT <: AbstractMatrix{T}} <: AbstractSet{T}
     set::S

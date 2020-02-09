@@ -1,3 +1,5 @@
+export InteriorPoint, CenterPoint
+
 abstract type AbstractVariable <: JuMP.AbstractVariable end
 
 abstract type HintPoint end
