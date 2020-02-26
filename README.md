@@ -86,14 +86,13 @@ simplex = HalfSpace([1, 1], 1) ∩ HalfSpace([-1, 0], 0) ∩ HalfSpace([0, -1], 
 Pick an SDP solver (see [here](https://www.juliaopt.org/JuMP.jl/stable/installation/#Getting-Solvers-1) for a list)
 ```julia
 using CSDP # Optimizer
-using JuMP # for `with_optimizer`
-factory = with_optimizer(CSDP.Optimizer)
+optimizer_constructor = CSDP.Optimizer
 ```
 
 To compute the maximal symmetric ellipsoid contained in the polytope `diamond` defined above (i.e. [Löwner-John ellipsoid](https://github.com/rdeits/LoewnerJohnEllipsoids.jl)):
 ```julia
 using SetProg
-model = Model(factory)
+model = Model(optimizer_constructor)
 @variable(model, S, Ellipsoid(symmetric=true))
 @constraint(model, S ⊆ diamond)
 @objective(model, Max, nth_root(volume(S)))
@@ -119,10 +118,10 @@ the sphere of maximal volume in the simplex so one might rightly guess that is i
 in the interior of the maximal ellispoid contained in the simplex.
 ```julia
 using SetProg
-cheby_center, cheby_radius = chebyshevcenter(simplex, factory)
+cheby_center, cheby_radius = chebyshevcenter(simplex, optimizer_constructor)
 interior_point = SetProg.InteriorPoint(cheby_center)
 
-model = Model(factory)
+model = Model(optimizer_constructor)
 @variable(model, S, Ellipsoid(point=interior_point))
 @constraint(model, S ⊆ simplex)
 @objective(model, Max, nth_root(volume(S)))
@@ -139,7 +138,7 @@ plot!(value(S))
 To compute the maximal invariant set contained in a polytope (*not yet implemented*):
 ```julia
 using SetProg
-model = Model(factory)
+model = Model(optimizer_constructor)
 @variable(model, S, Polyhedron())
 @constraint(model, S ⊆ diamond)
 @constraint(model, A*S ⊆ S) # Invariance constraint
@@ -150,7 +149,7 @@ optimize!(model)
 To compute the maximal invariant ellipsoid contained in the polytope `diamond` defined above:
 ```julia
 using SetProg
-model = Model(factory)
+model = Model(optimizer_constructor)
 @variable(model, S, Ellipsoid(symmetric=true))
 @constraint(model, S ⊆ diamond)
 @constraint(model, A*S ⊆ S) # Invariance constraint
@@ -161,7 +160,7 @@ optimize!(model)
 To compute the maximal algebraic-invariant ellipsoid (i.e. `AS ⊆ ES`) contained in the polytope `diamond` defined above:
 ```julia
 using SetProg
-model = Model(factory)
+model = Model(optimizer_constructor)
 @variable(model, S, Ellipsoid(symmetric=true)))
 @constraint(model, S ⊆ diamond)
 @constraint(model, A*S ⊆ E*S) # Invariance constraint

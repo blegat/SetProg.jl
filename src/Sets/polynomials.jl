@@ -2,18 +2,17 @@ using Polyhedra
 using SumOfSquares
 
 """
-    struct PolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomial{T}}
+    struct PolynomialSublevelSetAtOrigin{T, U} <: AbstractSet{U}
         degree::Int
-        p::P
+        p::GramMatrix{T, MonoBasis, U}
     end
 
 Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
 of degree `degree`.
 """
-struct PolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
+struct PolynomialSublevelSetAtOrigin{T, U} <: AbstractSet{U}
     degree::Int
-    p::GramMatrix{T, DynamicPolynomials.Monomial{true},
-                     DynamicPolynomials.MonomialVector{true}}
+    p::GramMatrix{T, MonoBasis, U}
 end
 
 function space_variables(set::PolynomialSublevelSetAtOrigin)
@@ -21,36 +20,34 @@ function space_variables(set::PolynomialSublevelSetAtOrigin)
 end
 
 """
-    struct ConvexPolynomialSublevelSetAtOrigin{T, P<:AbstractPolynomial{T}}
+    struct ConvexPolynomialSublevelSetAtOrigin{T, U} <: AbstractSet{U}
         degree::Int
-        p::P
+        p::GramMatrix{T, MonoBasis, U}
+        convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
     end
 
 Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
 of degree `degree`.
 """
-struct ConvexPolynomialSublevelSetAtOrigin{T} <: AbstractSet{T}
+struct ConvexPolynomialSublevelSetAtOrigin{T, U} <: AbstractSet{U}
     degree::Int
-    p::GramMatrix{T, DynamicPolynomials.Monomial{true},
-                     DynamicPolynomials.MonomialVector{true}}
+    p::GramMatrix{T, MonoBasis, U}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
 function ConvexPolynomialSublevelSetAtOrigin(
     degree::Int,
-    p::GramMatrix{T, DynamicPolynomials.Monomial{true},
-                  DynamicPolynomials.MonomialVector{true}},
-    convexity_proof::SumOfSquares.SymMatrix{T}) where T
-    return ConvexPolynomialSublevelSetAtOrigin{T}(degree, p, convexity_proof)
+    p::GramMatrix{T, MonoBasis, U},
+    convexity_proof::SumOfSquares.SymMatrix{T}) where {T, U}
+    return ConvexPolynomialSublevelSetAtOrigin{T, U}(degree, p, convexity_proof)
 end
 function ConvexPolynomialSublevelSetAtOrigin(
     degree::Int,
-    p::GramMatrix{S, DynamicPolynomials.Monomial{true},
-                  DynamicPolynomials.MonomialVector{true}},
+    p::GramMatrix{S, MonoBasis},
     convexity_proof::SumOfSquares.SymMatrix{T}) where {S, T}
-    U = promote_type(S, T)
+    V = promote_type(S, T)
     _convert(mat) = SumOfSquares.SymMatrix(convert(Vector{U}, mat.Q), mat.n)
-    return ConvexPolynomialSublevelSetAtOrigin{U}(
-        degree, GramMatrix(_convert(p.Q), p.x), _convert(convexity_proof))
+    return ConvexPolynomialSublevelSetAtOrigin(
+        degree, GramMatrix(_convert(p.Q), p.basis), _convert(convexity_proof))
 end
 
 function space_variables(set::ConvexPolynomialSublevelSetAtOrigin)
@@ -65,15 +62,15 @@ end
 function zero_eliminate(set::ConvexPolynomialSublevelSetAtOrigin, I)
     vars = space_variables(set)[I]
     K = findall(mono -> all(var -> iszero(degree(mono, var)), vars),
-                set.p.x)
+                set.p.basis.monomials)
     M = set.p.Q[K, K]
     Q = SumOfSquares.SymMatrix([M[i, j] for j in 1:length(K) for i in 1:j],
                                length(K))
-    monos = set.p.x[K]
+    monos = set.p.basis.monomials[K]
     J = setdiff(1:dimension(set), I)
     monos = DynamicPolynomials.MonomialVector(monos.vars[J],
                                              Vector{Int}[z[J] for z in monos.Z])
-    p = SumOfSquares.GramMatrix(Q, monos)
+    p = SumOfSquares.GramMatrix(Q, MB.MonomialBasis(monos))
     return ConvexPolynomialSublevelSetAtOrigin(set.degree, p, nothing)
 end
 
@@ -91,10 +88,9 @@ function scaling_function(set::Union{PolynomialSublevelSetAtOrigin,
 end
 
 """
-    struct ConvexPolynomialSet{T} <: AbstractSet{T}
+    struct ConvexPolynomialSet{T, U} <: AbstractSet{U}
         degree::Int
-        q::GramMatrix{T, DynamicPolynomials.Monomial{true},
-                         DynamicPolynomials.MonomialVector{true}}
+        q::GramMatrix{T, MonoBasis, u}
         z::SpaceVariable
         x::Vector{SpaceVariable}
     end
@@ -104,10 +100,9 @@ Set ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` or
 `q` are homogeneous polynomials of degree `degree` and `H` is a householder
 matrix.
 """
-struct ConvexPolynomialSet{T} <: AbstractSet{T}
+struct ConvexPolynomialSet{T, U} <: AbstractSet{U}
     degree::Int
-    q::GramMatrix{T, DynamicPolynomials.Monomial{true},
-                     DynamicPolynomials.MonomialVector{true}}
+    q::GramMatrix{T, MonoBasis, U}
     z::SpaceVariable
     x::Vector{SpaceVariable}
 end

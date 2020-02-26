@@ -4,7 +4,11 @@ using LinearAlgebra
 
 include("Sets/Sets.jl")
 
+import MutableArithmetics
+const MA = MutableArithmetics
+
 import Reexport
+Reexport.@reexport using MultivariateBases
 Reexport.@reexport using JuMP
 const MOI = JuMP.MOI
 Reexport.@reexport using Polyhedra

@@ -1,3 +1,5 @@
 [deps]
+IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
 MosekTools = "1ec41992-ff65-5c91-ac43-2df89e9693a4"
 Polyhedra = "67491407-f73d-577b-9b50-8179a7c68029"
+SetProg = "39881422-4b75-5582-a5c7-0feb14562a65"

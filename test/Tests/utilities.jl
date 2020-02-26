@@ -7,8 +7,8 @@ function _model(optimizer::MOI.AbstractOptimizer)
     return direct_model(optimizer)
 end
 
-function _model(factory::OptimizerFactory)
-    return Model(factory)
+function _model(optimizer_constructor)
+    return Model(optimizer_constructor)
 end
 
 #"""
@@ -30,7 +30,7 @@ macro test_suite(setname, subsets=false)
         runtest = :( f(model, config) )
     end
     esc(:(
-      function $testname(model::Union{$MOI.ModelLike, OptimizerFactory},
+      function $testname(model,
                          config::$MOI.Test.TestConfig,
                          exclude::Vector{String} = String[])
             for (name,f) in $testdict

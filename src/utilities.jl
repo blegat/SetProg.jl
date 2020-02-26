@@ -68,7 +68,7 @@ struct GramTransformation{T, MT <: MultivariatePolynomials.AbstractMonomial,
 end
 
 function apply_transformation(p::SumOfSquares.GramMatrix,
-                              t::GramTransformation)
+                              t::GramTransformation) where T
     new_n = length(t.monos)
     new_Q = [quad_form(t.M[:, i], p.Q, t.M[:, j]) for j in 1:new_n for i in 1:j]
     return GramMatrix(SymMatrix(new_Q, new_n), t.monos)
@@ -124,9 +124,9 @@ function transformation(old_monos, A::AbstractMatrix, new_vars, d)
 end
 
 # computes p ∘ A or more precisely p(variables(p) => A * new_vars)
-function apply_matrix(p::SumOfSquares.GramMatrix,
-                      A::AbstractMatrix, new_vars, d)
-    return apply_transformation(p, transformation(p.x, A, new_vars, d))
+function apply_matrix(p::SumOfSquares.GramMatrix{T, <:MonomialBasis},
+                      A::AbstractMatrix, new_vars, d) where T
+    return apply_transformation(p, transformation(p.basis.monomials, A, new_vars, d))
 end
 
 # computes A # μ or more precisely p(variables(p) => A * new_vars)

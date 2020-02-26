@@ -3,6 +3,9 @@ using LinearAlgebra
 using RecipesBase
 using MultivariatePolynomials
 using DynamicPolynomials
+import MultivariateBases
+const MB = MultivariateBases
+const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPolynomials.MonomialVector{true}}
 using Polyhedra
 
 const SpaceVariable = DynamicPolynomials.PolyVar{true}

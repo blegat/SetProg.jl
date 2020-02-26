@@ -57,7 +57,7 @@ function maximal_convex_invariant_quad_homogeneous_test(optimizer, config)
         PolySet(degree=2, convex=true, symmetric=true),
         nth_root, 2.0,
         ◯ -> begin
-            @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}}
+            @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, Float64}}
             x, y = Sets.space_variables(◯)
             ◯_polar = Sets.polar(◯)
             @test ◯_polar.p ≈ x^2 + y^2 atol=config.atol rtol=config.rtol

@@ -176,7 +176,7 @@ function constrain_convex(model, p, vars)
                                    length(X))
     Q = @variable(model, [1:MOI.dimension(set)])
     @constraint(model, Q in set)
-    s = SumOfSquares.build_gram_matrix(Q, X)
+    s = SumOfSquares.build_gram_matrix(Q, MonomialBasis(X))
     @constraint(model, q == s)
     return MultivariateMoments.getmat(s)
 end
