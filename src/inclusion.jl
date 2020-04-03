@@ -50,6 +50,10 @@ function set_space(space::Space, ::InclusionConstraint{<:Sets.LinearImage,
                                                        <:Sets.LinearImage})
     return set_space(space, DualSpace)
 end
+function set_space(space::Space, ::InclusionConstraint{<:Sets.AffineImage,
+                                                       <:Sets.LinearImage})
+    return set_space(space, DualSpace)
+end
 # AS ⊆ S <=> S ⊆ A^{-1}S so PrimalSpace work
 # AS ⊆ S <=> A^{-T}S∘ ⊆ S∘ so DualSpace work
 function set_space(space::Space, ::InclusionConstraint{<:Sets.LinearImage,
@@ -140,14 +144,23 @@ function JuMP.build_constraint(_error::Function,
 end
 
 # See [LTJ18]
+function _apply_maps(_error, subset, supset; kws...)
+    dim = Sets.dimension(subset)
+    @polyvar x[1:dim]
+    JuMP.build_constraint(_error, apply_map(subset, x),
+                          PowerSet(apply_map(supset, x)); kws...)
+end
 function JuMP.build_constraint(_error::Function,
                                subset::Sets.LinearImage{<:Union{Sets.Polar, Sets.PerspectiveDual}},
                                sup_powerset::PowerSet{<:Sets.LinearImage{<:Union{Sets.Polar, Sets.PerspectiveDual}}};
                                kws...)
-    dim = Sets.dimension(subset)
-    @polyvar x[1:dim]
-    JuMP.build_constraint(_error, apply_map(subset, x),
-                          PowerSet(apply_map(sup_powerset.set, x)); kws...)
+    _apply_maps(_error, subset, sup_powerset.set; kws...)
+end
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.AffineImage{<:Sets.PerspectiveDual},
+                               sup_powerset::PowerSet{<:Sets.LinearImage{<:Sets.PerspectiveDual}};
+                               kws...)
+    _apply_maps(_error, subset, sup_powerset.set; kws...)
 end
 function JuMP.build_constraint(_error::Function,
                                subset::Sets.AbstractSet,

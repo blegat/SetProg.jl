@@ -8,6 +8,10 @@ struct AffineExpression{T, F <: AbstractScalarFunction} <: AbstractScalarFunctio
     constant::T
 end
 
+function Base.copy(aff::AffineExpression)
+    return AffineExpression(copy(aff.terms), aff.constant)
+end
+
 function Base.:(+)(f::F, g::F) where F <: AbstractScalarFunction
     return AffineExpression([AffineTerm(1.0, f), AffineTerm(1.0, g)], 0.0)
 end

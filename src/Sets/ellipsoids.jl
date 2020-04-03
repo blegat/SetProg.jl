@@ -92,7 +92,7 @@ function _HPH(D, d, δ)
          d D]
 end
 
-_HPH(ell::EllipsoidAtOrigin) = _HPH(ell.Q, zeros(size(q.Q, 1)), -1.0)
+_HPH(ell::EllipsoidAtOrigin) = _HPH(ell.Q, zeros(size(ell.Q, 1)), -1.0)
 
 """
     struct ShiftedEllipsoid{T}
