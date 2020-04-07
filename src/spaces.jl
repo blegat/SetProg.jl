@@ -43,8 +43,8 @@ function merge_property(d::Dict, root, key1, key2, name)
     end
 end
 function merge_spaces(spaces::Spaces, a::SpaceIndex, b::SpaceIndex)
-    root_a = find_root(spaces.indices, a.value)
-    root_b = find_root(spaces.indices, b.value)
+    root_a = find_root!(spaces.indices, a.value)
+    root_b = find_root!(spaces.indices, b.value)
     root = root_union!(spaces.indices, root_a, root_b)
     # the properties my not be set at a.value when it is set at root_a.value
     merge_property(spaces.dimensions, root, root_a, root_b, "dimension")
@@ -53,14 +53,14 @@ function merge_spaces(spaces::Spaces, a::SpaceIndex, b::SpaceIndex)
     return SpaceIndex(root)
 end
 function space_dimension(spaces::Spaces, si::SpaceIndex)
-    idx = find_root(spaces.indices, si.value)
+    idx = find_root!(spaces.indices, si.value)
     if !haskey(spaces.dimensions, idx)
         error("Missing dimension information, use Ellipsoid(dimension=...) or PolySet(dimension=...)")
     end
     return spaces.dimensions[idx]
 end
 function space_polyvars(spaces::Spaces, si::SpaceIndex)
-    idx = find_root(spaces.indices, si.value)
+    idx = find_root!(spaces.indices, si.value)
     if !haskey(spaces.polyvars, idx)
         dim = space_dimension(spaces, si)
         @polyvar x[1:dim]

@@ -1,7 +1,7 @@
 name = "SetProg"
 uuid = "39881422-4b75-5582-a5c7-0feb14562a65"
 repo = "https://github.com/blegat/SetProg.jl.git"
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -20,7 +20,7 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SumOfSquares = "4b9e565b-77fc-50a5-a571-1244f986bda1"
 
 [compat]
-DataStructures = "0.17"
+DataStructures = "0.17.11"
 DynamicPolynomials = "0.3.8"
 JuMP = "0.21"
 MathOptInterface = "0.9.2"
