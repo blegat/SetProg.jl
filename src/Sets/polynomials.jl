@@ -2,17 +2,17 @@ using Polyhedra
 using SumOfSquares
 
 """
-    struct PolynomialSublevelSetAtOrigin{T, U} <: AbstractSet{U}
+    struct PolynomialSublevelSetAtOrigin{T, B, U} <: AbstractSet{U}
         degree::Int
-        p::GramMatrix{T, MonoBasis, U}
+        p::GramMatrix{T, B, U}
     end
 
 Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
 of degree `degree`.
 """
-struct PolynomialSublevelSetAtOrigin{T, U} <: AbstractSet{U}
+struct PolynomialSublevelSetAtOrigin{T, B, U} <: AbstractSet{U}
     degree::Int
-    p::GramMatrix{T, MonoBasis, U}
+    p::GramMatrix{T, B, U}
 end
 
 function space_variables(set::PolynomialSublevelSetAtOrigin)
@@ -20,29 +20,29 @@ function space_variables(set::PolynomialSublevelSetAtOrigin)
 end
 
 """
-    struct ConvexPolynomialSublevelSetAtOrigin{T, U} <: AbstractSet{U}
+    struct ConvexPolynomialSublevelSetAtOrigin{T, B, U} <: AbstractSet{U}
         degree::Int
-        p::GramMatrix{T, MonoBasis, U}
+        p::GramMatrix{T, B, U}
         convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
     end
 
 Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
 of degree `degree`.
 """
-struct ConvexPolynomialSublevelSetAtOrigin{T, U} <: AbstractSet{U}
+struct ConvexPolynomialSublevelSetAtOrigin{T, B, U} <: AbstractSet{U}
     degree::Int
-    p::GramMatrix{T, MonoBasis, U}
+    p::GramMatrix{T, B, U}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
 function ConvexPolynomialSublevelSetAtOrigin(
     degree::Int,
-    p::GramMatrix{T, MonoBasis, U},
-    convexity_proof::SumOfSquares.SymMatrix{T}) where {T, U}
-    return ConvexPolynomialSublevelSetAtOrigin{T, U}(degree, p, convexity_proof)
+    p::GramMatrix{T, B, U},
+    convexity_proof::SumOfSquares.SymMatrix{T}) where {T, B, U}
+    return ConvexPolynomialSublevelSetAtOrigin{T, B, U}(degree, p, convexity_proof)
 end
 function ConvexPolynomialSublevelSetAtOrigin(
     degree::Int,
-    p::GramMatrix{S, MonoBasis},
+    p::GramMatrix{S},
     convexity_proof::SumOfSquares.SymMatrix{T}) where {S, T}
     V = promote_type(S, T)
     _convert(mat) = SumOfSquares.SymMatrix(convert(Vector{U}, mat.Q), mat.n)
@@ -100,9 +100,9 @@ Set ``\\{\\, (z, x) \\mid p(z, x) \\le 0 \\,\\}`` or
 `q` are homogeneous polynomials of degree `degree` and `H` is a householder
 matrix.
 """
-struct ConvexPolynomialSet{T, U} <: AbstractSet{U}
+struct ConvexPolynomialSet{T, B, U} <: AbstractSet{U}
     degree::Int
-    q::GramMatrix{T, MonoBasis, U}
+    q::GramMatrix{T, B, U}
     z::SpaceVariable
     x::Vector{SpaceVariable}
 end

@@ -5,6 +5,11 @@ using SetProg, SetProg.Sets
 using Polyhedra
 using MultivariatePolynomials
 
+import DynamicPolynomials
+import MultivariateBases
+const MB = MultivariateBases
+const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPolynomials.MonomialVector{true}}
+
 using JuMP
 const MOIT = MOI.Test
 
@@ -75,7 +80,7 @@ function ci_quad_nonhomogeneous_test(optimizer, config)
                    PolySet(degree=2, convex=true, point=SetProg.InteriorPoint([0.0, 0.0])),
                    set -> L1_heuristic(set, [1.0, 1.0]), 8/3,
                    ◯ -> begin
-                       @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ConvexPolynomialSet{Float64, Float64}, Float64}}
+                       @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ConvexPolynomialSet{Float64, MonoBasis, Float64}, Float64}}
                        z = Sets.perspective_variable(◯)
                        x, y = Sets.space_variables(◯)
                        ◯_dual = Sets.perspective_dual(◯)
@@ -95,7 +100,7 @@ function ci_quartic_homogeneous_test(optimizer, config)
                    set -> L1_heuristic(set, [1.0, 1.0]),
                    64/15,
                    ◯ -> begin
-                       @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, Float64}}
+                       @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, MonoBasis, Float64}}
                        @test Sets.polar(◯).degree == 4
                        x, y = variables(Sets.polar(◯).p)
                        α = coefficient(Sets.polar(◯).p, x^3*y) / 2

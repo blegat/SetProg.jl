@@ -67,8 +67,8 @@ function Polyhedra.planar_contour(set::Union{PolynomialSublevelSetAtOrigin,
     return primal_contour(scaling_function(set), npoints)
 end
 
-function Polyhedra.planar_contour(set::PolarOf{ConvexPolynomialSublevelSetAtOrigin{T, U}};
-                                  npoints=64) where {T, U}
+function Polyhedra.planar_contour(set::PolarOf{ConvexPolynomialSublevelSetAtOrigin{T, B, U}};
+                                  npoints=64) where {T, B, U}
     return Polyhedra.planar_contour(dual_contour(scaling_function(polar(set)),
                                                  npoints, U))
 end

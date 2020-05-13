@@ -5,6 +5,11 @@ using SetProg, SetProg.Sets
 using Polyhedra
 using MultivariatePolynomials
 
+import DynamicPolynomials
+import MultivariateBases
+const MB = MultivariateBases
+const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPolynomials.MonomialVector{true}}
+
 using JuMP
 const MOIT = MOI.Test
 
@@ -66,7 +71,7 @@ function john_nonhomogeneous_quad_square_test(optimizer, config)
                 set -> L1_heuristic(set, [1.0, 1.0]),
                 8/3,
                 ◯ -> begin
-                    @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ConvexPolynomialSet{Float64, Float64}, Float64}}
+                    @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ConvexPolynomialSet{Float64, MonoBasis, Float64}, Float64}}
                     z = Sets.perspective_variable(◯)
                     x, y = Sets.space_variables(◯)
                     ◯_dual = Sets.perspective_dual(◯)
@@ -96,7 +101,7 @@ function quartic_inner_homogeneous_square_test(optimizer, config)
                 PolySet(symmetric=true, degree=4, dimension=2, convex=true),
                 nth_root, quartic_inner_obj,
                 ◯ -> begin
-                    @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, Float64}}
+                    @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, MonoBasis, Float64}}
                     ◯_polar = Sets.polar(◯)
                     @test ◯_polar.degree == 4
                     x, y = variables(◯_polar.p)
@@ -121,7 +126,7 @@ function quartic_outer_homogeneous_square_test(optimizer, config)
                 nth_root,
                 quartic_outer_obj,
                 ◯ -> begin
-                    @test ◯ isa Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, Float64}
+                    @test ◯ isa Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, MonoBasis, Float64}
                     @test ◯.degree == 4
                     x, y = variables(◯.p)
                     @test polynomial(◯.p) ≈ quartic_outer_β*x^4 + (quartic_outer_γ+2quartic_outer_λ)*x^2*y^2 + quartic_outer_β*y^4 atol=config.atol rtol=config.rtol

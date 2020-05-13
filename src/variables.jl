@@ -126,6 +126,7 @@ struct PolySet <: AbstractVariable
     convex::Bool
     variables::Union{Nothing, Vector{SpaceVariable}}
     superset::Union{Sets.PolynomialSublevelSetAtOrigin, Nothing}
+    basis::Type
 end
 function PolySet(; point::Union{Nothing, HintPoint}=nothing,
                  symmetric::Bool=false,
@@ -133,7 +134,8 @@ function PolySet(; point::Union{Nothing, HintPoint}=nothing,
                  dimension::Union{Int, Nothing}=nothing,
                  convex::Bool=false,
                  variables::Union{Vector{SpaceVariable}, Nothing}=nothing,
-                 superset::Union{Sets.PolynomialSublevelSetAtOrigin, Nothing}=nothing)
+                 superset::Union{Sets.PolynomialSublevelSetAtOrigin, Nothing}=nothing,
+                 basis::Type=MultivariateBases.MonomialBasis)
     if degree === nothing
         error("Degree of PolySet not specified, use PolySet(degree=..., ...)")
     end
@@ -157,7 +159,7 @@ function PolySet(; point::Union{Nothing, HintPoint}=nothing,
             error("Space variables set does not correspond to superset space variables.")
         end
     end
-    return PolySet(point, symmetric, degree, dimension, convex, variables, superset)
+    return PolySet(point, symmetric, degree, dimension, convex, variables, superset, basis)
 end
 Sets.space_variables(p::PolySet) = p.variables
 
@@ -188,12 +190,18 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
     # General all monomials of degree `degree`, we don't want monomials of
     # lower degree as the polynomial is homogeneous
     @assert iseven(set.degree)
+    if set.symmetric
+        monos = monomials(space_polyvars, div(set.degree, 2))
+    else
+        monos = monomials(lift_space_variables(d, space_polyvars),
+                          div(set.degree, 2))
+    end
+    basis = MultivariateBases.basis_covering_monomials(set.basis, monos)
+    # TODO If `set.convex` and `set.symmetric`, no need for the poly to be SOS, see Lemma 6.33 of [BPT12]
+    p = @variable(model, variable_type=SOSPoly(basis))
     if set.convex
         set.superset === nothing || error("superset not supported for convex PolySet")
         if set.symmetric
-            monos = monomials(space_polyvars, div(set.degree, 2))
-            # TODO No need for the poly to be SOS, see Lemma 6.33 of [BPT12]
-            p = @variable(model, variable_type=SOSPoly(monos))
             convexity_proof = constrain_convex(model, p, space_polyvars)
             if space == PrimalSpace
                 return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
@@ -202,9 +210,6 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
                 return Sets.polar(Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof))
             end
         else
-            monos = monomials(lift_space_variables(d, space_polyvars),
-                              div(set.degree, 2))
-            p = @variable(model, variable_type=SOSPoly(monos))
             constrain_convex(model, subs(p, d.perspective_polyvar => 1),
                              space_polyvars)
             if space == PrimalSpace
@@ -219,9 +224,6 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
         end
     else
         if set.symmetric
-            monos = monomials(space_polyvars, div(set.degree, 2))
-            # TODO No need for the poly to be SOS, see Lemma 6.33 of [BPT12]
-            p = @variable(model, variable_type=SOSPoly(monos))
             if space == PrimalSpace
                 if set.superset !== nothing
                     p = SetProg.SumOfSquares.gram_operate(+, set.superset.p, p)
