@@ -23,7 +23,7 @@ end
 function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
                                      point::CenterPoint, z, x)
     psd_constraint(model, Q)
-    ell = Sets.EllipsoidAtOrigin(Q)
+    ell = Sets.Ellipsoid(Q)
     return polar_perspective_ellipsoid(ell, point, z, x)
 end
 function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
@@ -56,12 +56,12 @@ struct Ellipsoid <: AbstractVariable
     symmetric::Bool
     dimension::Union{Nothing, Int}
     guaranteed_psd::Bool # Is it already guaranteed that it is PSD ? e.g. by nth_root
-    superset::Union{Sets.EllipsoidAtOrigin, Nothing}
+    superset::Union{Sets.Ellipsoid, Nothing}
 end
 function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
                    symmetric::Bool=false,
                    dimension::Union{Int, Nothing}=nothing,
-                   superset::Union{Sets.EllipsoidAtOrigin, Nothing}=nothing)
+                   superset::Union{Sets.Ellipsoid, Nothing}=nothing)
     if point !== nothing
         if dimension === nothing
             dimension = length(point.h)
@@ -92,11 +92,11 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
             if ell.superset !== nothing
                 Q = Symmetric(Q + ell.superset.Q)
             end
-            return Sets.EllipsoidAtOrigin(Q)
+            return Sets.Ellipsoid(Q)
         else
             ell.superset === nothing || error("superset not supported in dual space")
             @assert space == DualSpace
-            return Sets.polar(Sets.EllipsoidAtOrigin(Q))
+            return Sets.polar(Sets.Ellipsoid(Q))
         end
     else
         ell.superset === nothing || error("superset not supported for non-symmetric Ellipsoid")
@@ -113,8 +113,8 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
         end
     end
 end
-function JuMP.value(ell::Sets.EllipsoidAtOrigin)
-    return Sets.EllipsoidAtOrigin(Symmetric(JuMP.value.(ell.Q)))
+function JuMP.value(ell::Sets.Ellipsoid)
+    return Sets.Ellipsoid(Symmetric(JuMP.value.(ell.Q)))
 end
 
 ### PolySet ###
@@ -125,7 +125,7 @@ struct PolySet <: AbstractVariable
     dimension::Union{Nothing, Int}
     convex::Bool
     variables::Union{Nothing, Vector{SpaceVariable}}
-    superset::Union{Sets.PolynomialSublevelSetAtOrigin, Nothing}
+    superset::Union{Sets.PolySet, Nothing}
     basis::Type
 end
 function PolySet(; point::Union{Nothing, HintPoint}=nothing,
@@ -134,7 +134,7 @@ function PolySet(; point::Union{Nothing, HintPoint}=nothing,
                  dimension::Union{Int, Nothing}=nothing,
                  convex::Bool=false,
                  variables::Union{Vector{SpaceVariable}, Nothing}=nothing,
-                 superset::Union{Sets.PolynomialSublevelSetAtOrigin, Nothing}=nothing,
+                 superset::Union{Sets.PolySet, Nothing}=nothing,
                  basis::Type=MultivariateBases.MonomialBasis)
     if degree === nothing
         error("Degree of PolySet not specified, use PolySet(degree=..., ...)")
@@ -204,10 +204,10 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
         if set.symmetric
             convexity_proof = constrain_convex(model, p, space_polyvars)
             if space == PrimalSpace
-                return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof)
+                return Sets.ConvexPolySet(set.degree, p, convexity_proof)
             else
                 @assert space == DualSpace
-                return Sets.polar(Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, p, convexity_proof))
+                return Sets.polar(Sets.ConvexPolySet(set.degree, p, convexity_proof))
             end
         else
             constrain_convex(model, subs(p, d.perspective_polyvar => 1),
@@ -228,7 +228,7 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
                 if set.superset !== nothing
                     p = SetProg.SumOfSquares.gram_operate(+, set.superset.p, p)
                 end
-                return Sets.PolynomialSublevelSetAtOrigin(set.degree, p)
+                return Sets.PolySet(set.degree, p)
             else
                 error("Non-convex PolySet not supported in $space")
             end
@@ -242,11 +242,11 @@ function _value(convexity_proof::MultivariateMoments.SymMatrix)
     return MultivariateMoments.SymMatrix(JuMP.value.(convexity_proof.Q),
                                          convexity_proof.n)
 end
-function JuMP.value(set::Sets.PolynomialSublevelSetAtOrigin)
-    return Sets.PolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p))
+function JuMP.value(set::Sets.PolySet)
+    return Sets.PolySet(set.degree, JuMP.value(set.p))
 end
-function JuMP.value(set::Sets.ConvexPolynomialSublevelSetAtOrigin)
-    return Sets.ConvexPolynomialSublevelSetAtOrigin(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
+function JuMP.value(set::Sets.ConvexPolySet)
+    return Sets.ConvexPolySet(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
 end
 function JuMP.value(set::Sets.Polar)
     return Sets.polar(JuMP.value(Sets.polar(set)))

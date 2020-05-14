@@ -2,7 +2,7 @@ using Polyhedra
 using SumOfSquares
 
 """
-    struct PolynomialSublevelSetAtOrigin{T, B, U} <: AbstractSet{U}
+    struct PolySet{T, B, U} <: AbstractSet{U}
         degree::Int
         p::GramMatrix{T, B, U}
     end
@@ -10,17 +10,17 @@ using SumOfSquares
 Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
 of degree `degree`.
 """
-struct PolynomialSublevelSetAtOrigin{T, B, U} <: AbstractSet{U}
+struct PolySet{T, B, U} <: AbstractSet{U}
     degree::Int
     p::GramMatrix{T, B, U}
 end
 
-function space_variables(set::PolynomialSublevelSetAtOrigin)
+function space_variables(set::PolySet)
     return variables(set.p)
 end
 
 """
-    struct ConvexPolynomialSublevelSetAtOrigin{T, B, U} <: AbstractSet{U}
+    struct ConvexPolySet{T, B, U} <: AbstractSet{U}
         degree::Int
         p::GramMatrix{T, B, U}
         convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
@@ -29,37 +29,37 @@ end
 Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
 of degree `degree`.
 """
-struct ConvexPolynomialSublevelSetAtOrigin{T, B, U} <: AbstractSet{U}
+struct ConvexPolySet{T, B, U} <: AbstractSet{U}
     degree::Int
     p::GramMatrix{T, B, U}
     convexity_proof::Union{Nothing, SumOfSquares.SymMatrix{T}} # may be nothing after applying LinearMap
 end
-function ConvexPolynomialSublevelSetAtOrigin(
+function ConvexPolySet(
     degree::Int,
     p::GramMatrix{T, B, U},
     convexity_proof::SumOfSquares.SymMatrix{T}) where {T, B, U}
-    return ConvexPolynomialSublevelSetAtOrigin{T, B, U}(degree, p, convexity_proof)
+    return ConvexPolySet{T, B, U}(degree, p, convexity_proof)
 end
-function ConvexPolynomialSublevelSetAtOrigin(
+function ConvexPolySet(
     degree::Int,
     p::GramMatrix{S},
     convexity_proof::SumOfSquares.SymMatrix{T}) where {S, T}
     V = promote_type(S, T)
     _convert(mat) = SumOfSquares.SymMatrix(convert(Vector{U}, mat.Q), mat.n)
-    return ConvexPolynomialSublevelSetAtOrigin(
+    return ConvexPolySet(
         degree, GramMatrix(_convert(p.Q), p.basis), _convert(convexity_proof))
 end
 
-function space_variables(set::ConvexPolynomialSublevelSetAtOrigin)
+function space_variables(set::ConvexPolySet)
     return variables(set.p)
 end
-function dimension(set::ConvexPolynomialSublevelSetAtOrigin)
+function dimension(set::ConvexPolySet)
     return nvariables(set.p)
 end
-function gauge1(set::ConvexPolynomialSublevelSetAtOrigin)
+function gauge1(set::ConvexPolySet)
     return set.p
 end
-function zero_eliminate(set::ConvexPolynomialSublevelSetAtOrigin, I)
+function zero_eliminate(set::ConvexPolySet, I)
     vars = space_variables(set)[I]
     K = findall(mono -> all(var -> iszero(degree(mono, var)), vars),
                 set.p.basis.monomials)
@@ -71,13 +71,13 @@ function zero_eliminate(set::ConvexPolynomialSublevelSetAtOrigin, I)
     monos = DynamicPolynomials.MonomialVector(monos.vars[J],
                                              Vector{Int}[z[J] for z in monos.Z])
     p = SumOfSquares.GramMatrix(Q, MB.MonomialBasis(monos))
-    return ConvexPolynomialSublevelSetAtOrigin(set.degree, p, nothing)
+    return ConvexPolySet(set.degree, p, nothing)
 end
 
-convexity_proof(set::ConvexPolynomialSublevelSetAtOrigin) = set.convexity_proof
+convexity_proof(set::ConvexPolySet) = set.convexity_proof
 
-function scaling_function(set::Union{PolynomialSublevelSetAtOrigin,
-                                     ConvexPolynomialSublevelSetAtOrigin})
+function scaling_function(set::Union{PolySet,
+                                     ConvexPolySet})
     # We convert the GramMatrix to a polynomial to avoid having to do the
     # conversion for every substitution.
     p = polynomial(set.p)

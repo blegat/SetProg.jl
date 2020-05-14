@@ -56,13 +56,13 @@ end
 function feasible_switched_system_ell_test(optimizer, config, ε=1e-3)
     Q = [1.0 0.0
          0.0 1.0]
-    superset = SetProg.Sets.EllipsoidAtOrigin(Symmetric(Q))
+    superset = SetProg.Sets.Ellipsoid(Symmetric(Q))
     switched_system_test(
         optimizer, config,
         Ellipsoid(symmetric=true, superset=superset),
         √2 + ε, true, 4/3,
         ◯ -> begin
-            @test ◯ isa Sets.EllipsoidAtOrigin{Float64}
+            @test ◯ isa Sets.Ellipsoid{Float64}
             @test ◯.Q ≈ Q atol=config.atol rtol=config.rtol
         end,
         (cref1, cref2) -> begin end)
@@ -70,7 +70,7 @@ end
 function infeasible_switched_system_ell_test(optimizer, config, ε=1e-3)
     Q = [1.0 0.0
          0.0 1.0]
-    superset = SetProg.Sets.EllipsoidAtOrigin(Symmetric(Q))
+    superset = SetProg.Sets.Ellipsoid(Symmetric(Q))
     switched_system_test(
         optimizer, config,
         Ellipsoid(symmetric=true, superset=superset),
@@ -88,7 +88,7 @@ end
 
 function superset(x, d)
     q = SetProg.SumOfSquares.GramMatrix(SetProg.SumOfSquares.SOSDecomposition(x.^d))
-    return SetProg.Sets.PolynomialSublevelSetAtOrigin(2d, q)
+    return SetProg.Sets.PolySet(2d, q)
 end
 
 function feasible_switched_system_quad_test(optimizer, config, ε=1e-3)
@@ -98,7 +98,7 @@ function feasible_switched_system_quad_test(optimizer, config, ε=1e-3)
         PolySet(symmetric=true, degree=2, superset=superset(x, 1)),
         √2 + ε, true, 8/3,
         ◯ -> begin
-            @test ◯ isa Sets.PolynomialSublevelSetAtOrigin{Float64, MonoBasis}
+            @test ◯ isa Sets.PolySet{Float64, MonoBasis}
             @test polynomial(◯.p) ≈ x[1]^2 + x[2]^2 atol=config.atol rtol=config.rtol
         end,
         (cref1, cref2) -> begin end)
@@ -126,7 +126,7 @@ function feasible_switched_system_quartic_test(optimizer, config, ε=1e-2)
         PolySet(symmetric=true, degree=4, superset=superset(x, 2)),
         1.0 + ε, true, 10.001105454190741,
         ◯ -> begin
-            @test ◯ isa Sets.PolynomialSublevelSetAtOrigin{Float64, MonoBasis}
+            @test ◯ isa Sets.PolySet{Float64, MonoBasis}
 			α = 11.814054544955727
             @test polynomial(◯.p) ≈ (α+1) * x[1]^4 - 2α * x[1]^2*x[2]^2 + (α+1) * x[2]^4 atol=config.atol rtol=config.rtol
         end,

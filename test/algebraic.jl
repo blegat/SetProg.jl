@@ -25,7 +25,7 @@ using JuMP
             @test JuMP.termination_status(model) == MOI.OPTIMAL
             @test JuMP.objective_sense(model) == MOI.MAX_SENSE
             @test JuMP.objective_value(model) == 1.0
-            @test JuMP.value(◯) isa SetProg.Sets.PolarEllipsoidAtOrigin
+            @test JuMP.value(◯) isa SetProg.Sets.PolarEllipsoid
             @test JuMP.value(◯).Q == Symmetric([1.0 0.0; 0.0 1.0])
         end
         @testset "Löwner" begin
@@ -44,7 +44,7 @@ using JuMP
             @test JuMP.termination_status(model) == MOI.OPTIMAL
             @test JuMP.objective_sense(model) == MOI.MAX_SENSE
             @test JuMP.objective_value(model) == 0.5
-            @test JuMP.value(◯) isa SetProg.Sets.EllipsoidAtOrigin
+            @test JuMP.value(◯) isa SetProg.Sets.Ellipsoid
             @test JuMP.value(◯).Q == Symmetric([0.5 0.0; 0.0 0.5])
         end
     end
@@ -68,7 +68,7 @@ using JuMP
             @test JuMP.termination_status(model) == MOI.OPTIMAL
             @test JuMP.objective_sense(model) == MOI.MAX_SENSE
             @test JuMP.objective_value(model) == 1.0
-            @test JuMP.value(◯) isa SetProg.Sets.PolarPolynomialSublevelSetAtOrigin{Float64}
+            @test JuMP.value(◯) isa SetProg.Sets.PolarPolySet{Float64}
             @test JuMP.value(◯).degree == 4
             x, y = SetProg.data(model).polyvars
             @test polynomial(JuMP.value(◯).p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4
@@ -90,7 +90,7 @@ using JuMP
             @test JuMP.termination_status(model) == MOI.OPTIMAL
             @test JuMP.objective_sense(model) == MOI.MAX_SENSE
             @test JuMP.objective_value(model) == 1.0
-            @test JuMP.value(◯) isa SetProg.Sets.PolynomialSublevelSetAtOrigin{Float64}
+            @test JuMP.value(◯) isa SetProg.Sets.PolySet{Float64}
             @test JuMP.value(◯).degree == 4
             x, y = SetProg.data(model).polyvars
             @test polynomial(JuMP.value(◯).p) == x^4 + 2x^3*y + 3x^2*y^2 + 2x*y^3 + y^4

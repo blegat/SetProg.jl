@@ -8,31 +8,31 @@ dimension(sphere::HyperSphere) = sphere.dim
 polar(sphere::HyperSphere) = sphere
 
 """
-    struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
+    struct Ellipsoid{T} <: AbstractEllipsoid{T}
         Q::Symmetric{T, Matrix{T}}
     end
 """
-struct EllipsoidAtOrigin{T} <: AbstractEllipsoid{T}
+struct Ellipsoid{T} <: AbstractEllipsoid{T}
     Q::Symmetric{T, Matrix{T}}
 end
-ellipsoid(ell::EllipsoidAtOrigin) = ell
-function Polyhedra.project(ell::EllipsoidAtOrigin, I)
+ellipsoid(ell::Ellipsoid) = ell
+function Polyhedra.project(ell::Ellipsoid, I)
     return project(polar_representation(ell), I)
 end
-convexity_proof(ell::EllipsoidAtOrigin) = ell.Q
+convexity_proof(ell::Ellipsoid) = ell.Q
 
-function ellipsoid(ell::PolarOf{<:EllipsoidAtOrigin})
+function ellipsoid(ell::PolarOf{<:Ellipsoid})
     ellipsoid(polar_representation(ell))
 end
-function polar_representation(ell::PolarOf{<:EllipsoidAtOrigin})
-    EllipsoidAtOrigin(inv(ell.set.Q))
+function polar_representation(ell::PolarOf{<:Ellipsoid})
+    Ellipsoid(inv(ell.set.Q))
 end
-function polar_representation(ell::EllipsoidAtOrigin)
-    polar(EllipsoidAtOrigin(inv(ell.Q)))
+function polar_representation(ell::Ellipsoid)
+    polar(Ellipsoid(inv(ell.Q)))
 end
 
-function Polyhedra.project(ell::PolarOf{<:EllipsoidAtOrigin}, I)
-    return polar(EllipsoidAtOrigin(Symmetric(ell.set.Q[I, I])))
+function Polyhedra.project(ell::PolarOf{<:Ellipsoid}, I)
+    return polar(Ellipsoid(Symmetric(ell.set.Q[I, I])))
 end
 
 struct LiftedEllipsoid{T}
@@ -40,14 +40,14 @@ struct LiftedEllipsoid{T}
 end
 dimension(ell::LiftedEllipsoid) = LinearAlgebra.checksquare(ell.P) - 1
 
-function perspective_variables(ell::Union{EllipsoidAtOrigin, LiftedEllipsoid})
+function perspective_variables(ell::Union{Ellipsoid, LiftedEllipsoid})
     return nothing
 end
-function space_variables(ell::Union{EllipsoidAtOrigin, LiftedEllipsoid})
+function space_variables(ell::Union{Ellipsoid, LiftedEllipsoid})
     return nothing
 end
 
-function LiftedEllipsoid(t::Translation{<:EllipsoidAtOrigin})
+function LiftedEllipsoid(t::Translation{<:Ellipsoid})
     ell = t.set
     md = ell.Q * t.c
     δ = t.c' * md-1
@@ -83,7 +83,7 @@ function ellipsoid(ell::LiftedEllipsoid)
     B, b, β, λ = Bbβλ(ell.P)
     c = -(B \ b)
     Q = B / λ
-    Translation(EllipsoidAtOrigin(Symmetric(Q)), c)
+    Translation(Ellipsoid(Symmetric(Q)), c)
 end
 
 
@@ -92,7 +92,7 @@ function _HPH(D, d, δ)
          d D]
 end
 
-_HPH(ell::EllipsoidAtOrigin) = _HPH(ell.Q, zeros(size(q.Q, 1)), -1.0)
+_HPH(ell::Ellipsoid) = _HPH(ell.Q, zeros(size(q.Q, 1)), -1.0)
 
 """
     struct ShiftedEllipsoid{T}

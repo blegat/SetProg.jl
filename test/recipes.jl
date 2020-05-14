@@ -20,7 +20,7 @@ end
     @testset "Ellipsoid" begin
         @testset "Circle" begin
             for circle in [Sets.HyperSphere(2),
-                           Sets.EllipsoidAtOrigin(Symmetric(Q))]
+                           Sets.Ellipsoid(Symmetric(Q))]
                 recipe_test(circle,
                             [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
                 recipe_test(Sets.polar(circle),
@@ -29,13 +29,13 @@ end
         end
         @testset "Shifted Circle" begin
             for circle in [Sets.HyperSphere(2),
-                           Sets.EllipsoidAtOrigin(Symmetric(Q))]
+                           Sets.Ellipsoid(Symmetric(Q))]
                 shifted = Sets.Translation(circle, [1.0, 2.0])
                 recipe_test(shifted, [2.0, 1.0, 0.0, 1.0], [2.0, 3.0, 2.0, 1.0])
             end
         end
         @testset "Scaled circle" begin
-            scaled_circle = Sets.EllipsoidAtOrigin(Symmetric(2Q))
+            scaled_circle = Sets.Ellipsoid(Symmetric(2Q))
             recipe_test(scaled_circle,
                         [1/√2, 0.0, -1/√2, 0.0], [0.0, 1/√2, 0.0, -1/√2])
             recipe_test(Sets.polar(scaled_circle),
@@ -47,14 +47,14 @@ end
         @testset "Circle" begin
             p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
                                                monovec([x, y]))
-            circle = Sets.PolynomialSublevelSetAtOrigin(2, p)
+            circle = Sets.PolySet(2, p)
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
         end
         @testset "Convex Circle" begin
             p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
                                                monovec([x, y]))
-            circle = Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
+            circle = Sets.ConvexPolySet(2, p, nothing)
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
             recipe_test(Sets.polar(circle),
@@ -63,7 +63,7 @@ end
         @testset "Scaled circle" begin
             p = SetProg.GramMatrix{Float64}((i, j) -> 2convert(Float64, i == j),
                                                monovec([x, y]))
-            circle = Sets.ConvexPolynomialSublevelSetAtOrigin(2, p, nothing)
+            circle = Sets.ConvexPolySet(2, p, nothing)
             recipe_test(circle,
                         [1/√2, 0.0, -1/√2, 0.0], [0.0, 1/√2, 0.0, -1/√2])
             recipe_test(Sets.polar(circle),

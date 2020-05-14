@@ -93,7 +93,7 @@ function JuMP.build_constraint(_error::Function,
 end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:JuMP.AbstractJuMPScalar},
-                               ell::Sets.EllipsoidAtOrigin{<:Number})
+                               ell::Sets.Ellipsoid{<:Number})
     # The eltype of Point is an expression of JuMP variables so we cannot
     # compute (x-c)' * Q * (x-c) <= 1, we need to transform it to
     # ||L * (x - c)||_2 <= 1
@@ -109,7 +109,7 @@ function JuMP.build_constraint(_error::Function,
 end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:JuMP.AbstractJuMPScalar},
-                               set::Sets.EllipsoidAtOrigin{<:JuMP.AbstractJuMPScalar})
+                               set::Sets.Ellipsoid{<:JuMP.AbstractJuMPScalar})
     # The eltype of both `member` and `set` is an expression of JuMP variables
     # so we cannot use the linear constraint `x' * Q * x <= 1` nor transform it
     # to SOC. We need to use the SDP constraint:
@@ -119,17 +119,17 @@ function JuMP.build_constraint(_error::Function,
 end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:Number},
-                               set::Union{Sets.EllipsoidAtOrigin,
-                                          Sets.PolynomialSublevelSetAtOrigin,
-                                          Sets.ConvexPolynomialSublevelSetAtOrigin})
+                               set::Union{Sets.Ellipsoid,
+                                          Sets.PolySet,
+                                          Sets.ConvexPolySet})
     JuMP.build_constraint(_error, sublevel_eval(set, AbstractVector{Float64}(coord(member))),
                           MOI.LessThan(Float64(scaling(member)^2)))
 end
 function JuMP.build_constraint(_error::Function,
                                member::Polyhedra.Line,
-                               set::Union{Sets.EllipsoidAtOrigin,
-                                          Sets.PolynomialSublevelSetAtOrigin,
-                                          Sets.ConvexPolynomialSublevelSetAtOrigin})
+                               set::Union{Sets.Ellipsoid,
+                                          Sets.PolySet,
+                                          Sets.ConvexPolySet})
     # We must have (λl)^T Q (λl) ≤ 1 for all λ hence we must have l^T Q l ≤ 0
     # As Q is positive definite, it means l^T Q l = 0
     l = Polyhedra.coord(member)
@@ -137,9 +137,9 @@ function JuMP.build_constraint(_error::Function,
 end
 function JuMP.build_constraint(_error::Function,
                                member::Polyhedra.Ray,
-                               set::Union{Sets.EllipsoidAtOrigin,
-                                          Sets.PolynomialSublevelSetAtOrigin,
-                                          Sets.ConvexPolynomialSublevelSetAtOrigin})
+                               set::Union{Sets.Ellipsoid,
+                                          Sets.PolySet,
+                                          Sets.ConvexPolySet})
     # We must have (λl)^T Q (λl) ≤ 1 for all λ > 0 hence we must have l^T Q l ≤ 0
     # As Q is positive definite, it means l^T Q l = 0
     r = Polyhedra.coord(member)
@@ -179,7 +179,7 @@ end
 function JuMP.add_constraint(
     model::JuMP.Model,
     constraint::SetProg.MembershipConstraint{
-        Vector{T}, SetProg.Sets.ConvexPolynomialSublevelSetAtOrigin{Float64}},
+        Vector{T}, SetProg.Sets.ConvexPolySet{Float64}},
     name::String = "") where T
     set = constraint.set
     @assert iseven(set.degree)

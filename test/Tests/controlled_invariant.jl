@@ -51,7 +51,7 @@ function ci_ell_homogeneous_test(optimizer, config)
     ci_square_test(optimizer, config, true,
                    Ellipsoid(symmetric=true, dimension=2), nth_root, √15/4,
                    ◯ -> begin
-                       @test ◯ isa Sets.Polar{Float64, Sets.EllipsoidAtOrigin{Float64}}
+                       @test ◯ isa Sets.Polar{Float64, Sets.Ellipsoid{Float64}}
                        @test Sets.polar(◯).Q ≈ Symmetric([1.0 -1/4; -1/4 1.0]) atol=config.atol rtol=config.rtol
                    end)
 end
@@ -100,7 +100,7 @@ function ci_quartic_homogeneous_test(optimizer, config)
                    set -> L1_heuristic(set, [1.0, 1.0]),
                    64/15,
                    ◯ -> begin
-                       @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, MonoBasis, Float64}}
+                       @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolySet{Float64, MonoBasis, Float64}}
                        @test Sets.polar(◯).degree == 4
                        x, y = variables(Sets.polar(◯).p)
                        α = coefficient(Sets.polar(◯).p, x^3*y) / 2

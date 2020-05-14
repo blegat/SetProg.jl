@@ -66,8 +66,8 @@ end
 
 # S-procedure: Q ⊆ P <=> xQx ≤ 1 => xPx ≤ 1 <=> xPx ≤ xQx <=> Q - P is PSD
 function JuMP.build_constraint(_error::Function,
-                               subset::Sets.EllipsoidAtOrigin,
-                               sup_powerset::PowerSet{<:Sets.EllipsoidAtOrigin};
+                               subset::Sets.Ellipsoid,
+                               sup_powerset::PowerSet{<:Sets.Ellipsoid};
                                S_procedure_scaling = nothing)
     @assert S_procedure_scaling === nothing || isone(S_procedure_scaling)
     Q = subset.Q
@@ -77,10 +77,10 @@ end
 
 # S-procedure: Q ⊆ P <=> q(x) ≤ 1 => p(x) ≤ 1 <=> p(x) ≤ q(x) <= q - p is SOS
 function JuMP.build_constraint(_error::Function,
-                               subset::Union{Sets.PolynomialSublevelSetAtOrigin,
-                                             Sets.ConvexPolynomialSublevelSetAtOrigin},
-                               sup_powerset::PowerSet{<:Union{Sets.PolynomialSublevelSetAtOrigin,
-                                                              Sets.ConvexPolynomialSublevelSetAtOrigin}};
+                               subset::Union{Sets.PolySet,
+                                             Sets.ConvexPolySet},
+                               sup_powerset::PowerSet{<:Union{Sets.PolySet,
+                                                              Sets.ConvexPolySet}};
                                S_procedure_scaling = nothing)
     @assert S_procedure_scaling === nothing || isone(S_procedure_scaling)
     q = subset.p
@@ -244,7 +244,7 @@ function JuMP.add_constraint(model::JuMP.Model,
 end
 
 function JuMP.build_constraint(_error::Function,
-                               subset::Sets.EllipsoidAtOrigin,
+                               subset::Sets.Ellipsoid,
                                sup_powerset::PowerSet{<:HalfSpace})
     hs = sup_powerset.set
     P = [hs.β hs.a'
@@ -260,7 +260,7 @@ end
 # Homogeneous case: λ = β
 # Use build_constraint when SumOfSquares#66 if λ = β (e.g. homogeneous)
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Union{Sets.ConvexPolynomialSublevelSetAtOrigin,
+                             constraint::InclusionConstraint{<:Union{Sets.ConvexPolySet,
                                                                      Sets.ConvexPolynomialSet},
                                                              <:HalfSpace},
                             name::String = "")

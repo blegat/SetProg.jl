@@ -41,7 +41,7 @@ function john_homogeneous_square_test(optimizer, config)
                 Ellipsoid(symmetric=true, dimension=2),
                 nth_root, 1.0,
                 ◯ -> begin
-                    @test ◯ isa Sets.Polar{Float64, Sets.EllipsoidAtOrigin{Float64}}
+                    @test ◯ isa Sets.Polar{Float64, Sets.Ellipsoid{Float64}}
                     @test Sets.polar(◯).Q ≈ Symmetric([1.0 0.0; 0.0 1.0]) atol=config.atol rtol=config.rtol
                 end)
 end
@@ -84,7 +84,7 @@ function löwner_homogeneous_square_test(optimizer, config)
                 Ellipsoid(symmetric=true, dimension=2),
                 nth_root, 0.5,
                 ◯ -> begin
-                    @test ◯ isa Sets.EllipsoidAtOrigin
+                    @test ◯ isa Sets.Ellipsoid
                     @test ◯.Q ≈ Symmetric([0.5 0.0
                                            0.0 0.5]) atol=config.atol rtol=config.rtol
                 end)
@@ -101,7 +101,7 @@ function quartic_inner_homogeneous_square_test(optimizer, config)
                 PolySet(symmetric=true, degree=4, dimension=2, convex=true),
                 nth_root, quartic_inner_obj,
                 ◯ -> begin
-                    @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, MonoBasis, Float64}}
+                    @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolySet{Float64, MonoBasis, Float64}}
                     ◯_polar = Sets.polar(◯)
                     @test ◯_polar.degree == 4
                     x, y = variables(◯_polar.p)
@@ -126,7 +126,7 @@ function quartic_outer_homogeneous_square_test(optimizer, config)
                 nth_root,
                 quartic_outer_obj,
                 ◯ -> begin
-                    @test ◯ isa Sets.ConvexPolynomialSublevelSetAtOrigin{Float64, MonoBasis, Float64}
+                    @test ◯ isa Sets.ConvexPolySet{Float64, MonoBasis, Float64}
                     @test ◯.degree == 4
                     x, y = variables(◯.p)
                     @test polynomial(◯.p) ≈ quartic_outer_β*x^4 + (quartic_outer_γ+2quartic_outer_λ)*x^2*y^2 + quartic_outer_β*y^4 atol=config.atol rtol=config.rtol

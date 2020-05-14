@@ -40,7 +40,7 @@ As studied in [DPW96].
 state estimation*.
 IFAC Proceedings Volumes, **1996**.
 """
-function l1_integral(ell::Sets.EllipsoidAtOrigin, vertex)
+function l1_integral(ell::Sets.Ellipsoid, vertex)
     n = Sets.dimension(ell)
     @assert n == length(vertex)
     # The integral of off-diagonal entries xy are zero between the rectangle
@@ -58,8 +58,8 @@ As developed in [HL12].
 fixed-order controller design*.
 International Journal of Control, **2012**.
 """
-function l1_integral(set::Union{Sets.PolynomialSublevelSetAtOrigin,
-                                Sets.ConvexPolynomialSublevelSetAtOrigin},
+function l1_integral(set::Union{Sets.PolySet,
+                                Sets.ConvexPolySet},
                      vertex)
     return rectangle_integrate(set.p, vertex)
 end
@@ -70,14 +70,14 @@ end
 # the set is not necessarily inside this rectangle, we just know that it is
 # outside the polar of the rectangle with vertices (-v, v). However, since it
 # is homogeneous, only the ratios between the dimensions is important
-function l1_integral(set::Sets.PolarOf{<:Union{Sets.EllipsoidAtOrigin,
-                                               Sets.ConvexPolynomialSublevelSetAtOrigin}},
+function l1_integral(set::Sets.PolarOf{<:Union{Sets.Ellipsoid,
+                                               Sets.ConvexPolySet}},
                      vertex)
     return l1_integral(Sets.polar(set), 1 ./ vertex)
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
                      vertex)
-    return l1_integral(Sets.polar(Sets.EllipsoidAtOrigin(set.set.set.Q)),
+    return l1_integral(Sets.polar(Sets.Ellipsoid(set.set.set.Q)),
                        vertex)
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.ConvexPolynomialSet},
@@ -90,9 +90,9 @@ function invert_objective_sense(::Union{Sets.Polar,
                                         Sets.PerspectiveDual})
     return false
 end
-function invert_objective_sense(::Union{Sets.EllipsoidAtOrigin,
-                                        Sets.PolynomialSublevelSetAtOrigin,
-                                        Sets.ConvexPolynomialSublevelSetAtOrigin})
+function invert_objective_sense(::Union{Sets.Ellipsoid,
+                                        Sets.PolySet,
+                                        Sets.ConvexPolySet})
     return true
 end
 function objective_sense(model::JuMP.Model, l::L1Heuristic)
