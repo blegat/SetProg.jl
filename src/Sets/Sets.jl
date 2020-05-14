@@ -142,6 +142,12 @@ convexity_proof(set::Union{Polar, PerspectiveDual}) = convexity_proof(set.set)
 struct UnknownSet{T} <: AbstractSet{T} end
 include("transformations.jl")
 
+struct Piecewise{T, S<:AbstractSet{T}, P} <: AbstractSet{T}
+    sets::Vector{S}
+    polytope::P
+end
+dimension(set::Piecewise) = Polyhedra.fulldim(set.polytope)
+
 include("ellipsoids.jl")
 include("polynomials.jl")
 include("recipe.jl")
