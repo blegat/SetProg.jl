@@ -76,8 +76,8 @@ end
 
 convexity_proof(set::ConvexPolySet) = set.convexity_proof
 
-function scaling_function(set::Union{PolySet,
-                                     ConvexPolySet})
+function scaling_function(set::Union{PolySet, ConvexPolySet})
+    @assert dimension(set) == 2
     # We convert the GramMatrix to a polynomial to avoid having to do the
     # conversion for every substitution.
     p = polynomial(set.p)

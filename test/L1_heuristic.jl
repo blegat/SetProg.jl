@@ -1,4 +1,4 @@
-using Test
+using Test, LinearAlgebra
 using DynamicPolynomials
 using SetProg
 using Polyhedra

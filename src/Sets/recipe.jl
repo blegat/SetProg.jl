@@ -54,20 +54,13 @@ function Polyhedra.planar_contour(ell::PerspectiveDualOrPolarOrNot{<:AbstractEll
     return Polyhedra.planar_contour(ellipsoid(ell); kws...)
 end
 
-function Polyhedra.planar_contour(ell::Ellipsoid; npoints=64)
-    @assert dimension(ell) == 2
-    Q = ell.Q
-    return primal_contour((x, y) -> sqrt(x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2]),
-                          npoints)
-end
-
-function Polyhedra.planar_contour(set::Union{PolySet,
-                                             ConvexPolySet};
+function Polyhedra.planar_contour(set::Union{Ellipsoid, PolySet, ConvexPolySet,
+                                             Piecewise};
                                   npoints=64)
     return primal_contour(scaling_function(set), npoints)
 end
 
-function Polyhedra.planar_contour(set::PolarOf{ConvexPolySet{T, B, U}};
+function Polyhedra.planar_contour(set::PolarOf{<:Union{Piecewise{U}, ConvexPolySet{T, B, U}}};
                                   npoints=64) where {T, B, U}
     return Polyhedra.planar_contour(dual_contour(scaling_function(polar(set)),
                                                  npoints, U))

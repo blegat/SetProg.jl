@@ -142,11 +142,34 @@ convexity_proof(set::Union{Polar, PerspectiveDual}) = convexity_proof(set.set)
 struct UnknownSet{T} <: AbstractSet{T} end
 include("transformations.jl")
 
-struct Piecewise{T, S<:AbstractSet{T}, P} <: AbstractSet{T}
+struct Piecewise{T, S<:AbstractSet{T}, Po, Pi} <: AbstractSet{T}
     sets::Vector{S}
-    polytope::P
+    polytope::Po
+    pieces::Vector{Pi}
+end
+function Piecewise(sets::Vector{<:AbstractSet}, polytope)
+    @assert length(sets) == nhalfspaces(polytope)
+    function piece(i, h)
+        hs = typeof(h)[]
+        for (j, s) in enumerate(halfspaces(polytope))
+            if i != j
+                push!(hs, s - h)
+            end
+        end
+        return hrep(hs)
+    end
+    pieces = [piece(i, h) for (i, h) in enumerate(halfspaces(polytope))]
+    return Piecewise(sets, polytope, pieces)
 end
 dimension(set::Piecewise) = Polyhedra.fulldim(set.polytope)
+function scaling_function(set::Piecewise)
+    g = scaling_function.(set.sets)
+    return (x, y) -> begin
+        v = [x, y]
+        i = findfirst(piece -> v in piece, set.pieces)
+        return g[i](x, y)
+    end
+end
 
 include("ellipsoids.jl")
 include("polynomials.jl")

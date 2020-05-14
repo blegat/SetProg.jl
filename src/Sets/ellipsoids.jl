@@ -20,6 +20,11 @@ function Polyhedra.project(ell::Ellipsoid, I)
     return project(polar_representation(ell), I)
 end
 convexity_proof(ell::Ellipsoid) = ell.Q
+function scaling_function(ell::Ellipsoid)
+    @assert dimension(ell) == 2
+    Q = ell.Q
+    return (x, y) -> sqrt(x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2])
+end
 
 function ellipsoid(ell::PolarOf{<:Ellipsoid})
     ellipsoid(polar_representation(ell))
