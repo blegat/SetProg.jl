@@ -102,7 +102,7 @@ end
         end
     end
     @testset "Piecewise" begin
-        polytope = HalfSpace([1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([-1, 1], 1) ∩ HalfSpace([-1, -1], 1) ∩ HalfSpace([1, -1], 1)
+        polytope = polyhedron(HalfSpace([1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([-1, 1], 1) ∩ HalfSpace([-1, -1], 1) ∩ HalfSpace([1, -1], 1))
         Q_1 = [1.0 0.0
                0.0 0.0]
         Q_2 = [0.0 0.0

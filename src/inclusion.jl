@@ -226,10 +226,14 @@ function set_space(space::Space, ::InclusionConstraint{<:Polyhedra.Rep,
     return set_space(space, PrimalSpace)
 end
 
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Polyhedra.Rep,
-                                                             <:Sets.AbstractSet{<:JuMP.AbstractJuMPScalar}},
-                             name::String = "")
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    constraint::InclusionConstraint{
+        <:Polyhedra.VRep,
+        <:Union{Sets.AbstractSet{<:JuMP.AbstractJuMPScalar},
+                Polyhedra.HRepElement{<:JuMP.AbstractJuMPScalar}}},
+    name::String = ""
+)
     □ = constraint.subset
     ◯ = constraint.supset
     for line in lines(□)

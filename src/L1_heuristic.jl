@@ -192,7 +192,7 @@ function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.Ellipsoid{T}, Sets.Poly
     ints = [zeros(length(decs)) for i in 1:length(set.sets)]
     for simplex in simplices(set.polytope)
         piece = findfirst(h -> simplex ⊆ Polyhedra.hyperplane(h), collect(halfspaces(set.polytope)))
-        integrate_simplex!(ints[piece], decs, convexhull(simplex, Polyhedra.origin(pointtype(set.polytope), Sets.dimension(set))), cache)
+        integrate_simplex!(ints[piece], decs, convexhull(simplex, Polyhedra.origin(Polyhedra.pointtype(set.polytope), Sets.dimension(set))), cache)
     end
     U = MA.promote_operation(*, Float64, T)
     total = zero(MA.promote_operation(+, U, U))
@@ -208,6 +208,7 @@ end
 # outside the polar of the rectangle with vertices (-v, v). However, since it
 # is homogeneous, only the ratios between the dimensions is important
 function l1_integral(set::Sets.PolarOf{<:Union{Sets.Ellipsoid,
+                                               Sets.Piecewise, # vertex ignored by Piecewise anyway ^^
                                                Sets.ConvexPolySet}},
                      vertex)
     return l1_integral(Sets.polar(set), 1 ./ vertex)

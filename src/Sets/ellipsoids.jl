@@ -23,7 +23,14 @@ convexity_proof(ell::Ellipsoid) = ell.Q
 function scaling_function(ell::Ellipsoid)
     @assert dimension(ell) == 2
     Q = ell.Q
-    return (x, y) -> sqrt(x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2])
+    return (x, y) -> begin
+        val = x^2 * Q[1, 1] + 2x*y * Q[1, 2] + y^2 * Q[2, 2]
+        if -1e-8 < val < 0
+            # `sqrt` would error
+            return zero(float(val))
+        end
+        return sqrt(val)
+    end
 end
 
 function ellipsoid(ell::PolarOf{<:Ellipsoid})
