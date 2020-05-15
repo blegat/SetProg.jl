@@ -119,6 +119,37 @@ function JuMP.add_constraint(model::JuMP.Model,
                                            constraint.kws...), name)
 end
 
+function add_constraint_inclusion_domain(
+    model::JuMP.Model,
+    subset::Sets.Ellipsoid,
+    supset::Sets.Ellipsoid,
+    domain::Polyhedra.HRep)
+    Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain), j in 1:fulldim(domain)]
+    hashyperplanes(domain) && error("hyperplanes not supported yet")
+    for (i, hi) in enumerate(halfspaces(domain))
+        for (j, hj) in enumerate(halfspaces(domain))
+            i >= j && break
+            (iszero(hi.β) && iszero(hj.β)) || error("only cones are supported")
+            A = hi.a'hj.a + hj.a'hi.a
+            λ = @variable(model, lower_bound = 0.0)
+            Λ = MA.mutable_operate!(MA.add_mul, Λ, λ, A)
+        end
+    end
+    return JuMP.add_constraint(model, psd_constraint(Symmetric(subset.Q - supset.Q - Λ)))
+end
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.Piecewise,
+                                                             <:Sets.Piecewise},
+                             name::String = "")
+    subset = constraint.subset
+    supset = constraint.supset
+    for (i, si) in enumerate(subset.sets)
+        for (j, sj) in enumerate(supset.sets)
+            add_constraint_inclusion_domain(model, si, sj, subset.pieces[i] ∩ subset.pieces[j])
+        end
+    end
+end
+
 # S ⊆ T <=> T* ⊇ S*
 function JuMP.build_constraint(_error::Function,
                                subset::Sets.HouseDualOf,

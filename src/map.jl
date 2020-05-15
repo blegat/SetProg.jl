@@ -23,7 +23,7 @@ function apply_map(li::Sets.LinearPreImage{<:Sets.Ellipsoid}, new_vars)
 end
 
 function apply_map(li::Sets.LinearPreImage{<:Sets.Piecewise}, new_vars)
-    return Piecewise(
+    return Sets.Piecewise(
         [apply_map(Sets.LinearPreImage(set, li.A), new_vars) for set in li.set.sets],
         li.A \ li.set.polytope,
         [li.A \ piece for piece in li.set.pieces],
