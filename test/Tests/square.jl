@@ -94,7 +94,7 @@ end
 function piecewise_semiell_inner_homogeneous_◇_square_test(optimizer, config)
     square_test(optimizer, config, true,
                 Ellipsoid(symmetric=true, piecewise=◇),
-                set -> L1_heuristic(set, zeros(2)), 25/30,
+                set -> L1_heuristic(set, zeros(2)), 10/3,
                 p◯ -> begin
                     @test p◯ isa Sets.Polar
                     ◯ = p◯.set

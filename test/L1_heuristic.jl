@@ -14,22 +14,28 @@ using Polyhedra
     q = SetProg.GramMatrix(Q, SetProg.monomials([x, y], 2))
     @test SetProg.rectangle_integrate(polynomial(q), [2, 3]) ≈ 3465.6
 
+    @test SetProg.rectangle_integrate(polynomial(q), [1, 1]) ≈ 472/45
+
     subset = SetProg.Sets.PolySet(4, q)
-    v_rectangle = polyhedron(convexhull([2.0, 3], [-2, -3], [-2, 3], [2, -3]))
-    h_rectangle = polyhedron(HalfSpace([1.0, 0], 2) ∩ HalfSpace([-1, 0], 2) ∩
-                             HalfSpace([0, 1], 3) ∩ HalfSpace([0, -1], 3))
-    for rectangle in [v_rectangle, h_rectangle]
-        set = SetProg.Sets.Piecewise([subset, subset, subset, subset], rectangle)
-        @test SetProg.l1_integral(set, nothing) ≈ 3465.6
+    v_rep(a, b) = polyhedron(convexhull([a, b], [-a, -b], [-a, b], [a, -b]))
+    h_rep(a, b) = polyhedron(HalfSpace([1, 0], a) ∩ HalfSpace([-1,  0], a) ∩
+                             HalfSpace([0, 1], b) ∩ HalfSpace([ 0, -1], b))
+    v_square = v_rep(1.0, 1.0)
+    h_square = h_rep(1.0, 1.0)
+    for square in [v_square, h_square]
+        set = SetProg.Sets.Piecewise([subset, subset, subset, subset], square)
+        @test SetProg.l1_integral(set, nothing) ≈ 472/45
     end
 
     Q = [1 2
          2 3]
     @test SetProg.rectangle_integrate(polynomial(Q, [x, y]), [2, 3]) ≈ 248
 
+    @test SetProg.rectangle_integrate(polynomial(Q, [x, y]), [1, 1]) ≈ 16/3
+
     ell = SetProg.Sets.Ellipsoid(Symmetric(Q))
-    for rectangle in [v_rectangle, h_rectangle]
-        set = SetProg.Sets.Piecewise([ell, ell, ell, ell], rectangle)
-        @test SetProg.l1_integral(set, nothing) ≈ 248
+    for square in [v_square, h_square]
+        set = SetProg.Sets.Piecewise([ell, ell, ell, ell], square)
+        @test SetProg.l1_integral(set, nothing) ≈ 16/3
     end
 end

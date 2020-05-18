@@ -79,7 +79,7 @@ function ci_piecewise_semiell_homogeneous_test(optimizer, config)
     ci_square_test(
         optimizer, config, true,
         Ellipsoid(symmetric=true, piecewise=◇),
-        set -> L1_heuristic(set, [1.0, 1.0]), 35/48,
+        set -> L1_heuristic(set, [1.0, 1.0]), 35/12,
         p◯ -> begin
             @test p◯ isa Sets.Polar
             ◯ = p◯.set

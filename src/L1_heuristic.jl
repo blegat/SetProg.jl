@@ -45,12 +45,7 @@ end
 using Combinatorics
 using Polyhedra
 using LinearAlgebra
-function _volume_simplex(s)
-    return abs(det([hcat(collect(points(s))...); ones(npoints(s))']))
-end
-function volume_simplex(s)
-    return _volume_simplex(s) / factorial(fulldim(s))
-end
+
 # See (6) of [BBDKV11]
 function _linear_simplex(l::PowerOfLinearForm, s)
     ls = [l.coefficients'si for si in points(s)]
@@ -58,7 +53,7 @@ function _linear_simplex(l::PowerOfLinearForm, s)
 end
 function _integrate(l::PowerOfLinearForm, s)
     frac = (factorial(l.power) / factorial(l.power + fulldim(s))) # /!\ TODO: overflow
-    return frac * _volume_simplex(s)  * _linear_simplex(l, s)
+    return frac * Polyhedra.unscaled_volume_simplex(s)  * _linear_simplex(l, s)
 end
 function integrate(l::PowerOfLinearForm, s, cache::Dict{PowerOfLinearForm, Float64})
     if !haskey(cache, l)
@@ -145,15 +140,6 @@ function decompose(exps::Vector{Int})
 end
 decompose(mono::AbstractMonomial) = decompose(exponents(mono))
 
-using QHull
-function simplices(v::VRepresentation)
-    if hasrays(v)
-        error("Not a polytope")
-    end
-    ch = QHull.chull(MixedMatVRep(v).V)
-    return [vrep(ch.points[simplex, :]) for simplex in ch.simplices]
-end
-simplices(polytope::Polyhedron) = simplices(vrep(polytope))
 function all_exponents(set::Sets.Piecewise{<:Any, <:Sets.PolySet})
     # TODO check that all polysets have same degree
     s = set.sets[1]
@@ -189,10 +175,17 @@ function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.Ellipsoid{T}, Sets.Poly
     val = Dict(exps => length(push!(decs, decompose(exps)))
                for exps in all_exponents(set))
     cache = Dict{PowerOfLinearForm, Float64}()
-    ints = [zeros(length(decs)) for i in 1:length(set.sets)]
-    for simplex in simplices(set.polytope)
-        piece = findfirst(h -> simplex ⊆ Polyhedra.hyperplane(h), collect(halfspaces(set.polytope)))
-        integrate_simplex!(ints[piece], decs, convexhull(simplex, Polyhedra.origin(Polyhedra.pointtype(set.polytope), Sets.dimension(set))), cache)
+    ints = map(set.pieces) do piece
+        polytope = polyhedron(piece)
+        # `piece` is a cone, let's cut it with a halfspace
+        # We normalize as the norm of each ray is irrelevant
+        cut = normalize(sum(normalize ∘ Polyhedra.coord, rays(polytope))) # Just a heuristic, open to better ideas
+        intersect!(polytope, HalfSpace(cut, one(eltype(cut))))
+        int = zeros(length(decs))
+        for Δ in Polyhedra.triangulation(polytope)
+            integrate_simplex!(int, decs, Δ, cache)
+        end
+        return int
     end
     U = MA.promote_operation(*, Float64, T)
     total = zero(MA.promote_operation(+, U, U))
