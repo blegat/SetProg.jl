@@ -13,12 +13,13 @@ const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPol
 using JuMP
 const MOIT = MOI.Test
 
+const □ = polyhedron(HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1))
+const ◇ = polyhedron(convexhull([1.0, 0], [0, 1], [-1, 0], [0, -1]))
+
 function square_test(optimizer, config::MOIT.TestConfig,
                      inner::Bool, variable::SetProg.AbstractVariable,
                      metric::Function, objective_value, set_test)
     model = _model(optimizer)
-
-    □ = polyhedron(HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1))
 
     @variable(model, ◯, variable)
     if inner
@@ -90,6 +91,44 @@ function löwner_homogeneous_square_test(optimizer, config)
                 end)
 end
 
+function piecewise_semiell_inner_homogeneous_◇_square_test(optimizer, config)
+    square_test(optimizer, config, true,
+                Ellipsoid(symmetric=true, piecewise=◇),
+                set -> L1_heuristic(set), 4,
+                p◯ -> begin
+                    @test p◯ isa Sets.Polar
+                    ◯ = p◯.set
+                    @test ◯ isa Sets.Piecewise{Float64, Sets.Ellipsoid{Float64}}
+                    @test length(◯.sets) == 4
+                    Q1 = Symmetric([ 1.0  1.0
+                                     1.0  1.0])
+                    Q2 = Symmetric([ 1.0 -1.0
+                                    -1.0  1.0])
+                    @test ◯.sets[1].Q ≈ Q1 atol=config.atol rtol=config.rtol
+                    @test ◯.sets[2].Q ≈ Q2 atol=config.atol rtol=config.rtol
+                    @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
+                    @test ◯.sets[4].Q ≈ Q1 atol=config.atol rtol=config.rtol
+                end)
+end
+
+function piecewise_semiell_inner_homogeneous_□_square_test(optimizer, config)
+    square_test(optimizer, config, true,
+                Ellipsoid(symmetric=true, piecewise=□),
+                set -> L1_heuristic(set), 8/3,
+                p◯ -> begin
+                    @test p◯ isa Sets.Polar
+                    ◯ = p◯.set
+                    @test ◯ isa Sets.Piecewise{Float64, Sets.Ellipsoid{Float64}}
+                    @test length(◯.sets) == 4
+                    Q = Symmetric([1.0 0.0
+                                   0.0 1.0])
+                    @test ◯.sets[1].Q ≈ Q atol=config.atol rtol=config.rtol
+                    @test ◯.sets[2].Q ≈ Q atol=config.atol rtol=config.rtol
+                    @test ◯.sets[3].Q ≈ Q atol=config.atol rtol=config.rtol
+                    @test ◯.sets[4].Q ≈ Q atol=config.atol rtol=config.rtol
+                end)
+end
+
 const quartic_inner_poly = [3.1518541833100864, -0.1617384194869734]
 const quartic_inner_obj = 6.447419478140056
 const quartic_inner_α = 5.6567546886722795
@@ -136,11 +175,23 @@ function quartic_outer_homogeneous_square_test(optimizer, config)
                 end)
 end
 
-const square_tests = Dict("john_homogeneous_square" => john_homogeneous_square_test,
-                         "john_nonhomogeneous_ell_square" => john_nonhomogeneous_ell_square_test,
-                         "john_nonhomogeneous_quad_square" => john_nonhomogeneous_quad_square_test,
-                         "löwner_homogeneous_square" => löwner_homogeneous_square_test,
-                         "quartic_inner_homogeneous" => quartic_inner_homogeneous_square_test,
-                         "quartic_outer_homogeneous" => quartic_outer_homogeneous_square_test)
+const square_tests = Dict(
+    "john_homogeneous_square" =>
+     john_homogeneous_square_test,
+    "john_nonhomogeneous_ell_square" =>
+     john_nonhomogeneous_ell_square_test,
+    "john_nonhomogeneous_quad_square" =>
+     john_nonhomogeneous_quad_square_test,
+    "löwner_homogeneous_square" =>
+     löwner_homogeneous_square_test,
+    "piecewise_semiell_inner_homogeneous_◇_square" =>
+     piecewise_semiell_inner_homogeneous_◇_square_test,
+    "piecewise_semiell_inner_homogeneous_□_square" =>
+     piecewise_semiell_inner_homogeneous_□_square_test,
+    "quartic_inner_homogeneous_square" =>
+     quartic_inner_homogeneous_square_test,
+    "quartic_outer_homogeneous_square" =>
+     quartic_outer_homogeneous_square_test
+)
 
 @test_suite square

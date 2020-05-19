@@ -25,8 +25,8 @@ export nth_root, L1_heuristic
 
 include("utilities.jl")
 include("spaces.jl")
+include("macros.jl") # need to be before `variables.jl` and `constraints.jl` as they use `⊆` in `@constraint`
 include("variables.jl")
-include("macros.jl") # need to be before constraint as it uses ⊆ in @constraint
 include("map.jl")
 include("constraints.jl")
 include("objective.jl")

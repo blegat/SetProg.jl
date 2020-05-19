@@ -74,6 +74,14 @@ function JuMP.build_constraint(_error::Function, member::Point,
                                                         scaling(member))))
     end
 end
+function JuMP.build_constraint(_error::Function,
+                               member::Point{<:Number},
+                               set::Sets.Piecewise)
+    # We take `coord` and ignore the scaling as `piece` is a cone.
+    piece = findfirst(piece -> Polyhedra.coord(member) in piece, set.pieces)
+    JuMP.build_constraint(_error, member, set.sets[piece])
+end
+
 
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:JuMP.AbstractJuMPScalar},
@@ -199,4 +207,17 @@ function JuMP.add_constraint(
     p = SetProg.Sets.gauge1(set)
     scalar_product = dot(measure(ν), polynomial(p))
     @constraint(model, scalar_product in MOI.LessThan(1.0))
+end
+
+function JuMP.build_constraint(_error::Function,
+                               member::Point,
+                               h::Polyhedra.HalfSpace{AffExpr})
+    r = Polyhedra.coord(member)
+    JuMP.build_constraint(_error, r'h.a - scaling(member) * h.β, MOI.LessThan(0.0))
+end
+function JuMP.build_constraint(_error::Function,
+                               member::Polyhedra.Ray,
+                               h::Polyhedra.HalfSpace)
+    r = Polyhedra.coord(member)
+    JuMP.build_constraint(_error, r'h.a, MOI.LessThan(0.0))
 end

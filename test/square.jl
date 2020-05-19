@@ -53,6 +53,21 @@ const quartic_outer_convexity = [3.621308885857567, 0.0, quartic_outer_α, 0.0, 
                     end), config)
                 end
             end
+            @testset "Piecewise" begin
+                Q1 = ones(3)
+                Q2 = [1.0, -1.0, 1.0]
+                Tests.piecewise_semiell_inner_homogeneous_◇_square_test(
+                    bridged_mock(mock -> MOI.Utilities.mock_optimize!(
+                        mock,
+                        [Q1; Q2; Q2; Q1])),
+                    config)
+                Q = [1.0, 0.0, 1.0]
+                Tests.piecewise_semiell_inner_homogeneous_□_square_test(
+                    bridged_mock(mock -> MOI.Utilities.mock_optimize!(
+                        mock,
+                        [Q; Q; Q; Q])),
+                    config)
+            end
         end
         @testset "Löwner" begin
             # Q = [√2  0

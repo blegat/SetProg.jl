@@ -1,21 +1,6 @@
 # Efficient implementation a' * Q * b that avoid unnecessary type promotion as
 # well as unnecessary allocation
 function quad_form(a::AbstractVector{<:Real},
-                   Q::Union{Symmetric{<:Union{JuMP.AbstractVariableRef, JuMP.GenericAffExpr}},
-                            SymMatrix{<:Union{JuMP.AbstractVariableRef, JuMP.GenericAffExpr}}},
-                   b::AbstractVector{<:Real})
-    n = length(a)
-    @assert n == LinearAlgebra.checksquare(Q)
-    @assert n == length(b)
-    aff = zero(JuMP.GenericAffExpr{eltype(a), JuMP.VariableRef})
-    for j in 1:n
-        for i in 1:n
-            JuMP.add_to_expression!(aff, a[i] * b[j], Q[i, j])
-        end
-    end
-    return aff
-end
-function quad_form(a::AbstractVector{<:Real},
                    Q::SymMatrix{<:Real},
                    b::AbstractVector{<:Real})
     n = length(a)
@@ -36,21 +21,25 @@ function quad_form(a::AbstractVector{<:Real},
     end
     return out
 end
-function quad_form(a::AbstractVector{<:Real},
-                   Q::Symmetric{<:Real},
-                   b::AbstractVector{<:Real})
-    n = length(a)
-    @assert n == LinearAlgebra.checksquare(Q)
-    @assert n == length(b)
-    return sum(a[i] * Q[i, j] * b[j] for j in 1:n for i in 1:n)
+function quad_form(a::AbstractVector,
+                   Q::AbstractMatrix,
+                   b::AbstractVector)
+    (n, m) = size(Q)
+    n == length(a) || throw(DimensionMismatch())
+    m == length(b) || throw(DimensionMismatch())
+    U = MA.promote_operation(*, eltype(a), eltype(Q), eltype(b))
+    out = zero(MA.promote_operation(+, U, U))
+    for j in 1:m
+        for i in 1:n
+            out = MA.add_mul!(out, a[i], Q[i, j], b[j])
+        end
+    end
+    return out
 end
-
 # Same as quad_form(a, Q, a)
-function quad_form(Q::Symmetric{<:JuMP.AbstractJuMPScalar},
-                   a::AbstractVector{<:AbstractMonomialLike})
-    n = length(a)
-    @assert n == LinearAlgebra.checksquare(Q)
-    return sum((i == j ? 1 : 2) * a[i] * Q[i, j] * a[j] for j in 1:n for i in 1:j)
+function quad_form(Q::Symmetric,
+                   a::AbstractVector)
+    return quad_form(a, Q, a)
 end
 function quad_form(Q::Symmetric{JuMP.VariableRef}, a::AbstractVector{<:Real})
     return quad_form(a, Q, a)
@@ -136,7 +125,7 @@ end
 function psd_constraint(Q::Symmetric)
     n = LinearAlgebra.checksquare(Q)
     q = [Q[i, j] for j in 1:n for i in 1:j]
-    # For n == 0, it will create not constraint, for n == 1, it will simply
+    # For n == 0, it will create no constraint, for n == 1, it will simply
     # be a Nonnegatives constraint and for n == 2 it will be a rotated SOC.
     set = SumOfSquares.matrix_cone(MOI.PositiveSemidefiniteConeTriangle, n)
     return PolyJuMP.bridgeable(JuMP.build_constraint(error, q, set),

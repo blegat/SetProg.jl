@@ -142,6 +142,49 @@ convexity_proof(set::Union{Polar, PerspectiveDual}) = convexity_proof(set.set)
 struct UnknownSet{T} <: AbstractSet{T} end
 include("transformations.jl")
 
+struct Piecewise{T, S<:AbstractSet{T}, U, Po <: Polyhedra.Polyhedron{U}, Pi} <: AbstractSet{T}
+    sets::Vector{S}
+    polytope::Po
+    pieces::Vector{Pi}
+    # TODO add adjacency graph in Polyhedra
+    graph::Vector{Vector{Tuple{Int, Vector{U}}}}
+end
+function Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron{U}) where U
+    @assert length(sets) == nhalfspaces(polytope)
+    points = [Set(incidentpointindices(polytope, hidx)) for hidx in eachindex(halfspaces(polytope))]
+    graph = [Tuple{Int, Vector{U}}[] for i in eachindex(halfspaces(polytope))]
+    if !(Polyhedra.origin(Polyhedra.pointtype(polytope), Polyhedra.fulldim(polytope)) in polytope)
+        error("The origin is not in the polytope")
+    end
+    for (i, hi) in enumerate(halfspaces(polytope))
+        hi.β > 0 || error("The origin is not in the polytope")
+        vi = hi.a / hi.β
+        for (j, hj) in enumerate(halfspaces(polytope))
+            hi.β > 0 || error("The origin is not in the polytope")
+            vj = hj.a / hj.β
+            i == j && break
+            if length(points[i] ∩ points[j]) ≥ fulldim(polytope) - 1
+                push!(graph[i], (j, vj - vi))
+                push!(graph[j], (i, vi - vj))
+            end
+        end
+    end
+    function piece(i, h)
+        return hrep([HalfSpace(edge[2], zero(U)) for edge in graph[i]])
+    end
+    pieces = [piece(i, h) for (i, h) in enumerate(halfspaces(polytope))]
+    return Piecewise(sets, polytope, pieces, graph)
+end
+dimension(set::Piecewise) = Polyhedra.fulldim(set.polytope)
+function scaling_function(set::Piecewise)
+    g = scaling_function.(set.sets)
+    return (x, y) -> begin
+        v = [x, y]
+        i = findfirst(piece -> v in piece, set.pieces)
+        return g[i](x, y)
+    end
+end
+
 include("ellipsoids.jl")
 include("polynomials.jl")
 include("recipe.jl")

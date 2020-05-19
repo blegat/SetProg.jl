@@ -41,6 +41,27 @@ const MOIT = MOI.Test
                 config)
             end
         end
+        @testset "Piecewise" begin
+            @testset "Diamond" begin
+                Q1 = [1.0, -0.25, 1.0]
+                Q2 = [1.0, -1.0, 1.0]
+                Tests.ci_piecewise_semiell_homogeneous_test(
+                    bridged_mock(mock -> MOI.Utilities.mock_optimize!(
+                        mock,
+                        [Q1; Q2; Q2; Q1; collect(1:MOI.get(mock, MOI.NumberOfVariables()) - 12)])),
+                    config)
+            end
+            @testset "mci" begin
+                Q1 = [1.0, -1.0, 1.0]
+                Q2 = [1.0, 0.0, 0.0]
+                Q3 = [0.25, 0.5, 1.0]
+                Tests.ci_piecewise_semiell_mci_homogeneous_test(
+                    bridged_mock(mock -> MOI.Utilities.mock_optimize!(
+                        mock,
+                        [Q1; Q1; Q2; Q3; Q2; Q3; collect(1:MOI.get(mock, MOI.NumberOfVariables()) - 18)])),
+                    config)
+            end
+        end
     end
     @testset "Quartic" begin
         # The PSD matrix for the variable  is 3 x 3 so 3 * (3+1) / 2 = 6

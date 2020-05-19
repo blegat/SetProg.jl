@@ -57,49 +57,85 @@ struct Ellipsoid <: AbstractVariable
     dimension::Union{Nothing, Int}
     guaranteed_psd::Bool # Is it already guaranteed that it is PSD ? e.g. by nth_root
     superset::Union{Sets.Ellipsoid, Nothing}
+    piecewise::Union{Polyhedra.Rep, Nothing}
 end
 function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
                    symmetric::Bool=false,
                    dimension::Union{Int, Nothing}=nothing,
-                   superset::Union{Sets.Ellipsoid, Nothing}=nothing)
-    if point !== nothing
-        if dimension === nothing
-            dimension = length(point.h)
-        elseif dimension != length(point.h)
-            throw(DimensionMismatch())
+                   superset::Union{Sets.Ellipsoid, Nothing}=nothing,
+                   piecewise::Union{Polyhedra.Rep, Nothing}=nothing)
+    function update_dim(object, dim_fun)
+        if object !== nothing
+            d = dim_fun(object)
+            if dimension === nothing
+                dimension = d
+            elseif dimension != d
+                throw(DimensionMismatch())
+            end
         end
     end
-    if superset !== nothing
-        if dimension === nothing
-            dimension = Sets.dimension(superset)
-        elseif dimension != Sets.dimension(superset)
-            throw(DimensionMismatch())
-        end
-    end
-    return Ellipsoid(point, symmetric, dimension, false, superset)
+    update_dim(point, point -> length(point.h))
+    update_dim(superset, Sets.dimension)
+    update_dim(piecewise, Polyhedra.fulldim)
+    return Ellipsoid(point, symmetric, dimension, false, superset, piecewise)
 end
 Sets.space_variables(::Ellipsoid) = nothing
 
 function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
                       space_dimension, space_polyvars)
     n = space_dimension
-    Q = @variable(model, [1:n, 1:n], Symmetric, base_name="Q")
-    if !ell.guaranteed_psd
-        psd_constraint(model, Q)
+    function new_Q()
+        # TODO, we should use constraiend variable instead in case direct mode is used.
+        Q = @variable(model, [1:n, 1:n], Symmetric, base_name="Q")
+        if !ell.guaranteed_psd
+            psd_constraint(model, Q)
+        end
+        return Q
     end
     if ell.symmetric
-        if space == PrimalSpace
-            if ell.superset !== nothing
-                Q = Symmetric(Q + ell.superset.Q)
+        function new_piece()
+            if space == PrimalSpace
+                if ell.superset !== nothing
+                    Q = Symmetric(new_Q() + ell.superset.Q)
+                else
+                    Q = new_Q()
+                end
+                return Sets.Ellipsoid(Q)
+            else
+                ell.superset === nothing || error("superset not supported in dual space")
+                @assert space == DualSpace
+                return Sets.Ellipsoid(new_Q())
             end
-            return Sets.Ellipsoid(Q)
+        end
+        if ell.piecewise === nothing
+            set = new_piece()
         else
-            ell.superset === nothing || error("superset not supported in dual space")
-            @assert space == DualSpace
-            return Sets.polar(Sets.Ellipsoid(Q))
+            hashyperplanes(ell.piecewise) && error("hyperplanes not supported for piecewise")
+            sets = [new_piece() for i in 1:nhalfspaces(ell.piecewise)]
+            set = Sets.Piecewise(sets, ell.piecewise)
+            @polyvar x[1:n]
+            q = [quad_form(set.Q, x) for set in sets]
+            for i in eachindex(set.graph)
+                for (j, v) in set.graph[i]
+                    if i < j # The constraints are the same for (i, j) and (j, i)
+                        @constraint(model, q[i] == q[j], domain = @set x'v == 0)
+                        # v corresponds to `-n_ij` in LCSS paper
+                        Δ = sets[i].Q * v - sets[j].Q * v
+                        inter = polyhedron(set.pieces[i] ∩ set.pieces[j])
+                        h = HalfSpace(Δ, zero(eltype(Δ)))
+                        @constraint(model, inter ⊆ h)
+                    end
+                end
+            end
+        end
+        if space == PrimalSpace
+            return set
+        else
+            return Sets.polar(set)
         end
     else
         ell.superset === nothing || error("superset not supported for non-symmetric Ellipsoid")
+        ell.piecewise === nothing || error("piecewise not supported for non-symmetric Ellipsoid")
         if space == PrimalSpace
             error("Non-symmetric ellipsoid non implemented yet, use `Ellipsoid(symmetric=true)`.")
         else
@@ -107,7 +143,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
             if ell.point === nothing
                 throw(ArgumentError("Specify a point for nonsymmetric ellipsoid, e.g. `Ellipsoid(point=InteriorPoint([1.0, 0.0]))"))
             end
-            return polar_perspective_ellipsoid(model, Q, ell.point,
+            return polar_perspective_ellipsoid(model, new_Q(), ell.point,
                                                data(model).perspective_polyvar,
                                                space_polyvars)
         end
@@ -264,6 +300,9 @@ function JuMP.value(set::Sets.ShiftedEllipsoid)
 end
 function JuMP.value(set::Sets.ConvexPolynomialSet)
     return Sets.ConvexPolynomialSet(set.degree, JuMP.value(set.q), set.z, set.x)
+end
+function JuMP.value(set::Sets.Piecewise)
+    return Sets.Piecewise(JuMP.value.(set.sets), set.polytope, set.pieces, set.graph)
 end
 
 ### SetVariableRef ###
