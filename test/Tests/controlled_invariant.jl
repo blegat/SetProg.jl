@@ -79,7 +79,7 @@ function ci_piecewise_semiell_homogeneous_test(optimizer, config)
     ci_square_test(
         optimizer, config, true,
         Ellipsoid(symmetric=true, piecewise=◇),
-        set -> L1_heuristic(set, [1.0, 1.0]), 35/12,
+        set -> L1_heuristic(set), 19 / 6,
         p◯ -> begin
             @test p◯ isa Sets.Polar
             ◯ = p◯.set
@@ -93,6 +93,33 @@ function ci_piecewise_semiell_homogeneous_test(optimizer, config)
             @test ◯.sets[2].Q ≈ Q2 atol=config.atol rtol=config.rtol
             @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
             @test ◯.sets[4].Q ≈ Q1 atol=config.atol rtol=config.rtol
+        end
+    )
+end
+
+function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
+    polar_mci = polyhedron(convexhull([1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0], [1.0, 0.5], [-1.0, -0.5]))
+    ci_square_test(
+        optimizer, config, true,
+        Ellipsoid(symmetric=true, piecewise=polar_mci),
+        set -> L1_heuristic(set), 2.990943464248731,
+        p◯ -> begin
+            @test p◯ isa Sets.Polar
+            ◯ = p◯.set
+            @test ◯ isa Sets.Piecewise{Float64, Sets.Ellipsoid{Float64}}
+            @test length(◯.sets) == 6
+            Q1 = Symmetric([ 1.0 -1.0
+                            -1.0  1.0])
+            Q2 = Symmetric([ 1.0  0.0
+                             0.0  0.0])
+            Q3 = Symmetric([ 0.25 0.5
+                             0.5  1.0])
+            @test ◯.sets[1].Q ≈ Q1 atol=config.atol rtol=config.rtol
+            @test ◯.sets[2].Q ≈ Q1 atol=config.atol rtol=config.rtol
+            @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
+            @test ◯.sets[4].Q ≈ Q3 atol=config.atol rtol=config.rtol
+            @test ◯.sets[5].Q ≈ Q2 atol=config.atol rtol=config.rtol
+            @test ◯.sets[6].Q ≈ Q3 atol=config.atol rtol=config.rtol
         end
     )
 end
@@ -147,6 +174,8 @@ const ci_tests = Dict(
      ci_ell_nonhomogeneous_test,
     "ci_piecewise_semiell_homogeneous" =>
      ci_piecewise_semiell_homogeneous_test,
+    "ci_piecewise_semiell_mci_homogeneous" =>
+     ci_piecewise_semiell_mci_homogeneous_test,
     "ci_quad_nonhomogeneous" =>
      ci_quad_nonhomogeneous_test,
     "ci_quartic_homogeneous" =>

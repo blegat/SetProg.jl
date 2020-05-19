@@ -38,4 +38,18 @@ using Polyhedra
         set = SetProg.Sets.Piecewise([ell, ell, ell, ell], square)
         @test SetProg.l1_integral(set, nothing) ≈ 16/3
     end
+
+    Δ = polyhedron(convexhull([0.0, 0.0], [1.0, 0.0], [1.0, 0.5]))
+    Q = [0.0 0.5
+         0.5 0.0]
+    ell = SetProg.Sets.Ellipsoid(Symmetric(Q))
+    @test SetProg.l1_integral(ell, Δ) ≈ 1/32
+    Q = [1.0 0.0
+         0.0 0.0]
+    ell = SetProg.Sets.Ellipsoid(Symmetric(Q))
+    @test SetProg.l1_integral(ell, Δ) ≈ 1/8
+    Q = [0.0 0.0
+         0.0 1.0]
+    ell = SetProg.Sets.Ellipsoid(Symmetric(Q))
+    @test SetProg.l1_integral(ell, Δ) ≈ 1/96
 end

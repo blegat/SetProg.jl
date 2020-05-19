@@ -5,7 +5,5 @@ os:
 julia:
     - 1.0
     - 1
-env:
-    - PYTHON="" # Needed for QHull
 notifications:
     email: false

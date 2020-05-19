@@ -128,11 +128,11 @@ function add_constraint_inclusion_domain(
     hashyperplanes(domain) && error("hyperplanes not supported yet")
     for (i, hi) in enumerate(halfspaces(domain))
         for (j, hj) in enumerate(halfspaces(domain))
-            i >= j && break
+            i <= j && break
             (iszero(hi.β) && iszero(hj.β)) || error("only cones are supported")
             A = hi.a'hj.a + hj.a'hi.a
             λ = @variable(model, lower_bound = 0.0)
-            Λ = MA.mutable_operate!(MA.add_mul, Λ, λ, A)
+            Λ = MA.mutable_broadcast!(MA.add_mul, Λ, λ, A)
         end
     end
     return JuMP.add_constraint(model, psd_constraint(Symmetric(subset.Q - supset.Q - Λ)))
@@ -212,7 +212,7 @@ end
 
 # Ellipsoid #
 function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.AbstractSet{<:JuMP.AbstractJuMPScalar},
+                             constraint::InclusionConstraint{<:Sets.AbstractSet,
                                                              <:Polyhedra.Rep},
                              name::String = "")
     ◯ = constraint.subset

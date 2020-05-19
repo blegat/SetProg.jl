@@ -1,9 +1,9 @@
 struct L1Heuristic{V <: SetVariableRef} <: AbstractScalarFunction
     variable::V
-    rectangle_vertex::Vector{Float64}
+    rectangle_vertex::Union{Nothing, Vector{Float64}}
 end
 Base.copy(l::L1Heuristic) = l
-L1_heuristic(volume::Volume, v::Vector{Float64}) = L1Heuristic(volume.variable, v)
+L1_heuristic(volume::Volume, v::Union{Nothing, Vector{Float64}}=nothing) = L1Heuristic(volume.variable, v)
 Base.show(io::IO, l::L1Heuristic) = print(io, "L1-heuristic(", l.variable, ")")
 
 set_space(space::Space, ::L1Heuristic, ::JuMP.Model) = return space
@@ -72,11 +72,11 @@ function integrate_simplex!(ints::Vector{Float64}, decs::Vector{Decomposition}, 
 end
 function integrate_decompositions(decs::Vector{Decomposition}, polytope::Polyhedron,
                                   cache = Dict{PowerOfLinearForm, Float64}())
-    ints = zeros(length(decs))
-    for simplex in simplices(polytope)
-        integrate_simplex!(ints, decs, simplex, cache)
+    integrals = zeros(length(decs))
+    for Δ in Polyhedra.triangulation(polytope)
+        integrate_simplex!(integrals, decs, Δ, cache)
     end
-    return ints
+    return integrals
 end
 function integrate_monomials(monos::AbstractVector{<:AbstractMonomial}, polytope::Polyhedron)
     return integrate_decompositions(decompose.(monos), polytope)
@@ -84,6 +84,19 @@ end
 function integrate(p::AbstractPolynomial, polytope::Polyhedron)
     return coefficients(p)'integrate_monomials(monomials(p), polytope)
 end
+
+function integrate_gauge_like(set, polytope, decs, val, cache)
+    integrals = integrate_decompositions(decs, polytope, cache)
+    return evaluate_monomials(exps -> integrals[val[exps]], set)
+end
+function l1_integral(set, polytope::Polyhedra.Polyhedron)
+    decs = Decomposition[]
+    val = Dict(exps => length(push!(decs, decompose(exps)))
+                for exps in all_exponents(set))
+    cache = Dict{PowerOfLinearForm, Float64}()
+    return integrate_gauge_like(set, polytope, decs, val, cache)
+end
+
 
 """
 As studied in [DPW96].
@@ -93,7 +106,7 @@ As studied in [DPW96].
 state estimation*.
 IFAC Proceedings Volumes, **1996**.
 """
-function l1_integral(ell::Sets.Ellipsoid, vertex)
+function l1_integral(ell::Sets.Ellipsoid, vertex::AbstractVector)
     n = Sets.dimension(ell)
     @assert n == length(vertex)
     # The integral of off-diagonal entries xy are zero between the rectangle
@@ -113,7 +126,7 @@ International Journal of Control, **2012**.
 """
 function l1_integral(set::Union{Sets.PolySet,
                                 Sets.ConvexPolySet},
-                     vertex)
+                     vertex::AbstractVector)
     return rectangle_integrate(set.p, vertex)
 end
 
@@ -140,10 +153,15 @@ function decompose(exps::Vector{Int})
 end
 decompose(mono::AbstractMonomial) = decompose(exponents(mono))
 
-function all_exponents(set::Sets.Piecewise{<:Any, <:Sets.PolySet})
-    # TODO check that all polysets have same degree
-    s = set.sets[1]
-    return exponents.(monomials(Sets.space_variables(s), s.degree))
+function all_exponents(set::Sets.PolySet)
+    return exponents.(monomials(Sets.space_variables(set), set.degree))
+end
+function all_exponents(set::Sets.Ellipsoid)
+    return [ell_exponents(i, j, Sets.dimension(set)) for j in 1:Sets.dimension(set) for i in 1:j]
+end
+function all_exponents(set::Sets.Piecewise)
+    # TODO check that all polysets have same exponents
+    return all_exponents(set.sets[1])
 end
 function ell_exponents(i, j, n)
     exps = zeros(Int, n)
@@ -154,17 +172,20 @@ end
 function all_exponents(set::Sets.Piecewise{<:Any, <:Sets.Ellipsoid})
     return [ell_exponents(i, j, Sets.dimension(set)) for j in 1:Sets.dimension(set) for i in 1:j]
 end
-function add_integrals!(total, integral::Function, set::Sets.PolySet)
-    p = polynomial(set.p)
-    for t in terms(p)
-        total = MA.add_mul!(total, integral(exponents(monomial(t))), coefficient(t))
+function evaluate_monomials(monomial_value::Function, set::Sets.PolySet{T}) where T
+    U = MA.promote_operation(*, Float64, T)
+    total = zero(MA.promote_operation(+, U, U))
+    for t in terms(set.p)
+        total = MA.add_mul!(total, monomial_value(exponents(monomial(t))), coefficient(t))
     end
     return total
 end
-function add_integrals!(total, integral::Function, set::Sets.Ellipsoid)
+function evaluate_monomials(monomial_value::Function, set::Sets.Ellipsoid{T}) where T
+    U = MA.promote_operation(*, Float64, T)
+    total = zero(MA.promote_operation(+, U, U))
     for j in 1:Sets.dimension(set)
-        for i in 1:j
-            total = MA.add_mul!(total, integral(ell_exponents(i, j, Sets.dimension(set))), set.Q[i, j])
+        for i in 1:Sets.dimension(set)
+            total = MA.add_mul!(total, monomial_value(ell_exponents(i, j, Sets.dimension(set))), set.Q[i, j])
         end
     end
     return total
@@ -175,22 +196,15 @@ function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.Ellipsoid{T}, Sets.Poly
     val = Dict(exps => length(push!(decs, decompose(exps)))
                for exps in all_exponents(set))
     cache = Dict{PowerOfLinearForm, Float64}()
-    ints = map(set.pieces) do piece
+    U = MA.promote_operation(*, Float64, T)
+    total = zero(MA.promote_operation(+, U, U))
+    for (set, piece) in zip(set.sets, set.pieces)
         polytope = polyhedron(piece)
         # `piece` is a cone, let's cut it with a halfspace
         # We normalize as the norm of each ray is irrelevant
         cut = normalize(sum(normalize ∘ Polyhedra.coord, rays(polytope))) # Just a heuristic, open to better ideas
         intersect!(polytope, HalfSpace(cut, one(eltype(cut))))
-        int = zeros(length(decs))
-        for Δ in Polyhedra.triangulation(polytope)
-            integrate_simplex!(int, decs, Δ, cache)
-        end
-        return int
-    end
-    U = MA.promote_operation(*, Float64, T)
-    total = zero(MA.promote_operation(+, U, U))
-    for (integrals, set) in zip(ints, set.sets)
-        total = add_integrals!(total, exps -> integrals[val[exps]], set)
+        total = MA.add!(total, integrate_gauge_like(set, polytope, decs, val, cache))
     end
     return total
 end
@@ -201,10 +215,13 @@ end
 # outside the polar of the rectangle with vertices (-v, v). However, since it
 # is homogeneous, only the ratios between the dimensions is important
 function l1_integral(set::Sets.PolarOf{<:Union{Sets.Ellipsoid,
-                                               Sets.Piecewise, # vertex ignored by Piecewise anyway ^^
                                                Sets.ConvexPolySet}},
                      vertex)
     return l1_integral(Sets.polar(set), 1 ./ vertex)
+end
+function l1_integral(set::Sets.PolarOf{<:Sets.Piecewise}, vertex)
+    # `vertex` ignored by Piecewise
+    return l1_integral(Sets.polar(set), nothing)
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
                      vertex)
