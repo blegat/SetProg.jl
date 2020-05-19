@@ -21,6 +21,7 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SumOfSquares = "4b9e565b-77fc-50a5-a571-1244f986bda1"
 
 [compat]
+Combinatorics = "1"
 DataStructures = "0.17.11"
 DynamicPolynomials = "0.3.8"
 JuMP = "0.21"
