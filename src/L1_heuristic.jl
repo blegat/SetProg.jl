@@ -37,9 +37,8 @@ struct PowerOfLinearForm
     power::Int
 end
 struct Decomposition
-    coefficients::Vector{Int}
+    coefficients::Vector{Float64}
     forms::Vector{PowerOfLinearForm}
-    deno::Int
 end
 
 using Combinatorics
@@ -52,8 +51,13 @@ function _linear_simplex(l::PowerOfLinearForm, s)
     sum(prod(i -> ls[i]^k[i], eachindex(ls)) for k in multiexponents(npoints(s), l.power))
 end
 function _integrate(l::PowerOfLinearForm, s)
-    frac = (factorial(l.power) / factorial(l.power + fulldim(s))) # /!\ TODO: overflow
-    return frac * Polyhedra.unscaled_volume_simplex(s)  * _linear_simplex(l, s)
+    current = Polyhedra.unscaled_volume_simplex(s)  * _linear_simplex(l, s)
+    # Should multiply by `factorial(l.power) / factorial(l.power + fulldim(s))`
+    # but we want computing `factorial` as it needs big integer for arguments above 20.
+    for i in (l.power + 1):(l.power + fulldim(s))
+        current /= i
+    end
+    return current
 end
 function integrate(l::PowerOfLinearForm, s, cache::Dict{PowerOfLinearForm, Float64})
     if !haskey(cache, l)
@@ -67,7 +71,7 @@ function integrate_simplex!(ints::Vector{Float64}, decs::Vector{Decomposition}, 
     empty!(cache)
     for (i, dec) in enumerate(decs)
         ints[i] += sum(dec.coefficients[j] * integrate(dec.forms[j], simplex, cache)
-                       for j in eachindex(dec.forms)) / dec.deno
+                       for j in eachindex(dec.forms))
     end
 end
 function integrate_decompositions(decs::Vector{Decomposition}, polytope::Polyhedron,
@@ -136,8 +140,9 @@ end
 function decompose(exps::Vector{Int})
     f(i) = 0:i
     d = sum(exps)
-    deno = factorial(d)
-    coefficients = Int[]
+    # `factorial` is limited to `d <= 20`.
+    deno = prod(Float64, 1:d)
+    coefficients = Float64[]
     forms = PowerOfLinearForm[]
     for p in Iterators.product(f.(exps)...)
         dp = sum(p)
@@ -146,14 +151,14 @@ function decompose(exps::Vector{Int})
         if isodd(d - dp)
             coef = -coef
         end
-        push!(coefficients, coef)
+        push!(coefficients, coef / deno)
         push!(forms, PowerOfLinearForm(collect(p), d))
     end
-    return Decomposition(coefficients, forms, deno)
+    return Decomposition(coefficients, forms)
 end
 decompose(mono::AbstractMonomial) = decompose(exponents(mono))
 
-function all_exponents(set::Sets.PolySet)
+function all_exponents(set::Union{Sets.PolySet, Sets.ConvexPolySet})
     return exponents.(monomials(Sets.space_variables(set), set.degree))
 end
 function all_exponents(set::Sets.Ellipsoid)
@@ -172,7 +177,8 @@ end
 function all_exponents(set::Sets.Piecewise{<:Any, <:Sets.Ellipsoid})
     return [ell_exponents(i, j, Sets.dimension(set)) for j in 1:Sets.dimension(set) for i in 1:j]
 end
-function evaluate_monomials(monomial_value::Function, set::Sets.PolySet{T}) where T
+function evaluate_monomials(monomial_value::Function,
+                            set::Union{Sets.PolySet{T}, Sets.ConvexPolySet{T}}) where T
     U = MA.promote_operation(*, Float64, T)
     total = zero(MA.promote_operation(+, U, U))
     for t in terms(set.p)
@@ -209,19 +215,27 @@ function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.Ellipsoid{T}, Sets.Poly
     return total
 end
 
+_polar(::Nothing) = nothing
+function _polar(vertex::Vector)
+    ◇ = typeof(vertex)[]
+    for i in eachindex(vertex)
+        v = zeros(eltype(vertex), length(vertex))
+        v[i] = 1 / vertex[i]
+        push!(◇, v)
+        v = zeros(eltype(vertex), length(vertex))
+        v[i] = -1 / vertex[i]
+        push!(◇, v)
+    end
+    return Polyhedra.polyhedron(Polyhedra.vrep(◇))
+end
+
 # The polar of the rectangle with vertices (-v, v) is not a rectangle but the
 # smaller rectangle contained in it has vertices (-1 ./ v, 1 ./ v).
 # the set is not necessarily inside this rectangle, we just know that it is
 # outside the polar of the rectangle with vertices (-v, v). However, since it
 # is homogeneous, only the ratios between the dimensions is important
-function l1_integral(set::Sets.PolarOf{<:Union{Sets.Ellipsoid,
-                                               Sets.ConvexPolySet}},
-                     vertex)
-    return l1_integral(Sets.polar(set), 1 ./ vertex)
-end
-function l1_integral(set::Sets.PolarOf{<:Sets.Piecewise}, vertex)
-    # `vertex` ignored by Piecewise
-    return l1_integral(Sets.polar(set), nothing)
+function l1_integral(set::Sets.Polar, vertex)
+    return l1_integral(Sets.polar(set), _polar(vertex))
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
                      vertex)

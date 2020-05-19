@@ -147,7 +147,7 @@ function ci_quartic_homogeneous_test(optimizer, config)
     ci_square_test(optimizer, config, true,
                    PolySet(symmetric=true, degree=4, convex=true),
                    set -> L1_heuristic(set, [1.0, 1.0]),
-                   64/15,
+                   0.4,
                    ◯ -> begin
                        @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolySet{Float64, MonoBasis, Float64}}
                        @test Sets.polar(◯).degree == 4
