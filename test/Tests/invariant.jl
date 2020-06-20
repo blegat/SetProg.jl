@@ -18,7 +18,7 @@ function invariant_square_test(optimizer, config::MOIT.TestConfig,
                                metric::Function, objective_value, set_test)
     model = _model(optimizer)
 
-    □ = polyhedron(HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1))
+    □ = polyhedron(HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1), lib)
 
     @variable(model, ◯, variable)
     if inner

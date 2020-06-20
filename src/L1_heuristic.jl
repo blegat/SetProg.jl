@@ -6,7 +6,7 @@ Base.copy(l::L1Heuristic) = l
 L1_heuristic(volume::Volume, v::Union{Nothing, Vector{Float64}}=nothing) = L1Heuristic(volume.variable, v)
 Base.show(io::IO, l::L1Heuristic) = print(io, "L1-heuristic(", l.variable, ")")
 
-set_space(space::Space, ::L1Heuristic, ::JuMP.Model) = return space
+set_space(space::Space, ::L1Heuristic, ::JuMP.Model) = space
 
 function power_integrate(exponent, bound)
     exp = exponent + 1
@@ -205,11 +205,10 @@ function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.Ellipsoid{T}, Sets.Poly
     U = MA.promote_operation(*, Float64, T)
     total = zero(MA.promote_operation(+, U, U))
     for (set, piece) in zip(set.sets, set.pieces)
-        polytope = polyhedron(piece)
         # `piece` is a cone, let's cut it with a halfspace
         # We normalize as the norm of each ray is irrelevant
-        cut = normalize(sum(normalize ∘ Polyhedra.coord, rays(polytope))) # Just a heuristic, open to better ideas
-        intersect!(polytope, HalfSpace(cut, one(eltype(cut))))
+        cut = normalize(sum(normalize ∘ Polyhedra.coord, rays(piece))) # Just a heuristic, open to better ideas
+        polytope = piece ∩ HalfSpace(cut, one(eltype(cut)))
         total = MA.add!(total, integrate_gauge_like(set, polytope, decs, val, cache))
     end
     return total

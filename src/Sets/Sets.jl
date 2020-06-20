@@ -170,7 +170,9 @@ function Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron{U
         end
     end
     function piece(i, h)
-        return hrep([HalfSpace(edge[2], zero(U)) for edge in graph[i]])
+        # Need to be a polyhedron as `detecthlinearity` needs a solver in `add_constraint_inclusion_domain`
+        return Polyhedra.polyhedron(hrep([HalfSpace(edge[2], zero(U)) for edge in graph[i]]),
+                                    Polyhedra.DefaultLibrary{U}(Polyhedra.default_solver(polytope)))
     end
     pieces = [piece(i, h) for (i, h) in enumerate(halfspaces(polytope))]
     return Piecewise(sets, polytope, pieces, graph)

@@ -121,7 +121,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
                         @constraint(model, q[i] == q[j], domain = @set x'v == 0)
                         # v corresponds to `-n_ij` in LCSS paper
                         Δ = sets[i].Q * v - sets[j].Q * v
-                        inter = polyhedron(set.pieces[i] ∩ set.pieces[j])
+                        inter = set.pieces[i] ∩ set.pieces[j]
                         h = HalfSpace(Δ, zero(eltype(Δ)))
                         @constraint(model, inter ⊆ h)
                     end
