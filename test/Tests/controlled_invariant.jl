@@ -15,7 +15,7 @@ const MOIT = MOI.Test
 
 function ci_square_test(optimizer, config::MOIT.TestConfig,
                         inner::Bool, variable::SetProg.AbstractVariable,
-                        metric::Function, objective_value, set_test)
+                        metric::Function, objective_value, set_test, nvars=nothing)
     model = _model(optimizer)
 
     □ = polyhedron(HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1))
@@ -41,6 +41,9 @@ function ci_square_test(optimizer, config::MOIT.TestConfig,
                metric(volume(◯)))
 
     SetProg.optimize!(model)
+    if nvars !== nothing
+        @test nvars == num_variables(model)
+    end
     @test JuMP.termination_status(model) == MOI.OPTIMAL
     @test JuMP.objective_sense(model) == MOI.MAX_SENSE
     @test JuMP.objective_value(model) ≈ objective_value atol=config.atol rtol=config.rtol
@@ -93,12 +96,13 @@ function ci_piecewise_semiell_homogeneous_test(optimizer, config)
             @test ◯.sets[2].Q ≈ Q2 atol=config.atol rtol=config.rtol
             @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
             @test ◯.sets[4].Q ≈ Q1 atol=config.atol rtol=config.rtol
-        end
+        end,
+        28
     )
 end
 
 function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
-    polar_mci = polyhedron(convexhull([1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0], [1.0, 0.5], [-1.0, -0.5]))
+    polar_mci = polyhedron(convexhull([1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0], [1.0, 0.5], [-1.0, -0.5]), lib)
     ci_square_test(
         optimizer, config, true,
         Ellipsoid(symmetric=true, piecewise=polar_mci),
@@ -120,7 +124,8 @@ function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
             @test ◯.sets[4].Q ≈ Q3 atol=config.atol rtol=config.rtol
             @test ◯.sets[5].Q ≈ Q2 atol=config.atol rtol=config.rtol
             @test ◯.sets[6].Q ≈ Q3 atol=config.atol rtol=config.rtol
-        end
+        end,
+        34
     )
 end
 

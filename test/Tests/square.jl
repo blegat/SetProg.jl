@@ -14,7 +14,7 @@ using JuMP
 const MOIT = MOI.Test
 
 const □ = polyhedron(HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1))
-const ◇ = polyhedron(convexhull([1.0, 0], [0, 1], [-1, 0], [0, -1]))
+const ◇ = polyhedron(convexhull([1.0, 0], [0, 1], [-1, 0], [0, -1]), lib)
 
 function square_test(optimizer, config::MOIT.TestConfig,
                      inner::Bool, variable::SetProg.AbstractVariable,

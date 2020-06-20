@@ -123,7 +123,11 @@ function add_constraint_inclusion_domain(
     model::JuMP.Model,
     subset::Sets.Ellipsoid,
     supset::Sets.Ellipsoid,
-    domain::Polyhedra.HRep)
+    domain::Polyhedra.Polyhedron)
+    detecthlinearity!(domain)
+    if dim(domain) <= 0
+        return
+    end
     Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain), j in 1:fulldim(domain)]
     hashyperplanes(domain) && error("hyperplanes not supported yet")
     for (i, hi) in enumerate(halfspaces(domain))
@@ -135,7 +139,19 @@ function add_constraint_inclusion_domain(
             Λ = MA.mutable_broadcast!(MA.add_mul, Λ, λ, A)
         end
     end
-    return JuMP.add_constraint(model, psd_constraint(Symmetric(subset.Q - supset.Q - Λ)))
+    A = subset.Q - supset.Q - Λ
+    if hashyperplanes(domain)
+        # If we are in lower dimension,
+        # we can reduce the size of `A` so that the PSD constraint has smaller size.
+        L = Matrix{Polyhedra.coefficient_type(domain)}(undef, nhyperplanes(domain), fulldim(domain))
+        for (i, h) in hyperplanes(domain)
+            iszero(h.β) || error("only cones are supported")
+            L[i, :] = h.a
+        end
+        V = LinearAlgebra.nullspace(A)
+        A = V' * A * V
+    end
+    return JuMP.add_constraint(model, psd_constraint(Symmetric(A)))
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Sets.Piecewise,

@@ -41,7 +41,7 @@ function dual_contour(f::Function, nhalfspaces::Int, ::Type{T},
         a = point + ray / λ
         intersect!(h, HalfSpace(cone ? -a : a, cone ? zero(T) : one(T)))
     end
-    return polyhedron(h)
+    return polyhedron(h, Polyhedra.DefaultLibrary{T}(Polyhedra.OppositeMockOptimizer))
 end
 
 function Polyhedra.planar_contour(sphere::HyperSphere; npoints=64)
