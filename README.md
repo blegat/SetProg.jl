@@ -168,8 +168,8 @@ model = Model(optimizer_constructor)
 optimize!(model)
 ```
 
-[build-img]: https://travis-ci.org/blegat/SetProg.jl.svg?branch=master
-[build-url]: https://travis-ci.org/blegat/SetProg.jl
+[build-img]: https://github.org/blegat/SetProg.jl/workflows/CI/badge.svg?branch=master
+[build-url]: https://github.org/blegat/SetProg.jl/actions?query=workflow%3ACI
 [codecov-img]: http://codecov.io/github/blegat/SetProg.jl/coverage.svg?branch=master
 [codecov-url]: http://codecov.io/github/blegat/SetProg.jl?branch=master
 
