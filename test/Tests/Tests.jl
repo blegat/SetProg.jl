@@ -2,7 +2,7 @@ module Tests
 
 using JuMP
 import GLPK
-const lp_solver = optimizer_with_attributes(GLPK.Optimizer, "presolve" => GLPK.ON)
+const lp_solver = optimizer_with_attributes(GLPK.Optimizer, "presolve" => GLPK.GLP_ON)
 import Polyhedra
 const lib = Polyhedra.DefaultLibrary{Float64}(lp_solver)
 

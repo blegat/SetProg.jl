@@ -63,9 +63,7 @@ function zero_eliminate(set::ConvexPolySet, I)
     vars = space_variables(set)[I]
     K = findall(mono -> all(var -> iszero(degree(mono, var)), vars),
                 set.p.basis.monomials)
-    M = set.p.Q[K, K]
-    Q = SumOfSquares.SymMatrix([M[i, j] for j in 1:length(K) for i in 1:j],
-                               length(K))
+    Q = SumOfSquares.square_getindex(set.p.Q, K)
     monos = set.p.basis.monomials[K]
     J = setdiff(1:dimension(set), I)
     monos = DynamicPolynomials.MonomialVector(monos.vars[J],

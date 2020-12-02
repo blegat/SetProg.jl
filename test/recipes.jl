@@ -58,7 +58,8 @@ end
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
             recipe_test(Sets.polar(circle),
-                        [-1.0, 1.0, 1.0, -1.0, -1.0], [1.0, 1.0, -1.0, -1.0, 1.0])
+                        [-1.0, -1.0, 1.0,  1.0, -1.0],
+                        [-1.0,  1.0, 1.0, -1.0, -1.0])
         end
         @testset "Scaled circle" begin
             p = SetProg.GramMatrix{Float64}((i, j) -> 2convert(Float64, i == j),
@@ -67,8 +68,8 @@ end
             recipe_test(circle,
                         [1/√2, 0.0, -1/√2, 0.0], [0.0, 1/√2, 0.0, -1/√2])
             recipe_test(Sets.polar(circle),
-                        [-√2, √2,  √2, -√2, -√2],
-                        [ √2, √2, -√2, -√2,  √2])
+                        [-√2, -√2, √2,  √2, -√2],
+                        [-√2,  √2, √2, -√2, -√2])
         end
         @testset "Non-homogeneous Circle" begin
             @testset "Basic" begin
@@ -77,8 +78,8 @@ end
                                                0 0 1], monovec([z, x, y]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
                 recipe_test(shifted_circle,
-                            [-1.0, 1.0, 1.0, -1.0, -1.0],
-                            [1.0, 1.0, -1.0, -1.0, 1.0])
+                            [-1.0, -1.0, 1.0,  1.0, -1.0],
+                            [-1.0,  1.0, 1.0, -1.0, -1.0])
             end
             @testset "Scaled" begin
                 q = SetProg.GramMatrix(Float64[0 0 0
@@ -86,8 +87,8 @@ end
                                                0 0 2], monovec([z, x, y]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
                 recipe_test(shifted_circle,
-                           [-√2, √2,  √2, -√2, -√2],
-                           [ √2, √2, -√2, -√2,  √2])
+							[-√2, -√2, √2,  √2, -√2],
+							[-√2,  √2, √2, -√2, -√2])
             end
             @testset "z-Scaled" begin
                 # z: -1/2 + 1 = 1/2
@@ -96,8 +97,8 @@ end
                                         0   0 1], monovec([z, x, y]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
 				recipe_test(shifted_circle,
-							[-√2, √2,  √2, -√2, -√2],
-							[ √2, √2, -√2, -√2,  √2])
+							[-√2, -√2, √2,  √2, -√2],
+							[-√2,  √2, √2, -√2, -√2])
             end
         end
     end
@@ -129,7 +130,8 @@ end
         β = 0.732050807568877
         recipe_test(
             Sets.polar(set),
-            [-1.0, -α, 0.0, 1.0, 1.0, β, -1.0, -1.0],
-            [α, 1.0, 1.0, 0.0, -β, -1.0, -1.0, α], 8)
+            [-1.0, -1.0, -α, 0.0, 1.0, 1.0, β, -1.0],
+            [-1.0, α, 1.0, 1.0, 0.0, -β, -1.0, -1.0],
+            8)
     end
 end
