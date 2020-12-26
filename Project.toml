@@ -32,7 +32,7 @@ MultivariatePolynomials = "0.3.6"
 MutableArithmetics = "0.2.6"
 Polyhedra = "0.6.3"
 RecipesBase = "0.7, 0.8, 1.0"
-Reexport = "0.2"
+Reexport = "0.2, 1.0"
 SumOfSquares = "0.4"
 julia = "1"
 
