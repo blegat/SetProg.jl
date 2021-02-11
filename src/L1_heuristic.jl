@@ -1,10 +1,10 @@
-struct L1Heuristic{V <: SetVariableRef} <: AbstractScalarFunction
-    variable::V
-    rectangle_vertex::Union{Nothing, Vector{Float64}}
+struct L1Heuristic{S} <: AbstractScalarFunction
+    set::S
+    support # support of L1 integral
 end
 Base.copy(l::L1Heuristic) = l
-L1_heuristic(volume::Volume, v::Union{Nothing, Vector{Float64}}=nothing) = L1Heuristic(volume.variable, v)
-Base.show(io::IO, l::L1Heuristic) = print(io, "L1-heuristic(", l.variable, ")")
+L1_heuristic(volume::Volume, support=nothing) = L1Heuristic(volume.set, support)
+Base.show(io::IO, l::L1Heuristic) = print(io, "L1-heuristic(", l.set, ")")
 
 set_space(space::Space, ::L1Heuristic, ::JuMP.Model) = space
 
@@ -197,7 +197,7 @@ function evaluate_monomials(monomial_value::Function, set::Sets.Ellipsoid{T}) wh
     return total
 end
 function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.Ellipsoid{T}, Sets.PolySet{T}}},
-                     vertex) where T
+                     ::Nothing) where T
     decs = Decomposition[]
     val = Dict(exps => length(push!(decs, decompose(exps)))
                for exps in all_exponents(set))
@@ -205,6 +205,9 @@ function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.Ellipsoid{T}, Sets.Poly
     U = MA.promote_operation(*, Float64, T)
     total = zero(MA.promote_operation(+, U, U))
     for (set, piece) in zip(set.sets, set.pieces)
+        # Some pieces might be empty cones, e.g., if a projection of a polar set is given.
+        hasallrays(piece) || continue
+        @assert !haslines(piece)
         # `piece` is a cone, let's cut it with a halfspace
         # We normalize as the norm of each ray is irrelevant
         cut = normalize(sum(normalize ∘ Polyhedra.coord, rays(piece))) # Just a heuristic, open to better ideas
@@ -233,12 +236,15 @@ end
 # the set is not necessarily inside this rectangle, we just know that it is
 # outside the polar of the rectangle with vertices (-v, v). However, since it
 # is homogeneous, only the ratios between the dimensions is important
+function l1_integral(set::Sets.Polar, p::Polyhedra.Polyhedron)
+    return l1_integral(Polyhedra.polar(set), Polyhedra.polar(p))
+end
 function l1_integral(set::Sets.Polar, vertex)
-    return l1_integral(Sets.polar(set), _polar(vertex))
+    return l1_integral(Polyhedra.polar(set), _polar(vertex))
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
                      vertex)
-    return l1_integral(Sets.polar(Sets.Ellipsoid(set.set.set.Q)),
+    return l1_integral(Polyhedra.polar(Sets.Ellipsoid(set.set.set.Q)),
                        vertex)
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.ConvexPolynomialSet},
@@ -259,7 +265,7 @@ function invert_objective_sense(::Union{Sets.Ellipsoid,
 end
 function objective_sense(model::JuMP.Model, l::L1Heuristic)
     sense = data(model).objective_sense
-    if invert_objective_sense(l.variable.variable)
+    if invert_objective_sense(variablify(l.set))
         if sense == MOI.MAX_SENSE
             return MOI.MIN_SENSE
         elseif sense == MOI.MIN_SENSE
@@ -272,5 +278,5 @@ function objective_sense(model::JuMP.Model, l::L1Heuristic)
     end
 end
 function objective_function(::JuMP.Model, l::L1Heuristic)
-    return l1_integral(l.variable.variable, l.rectangle_vertex)
+    return l1_integral(variablify(l.set), l.support)
 end

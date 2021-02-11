@@ -119,39 +119,79 @@ function JuMP.add_constraint(model::JuMP.Model,
                                            constraint.kws...), name)
 end
 
+function _quadratic_part(model, domain)
+    Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain), j in 1:fulldim(domain)]
+    for (i, hi) in enumerate(halfspaces(domain))
+        for (j, hj) in enumerate(halfspaces(domain))
+            i <= j && break
+            (iszero(hi.β) && iszero(hj.β)) || error("only cones are supported")
+            A = hi.a * hj.a' + hj.a * hi.a'
+            λ = @variable(model, lower_bound = 0.0, base_name = "λ[$i,$j]")
+            Λ = MA.mutable_broadcast!(MA.add_mul, Λ, λ, A)
+        end
+    end
+    return Λ
+end
+function _linspace(domain)
+    L = Matrix{Polyhedra.coefficient_type(domain)}(undef, nhyperplanes(domain), fulldim(domain))
+    for (i, h) in enumerate(hyperplanes(domain))
+        iszero(h.β) || error("only cones are supported")
+        L[i, :] = h.a
+    end
+    return LinearAlgebra.nullspace(L)
+end
+function psd_in_domain(model, Q::Symmetric, domain::Polyhedra.HRep)
+    # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from
+    #      `zero_eliminate` of `[1e-17, 0, 1]` so we remove duplicates to drop it
+    domain = polyhedron(
+        removeduplicates(hrep(domain), Polyhedra.default_solver(domain)),
+        library(domain)
+    )
+    detecthlinearity!(domain)
+    dim(domain) <= 0 && return
+    A = Q - _quadratic_part(model, domain)
+    if hashyperplanes(domain)
+        # If we are in lower dimension,
+        # we can reduce the size of `A` so that the PSD constraint has smaller size.
+        V = _linspace(domain)
+        A = V' * A * V
+    end
+    return psd_constraint(Symmetric(A))
+end
+function lifted_psd_in_domain(model, Q::Symmetric, domain)
+    # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from
+    #      `zero_eliminate` of `[1e-17, 0, 1]` so we remove duplicates to drop it
+    domain = polyhedron(
+        removeduplicates(hrep(domain), Polyhedra.default_solver(domain)),
+        library(domain)
+    )
+    detecthlinearity!(domain)
+    dim(domain) <= 0 && return
+    Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain)]
+    for (i, hi) in enumerate(halfspaces(domain))
+        λ = @variable(model, lower_bound = 0.0, base_name = "λ[$i]")
+        Λ = MA.mutable_broadcast!(MA.add_mul, Λ, λ, hi.a)
+    end
+    off = Q[2:end, 1] - Λ
+    A = [Q[1, 1] off'
+         off     Q[2:end, 2:end] - _quadratic_part(model, domain)]
+    if hashyperplanes(domain)
+        V = _linspace(domain)
+        V = [1 zeros(1, size(V, 2))
+             zeros(size(V, 1), 1) V]
+        A = V' * A * V
+    end
+    return psd_constraint(Symmetric(A))
+end
+_add_constraint_or_not(model, ::Nothing) = nothing
+_add_constraint_or_not(model, con) = JuMP.add_constraint(model, con)
+
 function add_constraint_inclusion_domain(
     model::JuMP.Model,
     subset::Sets.Ellipsoid,
     supset::Sets.Ellipsoid,
     domain::Polyhedra.Polyhedron)
-    detecthlinearity!(domain)
-    if dim(domain) <= 0
-        return
-    end
-    Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain), j in 1:fulldim(domain)]
-    hashyperplanes(domain) && error("hyperplanes not supported yet")
-    for (i, hi) in enumerate(halfspaces(domain))
-        for (j, hj) in enumerate(halfspaces(domain))
-            i <= j && break
-            (iszero(hi.β) && iszero(hj.β)) || error("only cones are supported")
-            A = hi.a'hj.a + hj.a'hi.a
-            λ = @variable(model, lower_bound = 0.0)
-            Λ = MA.mutable_broadcast!(MA.add_mul, Λ, λ, A)
-        end
-    end
-    A = subset.Q - supset.Q - Λ
-    if hashyperplanes(domain)
-        # If we are in lower dimension,
-        # we can reduce the size of `A` so that the PSD constraint has smaller size.
-        L = Matrix{Polyhedra.coefficient_type(domain)}(undef, nhyperplanes(domain), fulldim(domain))
-        for (i, h) in hyperplanes(domain)
-            iszero(h.β) || error("only cones are supported")
-            L[i, :] = h.a
-        end
-        V = LinearAlgebra.nullspace(A)
-        A = V' * A * V
-    end
-    return JuMP.add_constraint(model, psd_constraint(Symmetric(A)))
+    return _add_constraint_or_not(model, psd_in_domain(model, Symmetric(subset.Q - supset.Q), domain))
 end
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Sets.Piecewise,
@@ -182,7 +222,7 @@ function JuMP.build_constraint(_error::Function,
                                sup_powerset::PowerSet{<:Sets.Polar}; kws...)
     S = subset
     T = sup_powerset.set
-    JuMP.build_constraint(_error, Sets.polar(T), PowerSet(Sets.polar(S));
+    JuMP.build_constraint(_error, Polyhedra.polar(T), PowerSet(Polyhedra.polar(S));
                           kws...)
 end
 
@@ -248,11 +288,11 @@ function JuMP.build_constraint(_error::Function, subset::Sets.Polar,
                                sup_powerset::PowerSet{<:Polyhedra.HyperPlane})
     @assert iszero(sup_powerset.set.β) # Otherwise it is not symmetric around the origin
     JuMP.build_constraint(_error, Line(sup_powerset.set.a),
-                          Sets.polar(subset))
+                          Polyhedra.polar(subset))
 end
 function JuMP.build_constraint(_error::Function, subset::Sets.Polar,
                                sup_powerset::PowerSet{<:Polyhedra.HalfSpace})
-    JuMP.build_constraint(_error, ScaledPoint(sup_powerset.set.a, sup_powerset.set.β), Sets.polar(subset))
+    JuMP.build_constraint(_error, ScaledPoint(sup_powerset.set.a, sup_powerset.set.β), Polyhedra.polar(subset))
 end
 
 # τ^{-1}(τ(S)*) ⊆ [⟨a, x⟩ ≤ β]
@@ -260,7 +300,7 @@ end
 #       (β, -a) ∈ τ(S)
 function JuMP.build_constraint(_error::Function, subset::Sets.PerspectiveDual,
                                sup_powerset::PowerSet{<:Polyhedra.HyperPlane})
-    JuMP.build_constraint(_error, SymScaledPoint(-sup_powerset.set.a, sup_powerset.set.β), Sets.polar(subset))
+    JuMP.build_constraint(_error, SymScaledPoint(-sup_powerset.set.a, sup_powerset.set.β), Polyhedra.polar(subset))
 end
 function JuMP.build_constraint(_error::Function, subset::Sets.PerspectiveDual,
                                sup_powerset::PowerSet{<:Polyhedra.HalfSpace})
@@ -294,21 +334,77 @@ function JuMP.add_constraint(
     end
 end
 
-function JuMP.build_constraint(_error::Function,
-                               subset::Sets.Ellipsoid,
-                               sup_powerset::PowerSet{<:HalfSpace})
-    hs = sup_powerset.set
-    P = [hs.β hs.a'
-         hs.a subset.Q]
-    return psd_constraint(Symmetric(P))
+# Approach 1:
+#     [x'Qx ≤ 1] ⊆ [⟨a, x⟩ ≤ β]
+# <=> [x'Qx ≤ 1] ⊆ [⟨a/β, x⟩ ≤ 1]
+# <=> [x'Qx ≤ 1] ⊆ [(⟨a/β, x⟩)^2 ≤ 1]
+# <=> [x'Qx ≤ 1] ⊆ [x'(aa' / β^2)x ≤ 1]
+# <=> Q ⪰ aa' / β^2
+# Schur's Lemma
+# [β^2 a']
+# [a   Q ]
+# Approach 2:
+#     [x'Qx ≤ 1] ⊆ [⟨a, x⟩ ≤ β]
+# <=> [x'Qx ≤ 1] ⊆ [⟨-a, x⟩ ≤ β]
+# <=> [x'Qx - z^2 ≤ 0] ⊆ [⟨-a, x⟩z - βz^2 ≤ 0]
+# <=> λx'Qx - λz^2 ≥ ⟨-a, x⟩z - βz^2
+# <=> λx'Qx - λz^2 ≥ ⟨-a, x⟩z - βz^2
+# <=> λx'Qx + ⟨a, x⟩z + (β - λ) z^2 ≥ 0
+# [β-λ a'/2]
+# [a/2 λQ  ]
+# TODO how to prove that they are equivalent ?
+# Approach 1 is better if β is constant
+# Approach 2 is better if Q is constant
+_unstable_constantify(x) = x
+function _unstable_constantify(x::JuMP.GenericAffExpr)
+    return isempty(JuMP.linear_terms(x)) ? x.constant : x
+end
+function _psd_matrix(subset::Sets.Ellipsoid, hs::HalfSpace)
+    return Symmetric([
+        _unstable_constantify(hs.β)^2 hs.a'
+        hs.a subset.Q
+    ])
+end
+function JuMP.build_constraint(
+    _error::Function,
+    subset::Sets.Ellipsoid,
+    sup_powerset::PowerSet{<:HalfSpace}
+)
+    return psd_constraint(Symmetric(_psd_matrix(subset, sup_powerset.set)))
+end
+
+function add_constraint_inclusion_domain(
+    model::JuMP.Model,
+    subset::Sets.Ellipsoid,
+    supset::HalfSpace,
+    domain
+)
+    return _add_constraint_or_not(
+        model,
+        lifted_psd_in_domain(model, _psd_matrix(subset, supset), domain)
+    )
+end
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    constraint::InclusionConstraint{
+        <:Sets.Piecewise,
+        <:HalfSpace},
+    name::String = ""
+)
+    subset = constraint.subset
+    supset = constraint.supset
+    for (piece, set) in zip(subset.pieces, subset.sets)
+        add_constraint_inclusion_domain(model, set, constraint.supset, piece)
+    end
 end
 
 #     [p(x) ≤ 1] ⊆ [⟨a, x⟩ ≤ β]
 # <= λ(1 - p(x)) ≤ β - ⟨a, x⟩ (necessary if p is SOS-convex)
 #              0 ≤ λ(p(x) - 1) - ⟨a, x⟩ + β
 # Set `x = 0`: 0 ≤ λ(p(0) - 1) + β
-# hence if p(0) ≤ 1 (i.e. 0 ∈ S), then λ = β / (1 - p(0))
-# Homogeneous case: λ = β
+# hence if p(0) ≤ 1 (i.e. 0 ∈ S), then λ ≤ β / (1 - p(0))
+# Homogeneous case: λ ≤ β
 # Use build_constraint when SumOfSquares#66 if λ = β (e.g. homogeneous)
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Union{Sets.ConvexPolySet,
@@ -316,10 +412,25 @@ function JuMP.add_constraint(model::JuMP.Model,
                                                              <:HalfSpace},
                             name::String = "")
     p = Sets.gauge1(constraint.subset)
-    λ = @variable(model, lower_bound=0.0, base_name = "λ")
+    h = constraint.supset
     x = Sets.space_variables(constraint.subset)
-    hs = dot(constraint.supset.a, x) - constraint.supset.β
-    cref = @constraint(model, λ * (p - 1) - hs in SOSCone())
+    hs = dot(h.a, x) - h.β
+    if MultivariatePolynomials.coefficienttype(p) <: Number
+        λ = @variable(model, lower_bound=0.0, base_name = "λ")
+        cref = @constraint(model, λ * (p - 1) - hs in SOSCone())
+    elseif Polyhedra.coefficient_type(h) <: Number
+        λ = @variable(model, lower_bound=0.0, base_name = "λ")
+        cref = @constraint(model, (p - 1) - λ * hs in SOSCone())
+    else
+        β = _unstable_constantify(h.β)
+        if β isa Number
+            # TODO what is a good value for β ???
+            λ = β/2
+        else
+            λ = @variable(model, lower_bound=0.0, base_name = "λ")
+        end
+        cref = @constraint(model, λ * (p - 1) - hs in SOSCone())
+    end
     return cref
 end
 function JuMP.build_constraint(_error::Function,

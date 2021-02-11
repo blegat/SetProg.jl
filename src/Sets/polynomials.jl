@@ -66,8 +66,10 @@ function zero_eliminate(set::ConvexPolySet, I)
     Q = SumOfSquares.square_getindex(set.p.Q, K)
     monos = set.p.basis.monomials[K]
     J = setdiff(1:dimension(set), I)
-    monos = DynamicPolynomials.MonomialVector(monos.vars[J],
-                                             Vector{Int}[z[J] for z in monos.Z])
+    monos = DynamicPolynomials.MonomialVector(
+        monos.vars[J],
+        Vector{Int}[z[J] for z in monos.Z]
+    )
     p = SumOfSquares.GramMatrix(Q, MB.MonomialBasis(monos))
     return ConvexPolySet(set.degree, p, nothing)
 end

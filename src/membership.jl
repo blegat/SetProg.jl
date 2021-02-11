@@ -17,6 +17,10 @@ Polyhedra.coord(p::Union{ScaledPoint, SymScaledPoint}) = p.coord
 scaling(::AbstractVector) = 1.0
 scaling(p::Union{ScaledPoint, SymScaledPoint}) = p.scaling
 
+Sets.perspective_variable(::Point) = nothing
+clear_spaces(::Point) = nothing
+create_spaces(point::Point, spaces::Spaces) = new_space(spaces, length(point))
+
 """
     struct MembershipConstraint{P, S} <: SetConstraint
         member::P
@@ -31,15 +35,17 @@ struct MembershipConstraint{P, S} <: SetConstraint
 end
 need_variablify(c::MembershipConstraint) = need_variablify(c.set)
 function variablify(c::MembershipConstraint)
-    return JuMP.build_constraint(error, c.member, variablify(c.set))
+    return JuMP.build_constraint(error, variablify(c.member), variablify(c.set))
 end
 
 JuMP.function_string(print_mode, c::MembershipConstraint) = string(c.member)
 JuMP.in_set_string(print_mode, c::MembershipConstraint) = string(JuMP.math_symbol(print_mode, :in), c.set)
 function JuMP.build_constraint(_error::Function, member,
-                               set::Sets.AbstractSet)
+                               set::Union{Sets.AbstractSet, Sets.Projection, SetVariableRef})
     MembershipConstraint(member, set)
 end
+# TODO
+set_space(space::Space, ::MembershipConstraint) = space
 
 #  a/β ∈ S∘
 #   S  ⊆ [⟨a/β, x⟩ ≤ 1]
@@ -51,7 +57,7 @@ function JuMP.build_constraint(_error::Function, member::Point,
         # a SOC
         return JuMP.build_constraint(_error, member, Sets.ellipsoid(set))
     else
-        return JuMP.build_constraint(_error, Sets.polar(set),
+        return JuMP.build_constraint(_error, Polyhedra.polar(set),
                                      PowerSet(HalfSpace(coord(member),
                                                         scaling(member))))
     end
@@ -123,7 +129,7 @@ function JuMP.build_constraint(_error::Function,
     # to SOC. We need to use the SDP constraint:
     # [ 1 x'     ]
     # [ x Q^{-1} ] ⪰ 0 so we switch to the polar representation
-    JuMP.build_constraint(_error, member, Sets.polar_representation(set))
+    JuMP.build_constraint(_error, member, Polyhedra.polar_representation(set))
 end
 function JuMP.build_constraint(_error::Function,
                                member::Point{<:Number},

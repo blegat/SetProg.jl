@@ -131,7 +131,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
         if space == PrimalSpace
             return set
         else
-            return Sets.polar(set)
+            return Polyhedra.polar(set)
         end
     else
         ell.superset === nothing || error("superset not supported for non-symmetric Ellipsoid")
@@ -244,7 +244,7 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
                 return Sets.ConvexPolySet(set.degree, p, convexity_proof)
             else
                 @assert space == DualSpace
-                return Sets.polar(Sets.ConvexPolySet(set.degree, p, convexity_proof))
+                return Polyhedra.polar(Sets.ConvexPolySet(set.degree, p, convexity_proof))
             end
         else
             constrain_convex(model, subs(p, d.perspective_polyvar => 1),
@@ -286,7 +286,7 @@ function JuMP.value(set::Sets.ConvexPolySet)
     return Sets.ConvexPolySet(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
 end
 function JuMP.value(set::Sets.Polar)
-    return Sets.polar(JuMP.value(Sets.polar(set)))
+    return Polyhedra.polar(JuMP.value(Polyhedra.polar(set)))
 end
 function JuMP.value(set::Sets.PerspectiveDual)
     return Sets.perspective_dual(JuMP.value(Sets.perspective_dual(set)))
@@ -334,7 +334,8 @@ JuMP.value(vref::SetVariableRef) = JuMP.value(vref.variable)
 function clear_spaces(vref::SetVariableRef)
     vref.space_index = nothing
 end
-function Sets.perspective_variable(::SetVariableRef) end
+Sets.space_variables(::SetVariableRef) = nothing
+Sets.perspective_variable(::SetVariableRef) = nothing
 function create_spaces(vref::SetVariableRef, spaces::Spaces)
     if vref.space_index === nothing
         if Sets.space_variables(vref.set) === nothing
@@ -357,3 +358,5 @@ function load(model::JuMP.AbstractModel, vref::SetVariableRef)
                                  space_dimension(d.spaces, vref.space_index),
                                  space_polyvars(d.spaces, vref.space_index))
 end
+
+variablify(p::Sets.Projection) = Polyhedra.project(variablify(p.set), p.indices)

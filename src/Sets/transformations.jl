@@ -1,3 +1,19 @@
+struct Projection{S, I}
+    set::S
+    indices::I
+end
+Polyhedra.project(set, indices) = Projection(set, indices)
+function space_variables(p::Projection)
+    vars = space_variables(p.set)
+    if vars === nothing
+        return nothing
+    else
+        return vars[p.indices]
+    end
+end
+dimension(p::Projection) = length(p.indices)
+
+
 # A^{-1} * S
 struct LinearImage{S, T, MT <: AbstractMatrix{T}} <: AbstractSet{T}
     set::S
@@ -56,7 +72,7 @@ convexity_proof(set::Householder) = convexity_proof(set.set)
 const HouseDualOf{S, T, U} = PerspectiveDualOf{Householder{T, S, U}}
 
 function Polyhedra.project(set::Polar{T}, I) where T
-    return polar(zero_eliminate(polar(set), setdiff(1:dimension(set), I)))
+    return Polyhedra.polar(zero_eliminate(Polyhedra.polar(set), setdiff(1:dimension(set), I)))
 end
 
 function zero_eliminate(set::Householder{T}, I) where T
