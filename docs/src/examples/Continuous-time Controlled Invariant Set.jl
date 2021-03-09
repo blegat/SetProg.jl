@@ -51,13 +51,7 @@ using Test     #src
 # The goal is to take the state vector toward a target set **XT** by visiting one of the squares
 # **A** or **B** and avoiding the obstacles **O1** and **O2**
 
-# The matricial form of this system is given by $\dot{x}(t) = Ax(t) + Bu(t)$ where
-
-A = [0.0 1.0 0.0
-     0.0 0.0 1.0
-     0.0 0.0 0.0]
-B = reshape([0.0, 0.0, 1.0], 3, 1)
-
+# The matricial form of this system is given by $\dot{x}(t) = Ax(t) + Bu(t)$ where `A` and `B` are as defined below.
 # As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is invariant for the algebraic system
 # $$\begin{align*}
 # \dot{x_1}(t) & = x_2(t)\\
@@ -65,6 +59,10 @@ B = reshape([0.0, 0.0, 1.0], 3, 1)
 # \end{align*}$$
 # The matricial form of this system is given by $E\dot{x}(t) = Cx(t)$ where
 
+A = [0.0 1.0 0.0
+     0.0 0.0 1.0
+     0.0 0.0 0.0]
+B = reshape([0.0, 0.0, 1.0], 3, 1)
 E = [1.0 0.0 0.0
      0.0 1.0 0.0]
 C = A[1:2, :]
@@ -75,7 +73,6 @@ C = A[1:2, :]
 #
 # [L20] Legat, B. (2020). *Set programming : theory and computation*. Ph.D. thesis, UCLouvain.
 
-using SetProg
 using SetProg
 function maximal_invariant(family, γ = nothing; dirs=dirs)
     model = Model(sdp_solver)
