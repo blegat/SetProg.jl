@@ -11,8 +11,8 @@ using Test     #src
 # This example considers the continuous-time constrained linear control system:
 # ```math
 # \begin{align*}
-# \dot{x_1}(t) & = x_2(t)\\
-# \dot{x_2}(t) & = u(t)
+# \dot{x}_1(t) & = x_2(t)\\
+# \dot{x}_2(t) & = u(t)
 # \end{align*}
 # ```
 # with state constraint $x \in [-1, 1]^2$ and input constraint $u \in [-1, 1]$.
@@ -22,9 +22,9 @@ using Test     #src
 # following lifted system:
 # ```math
 # \begin{align*}
-# \dot{x_1}(t) & = x_2(t)\\
-# \dot{x_2}(t) & = x_3(t)\\
-# \dot{x_3}(t) & = u(t)
+# \dot{x}_1(t) & = x_2(t)\\
+# \dot{x}_2(t) & = x_3(t)\\
+# \dot{x}_3(t) & = u(t)
 # \end{align*}
 # ```
 # with state constraint $x \in [-1, 1]^3$.
@@ -59,8 +59,8 @@ using Test     #src
 # As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is invariant for the algebraic system
 # ```math
 # \begin{align*}
-# \dot{x_1}(t) & = x_2(t)\\
-# \dot{x_2}(t) & = x_3(t)
+# \dot{x}_1(t) & = x_2(t)\\
+# \dot{x}_2(t) & = x_3(t)
 # \end{align*}
 # ```
 # The matricial form of this system is given by $E\dot{x}(t) = Cx(t)$ where
