@@ -1,9 +1,9 @@
 # SetProg
 
-| **Build Status** | **Social** |
-|:----------------:|:----------:|
-| [![Build Status][build-img]][build-url] | [![Gitter][gitter-img]][gitter-url] |
-| [![Codecov branch][codecov-img]][codecov-url] | [<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Discourse_logo.png/799px-Discourse_logo.png" width="64">][discourse-url] |
+| **Documentation** | **Build Status** | **Social** |
+|:-----------------:|:----------------:|:----------:|
+| [![][docs-stable-img]][docs-stable-url] | [![Build Status][build-img]][build-url] | [![Gitter][gitter-img]][gitter-url] |
+| [![][docs-latest-img]][docs-latest-url] | [![Codecov branch][codecov-img]][codecov-url] | [<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Discourse_logo.png/799px-Discourse_logo.png" width="64">][discourse-url] |
 
 JuMP extension for Set Programming : optimization with set variables and inclusion/containment constraints. This package allows the formulation of a mathematical programming involving both classical variables and constraints supported by JuMP and set variables and constraints.
 
@@ -18,6 +18,11 @@ In fact, the option to use can be automatically chosen depending on the variable
 |--------------------|----------------|-----------------|
 | Polyhedron         | Polyhedral     | Dual Dynamic    |
 | Ellipsoid/PolySet  | Sum-of-Squares | Sum-of-Squares  |
+
+## Documentation
+
+- [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
+- [**LATEST**][docs-latest-url] &mdash; *in-development version of the documentation.*
 
 ## Variables
 
@@ -167,6 +172,11 @@ model = Model(optimizer_constructor)
 @objective(model, Max, L1_heuristic(volume(S), ones(Polyhedra.fulldim(P))))
 optimize!(model)
 ```
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
+[docs-stable-url]: https://blegat.github.io/SetProg.jl/stable
+[docs-latest-url]: https://blegat.github.io/SetProg.jl/dev
 
 [build-img]: https://github.com/blegat/SetProg.jl/workflows/CI/badge.svg?branch=master
 [build-url]: https://github.com/blegat/SetProg.jl/actions?query=workflow%3ACI
