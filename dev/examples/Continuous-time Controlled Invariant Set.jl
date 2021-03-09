@@ -9,31 +9,35 @@ using Test     #src
 # This capsule reproduces the result of the Section 4 of [LJ21].
 #
 # This example considers the continuous-time constrained linear control system:
-# $$\begin{align*}
+# ```math
+# \begin{align*}
 # \dot{x_1}(t) & = x_2(t)\\
 # \dot{x_2}(t) & = u(t)
-# \end{align*}$$
+# \end{align*}
+# ```
 # with state constraint $x \in [-1, 1]^2$ and input constraint $u \in [-1, 1]$.
 #
 # In order to compute controlled invariant sets for this system, we consider
 # the projection onto the first two dimensions of controlled invariant sets of the
 # following lifted system:
-# $$\begin{align*}
+# ```math
+# \begin{align*}
 # \dot{x_1}(t) & = x_2(t)\\
 # \dot{x_2}(t) & = x_3(t)\\
 # \dot{x_3}(t) & = u(t)
-# \end{align*}$$
+# \end{align*}
+# ```
 # with state constraint $x \in [-1, 1]^3$.
 #
 # $\dot{x}(t) = Ax(t) + Bu(t)$
-# $$
+# ```math
 # A = \begin{bmatrix}
 # 0 & 1\\
 # 0 & 0
 # \end{bmatrix}.
-# $$
+# ```
 # As shown in [LTJ18], a set $S$ is controlled invariant if
-# $$
+# ```math
 # \begin{bmatrix}
 # 1 & \Delta t
 # \end{bmatrix}
@@ -42,7 +46,7 @@ using Test     #src
 # 1 & 0
 # \end{bmatrix}
 # S
-# $$
+# ```
 #
 # [LJ21] B. Legat and R. M. Jungers.
 # *Continuous-time controlled invariant sets, a geometric approach*.
@@ -53,10 +57,12 @@ using Test     #src
 
 # The matricial form of this system is given by $\dot{x}(t) = Ax(t) + Bu(t)$ where `A` and `B` are as defined below.
 # As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is invariant for the algebraic system
-# $$\begin{align*}
+# ```math
+# \begin{align*}
 # \dot{x_1}(t) & = x_2(t)\\
 # \dot{x_2}(t) & = x_3(t)
-# \end{align*}$$
+# \end{align*}
+# ```
 # The matricial form of this system is given by $E\dot{x}(t) = Cx(t)$ where
 
 A = [0.0 1.0 0.0
@@ -68,7 +74,9 @@ E = [1.0 0.0 0.0
 C = A[1:2, :]
 
 # The invariance of a set $S$ for this system is characterized by the following condition (see Proposition 7 of [LJ21]):
-# $$\forall x \in \partial S, \exists y \in T_S(x), Ey = Cx.$$
+# ```math
+# \forall x \in \partial S, \exists y \in T_S(x), Ey = Cx.
+# ```
 # The search for a set satisfying this condition can be formulated as the following set program; see [L20] for an intoduction to set programming.
 #
 # [L20] Legat, B. (2020). *Set programming : theory and computation*. Ph.D. thesis, UCLouvain.
