@@ -32,8 +32,8 @@ const PolarOrNot{S} = Union{S, PolarOf{S}}
 
 Return the polar of `set`.
 """
-polar(set::AbstractSet) = Polar(set)
-polar(set::Polar) = set.set
+Polyhedra.polar(set::AbstractSet) = Polar(set)
+Polyhedra.polar(set::Polar) = set.set
 
 """
     polar_representation(set::AbstractSet)
@@ -185,6 +185,20 @@ function scaling_function(set::Piecewise)
         i = findfirst(piece -> v in piece, set.pieces)
         return g[i](x, y)
     end
+end
+function zero_eliminate(set::Piecewise, I)
+    _elim(p) = Polyhedra.fixandeliminate(p, I, zeros(Polyhedra.coefficient_type(p), length(I)))
+    J = setdiff(1:dimension(set), I)
+    return Piecewise(
+        [zero_eliminate(s, I) for s in set.sets],
+        _elim(set.polytope),
+        _elim.(set.pieces),
+        map(set.graph) do adj
+            map(adj) do iv
+                iv[1], iv[2][J]
+            end
+        end
+    )
 end
 
 include("ellipsoids.jl")

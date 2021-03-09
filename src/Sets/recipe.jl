@@ -62,7 +62,7 @@ end
 
 function Polyhedra.planar_contour(set::PolarOf{<:Union{Piecewise{U}, ConvexPolySet{T, B, U}}};
                                   npoints=64) where {T, B, U}
-    return Polyhedra.planar_contour(dual_contour(scaling_function(polar(set)),
+    return Polyhedra.planar_contour(dual_contour(scaling_function(Polyhedra.polar(set)),
                                                  npoints, U))
 end
 

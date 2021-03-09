@@ -81,7 +81,7 @@ end
 function create_spaces(set::Polyhedra.Rep, spaces::Spaces)
     return new_space(spaces, Polyhedra.fulldim(set))
 end
-function create_spaces(set::Sets.AbstractSet, spaces::Spaces)
+function create_spaces(set::Union{Sets.AbstractSet, Sets.Projection}, spaces::Spaces)
     polyvars = Sets.space_variables(set)
     if polyvars === nothing
         return new_space(spaces, Sets.dimension(set))

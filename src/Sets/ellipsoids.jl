@@ -5,7 +5,7 @@ struct HyperSphere <: AbstractEllipsoid{Bool}
     dim::Int
 end
 dimension(sphere::HyperSphere) = sphere.dim
-polar(sphere::HyperSphere) = sphere
+Polyhedra.polar(sphere::HyperSphere) = sphere
 
 """
     struct Ellipsoid{T} <: AbstractEllipsoid{T}
@@ -43,8 +43,9 @@ function polar_representation(ell::Ellipsoid)
     polar(Ellipsoid(inv(ell.Q)))
 end
 
-function Polyhedra.project(ell::PolarOf{<:Ellipsoid}, I)
-    return polar(Ellipsoid(Symmetric(ell.set.Q[I, I])))
+function zero_eliminate(ell::Ellipsoid, I)
+    J = setdiff(1:dimension(ell), I)
+    return Ellipsoid(Symmetric(ell.Q[J, J]))
 end
 
 struct LiftedEllipsoid{T}

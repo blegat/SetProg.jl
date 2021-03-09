@@ -106,7 +106,7 @@ function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
     ci_square_test(
         optimizer, config, true,
         Ellipsoid(symmetric=true, piecewise=polar_mci),
-        set -> L1_heuristic(set), 2.990943464248731,
+        set -> L1_heuristic(set), 0.9349838949990186,
         p◯ -> begin
             @test p◯ isa Sets.Polar
             ◯ = p◯.set
@@ -125,7 +125,7 @@ function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
             @test ◯.sets[5].Q ≈ Q2 atol=config.atol rtol=config.rtol
             @test ◯.sets[6].Q ≈ Q3 atol=config.atol rtol=config.rtol
         end,
-        34
+        92
     )
 end
 

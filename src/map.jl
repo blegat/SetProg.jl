@@ -1,3 +1,7 @@
+need_variablify(p::Sets.Projection) = need_variablify(p.set)
+Sets.perspective_variable(p::Sets.Projection) = Sets.perspective_variable(p.set)
+clear_spaces(p::Sets.Projection) = clear_spaces(p.set)
+
 need_variablify(lm::Sets.LinearImage) = need_variablify(lm.set)
 function variablify(lm::Sets.LinearImage)
     return Sets.LinearImage(variablify(lm.set), lm.A)
@@ -67,7 +71,9 @@ function apply_map(li::Sets.LinearImage{<:Sets.PerspectiveDualOf{<:Sets.Househol
     return Sets.perspective_dual(dual)
 end
 
+abstract type SymbolicVariable end
+
 # FIXME, for Sets.AbstractSet, we should apply it directly
-function Base.:(*)(A::AbstractMatrix, set::Union{SetVariableRef, Sets.AbstractSet})
+function Base.:(*)(A::AbstractMatrix, set::Union{SetVariableRef, Sets.AbstractSet, SymbolicVariable})
     return Sets.LinearImage(set, A)
 end

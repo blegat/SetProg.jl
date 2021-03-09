@@ -1,9 +1,9 @@
-struct RootVolume{V <: SetVariableRef} <: AbstractScalarFunction
-    variable::V
+struct RootVolume{S} <: AbstractScalarFunction
+    set::S
 end
 Base.copy(rv::RootVolume) = rv
-nth_root(volume::Volume) = RootVolume(volume.variable)
-Base.show(io::IO, rv::RootVolume) = print(io, "volume^(1/n)(", rv.variable, ")")
+nth_root(volume::Volume) = RootVolume(volume.set)
+Base.show(io::IO, rv::RootVolume) = print(io, "volume^(1/n)(", rv.set, ")")
 
 # Primal:
 #   set : x^T Q x ≤ 1
@@ -20,8 +20,8 @@ Base.show(io::IO, rv::RootVolume) = print(io, "volume^(1/n)(", rv.variable, ")")
 #   For t ≤ det(Q)^(1/n) to be tight we need to maximize `t`
 #   hence we need to maximize the volume
 function set_space(space::Space, rv::RootVolume, model::JuMP.Model)
-    if rv.variable isa Ellipsoid
-        rv.variable.guaranteed_psd = true
+    if rv.set isa Ellipsoid
+        rv.set.guaranteed_psd = true
     end
     sense = data(model).objective_sense
     if sense == MOI.MIN_SENSE
@@ -69,5 +69,5 @@ end
 
 objective_sense(::JuMP.Model, ::RootVolume) = MOI.MAX_SENSE
 function objective_function(model::JuMP.Model, rv::RootVolume)
-    return root_volume(model, rv.variable.variable)
+    return root_volume(model, variablify(rv.set))
 end
