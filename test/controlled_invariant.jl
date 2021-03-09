@@ -42,7 +42,7 @@ const MOIT = MOI.Test
             end
         end
         @testset "Piecewise" begin
-            @testset "Diamond" begin
+            @testset "Diamond/2D cross-polytope" begin
                 Q1 = [1.0, -0.25, 1.0]
                 Q2 = [1.0, -1.0, 1.0]
                 Tests.ci_piecewise_semiell_homogeneous_test(
