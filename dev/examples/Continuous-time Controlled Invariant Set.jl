@@ -10,10 +10,10 @@ using Test     #src
 #
 # This example considers the continuous-time constrained linear control system:
 # ```math
-# \begin{align*}
+# \begin{aligned}
 # \dot{x}_1(t) & = x_2(t)\\
 # \dot{x}_2(t) & = u(t)
-# \end{align*}
+# \end{aligned}
 # ```
 # with state constraint $x \in [-1, 1]^2$ and input constraint $u \in [-1, 1]$.
 #
@@ -21,11 +21,11 @@ using Test     #src
 # the projection onto the first two dimensions of controlled invariant sets of the
 # following lifted system:
 # ```math
-# \begin{align*}
+# \begin{aligned}
 # \dot{x}_1(t) & = x_2(t)\\
 # \dot{x}_2(t) & = x_3(t)\\
 # \dot{x}_3(t) & = u(t)
-# \end{align*}
+# \end{aligned}
 # ```
 # with state constraint $x \in [-1, 1]^3$.
 #
@@ -58,10 +58,10 @@ using Test     #src
 # The matricial form of this system is given by $\dot{x}(t) = Ax(t) + Bu(t)$ where `A` and `B` are as defined below.
 # As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is invariant for the algebraic system
 # ```math
-# \begin{align*}
+# \begin{aligned}
 # \dot{x}_1(t) & = x_2(t)\\
 # \dot{x}_2(t) & = x_3(t)
-# \end{align*}
+# \end{aligned}
 # ```
 # The matricial form of this system is given by $E\dot{x}(t) = Cx(t)$ where
 
