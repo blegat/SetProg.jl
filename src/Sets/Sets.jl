@@ -1,8 +1,9 @@
 module Sets
 using LinearAlgebra
 using RecipesBase
-using MultivariatePolynomials
-using DynamicPolynomials
+import MultivariatePolynomials
+const MP = MultivariatePolynomials
+import DynamicPolynomials
 import MultivariateBases
 const MB = MultivariateBases
 const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPolynomials.MonomialVector{true}}

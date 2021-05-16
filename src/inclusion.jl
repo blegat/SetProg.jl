@@ -232,7 +232,7 @@ function JuMP.build_constraint(_error::Function,
                                sup_powerset::PowerSet{<:Sets.LinearImage{<:Union{Sets.Polar, Sets.PerspectiveDual}}};
                                kws...)
     dim = Sets.dimension(subset)
-    @polyvar x[1:dim]
+    DynamicPolynomials.@polyvar x[1:dim]
     JuMP.build_constraint(_error, apply_map(subset, x),
                           PowerSet(apply_map(sup_powerset.set, x)); kws...)
 end

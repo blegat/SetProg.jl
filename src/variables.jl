@@ -113,7 +113,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
             hashyperplanes(ell.piecewise) && error("hyperplanes not supported for piecewise")
             sets = [new_piece() for i in 1:nhalfspaces(ell.piecewise)]
             set = Sets.Piecewise(sets, ell.piecewise)
-            @polyvar x[1:n]
+            DynamicPolynomials.@polyvar x[1:n]
             q = [quad_form(set.Q, x) for set in sets]
             for i in eachindex(set.graph)
                 for (j, v) in set.graph[i]
@@ -200,7 +200,7 @@ end
 Sets.space_variables(p::PolySet) = p.variables
 
 function constrain_convex(model, p, vars)
-    hessian = differentiate(p, vars, 2)
+    hessian = MP.differentiate(p, vars, 2)
     # We do not just do `@constraint(model, p in SOSConvex())` as we would
     # like to have access to the PSD matrix of variables for the det volume heuristic
     y = [MP.similarvariable(eltype(hessian), gensym()) for i in 1:LinearAlgebra.checksquare(hessian)]
@@ -228,10 +228,10 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
     # lower degree as the polynomial is homogeneous
     @assert iseven(set.degree)
     if set.symmetric
-        monos = monomials(space_polyvars, div(set.degree, 2))
+        monos = MP.monomials(space_polyvars, div(set.degree, 2))
     else
-        monos = monomials(lift_space_variables(d, space_polyvars),
-                          div(set.degree, 2))
+        monos = MP.monomials(lift_space_variables(d, space_polyvars),
+                             div(set.degree, 2))
     end
     basis = MultivariateBases.basis_covering_monomials(set.basis, monos)
     # TODO If `set.convex` and `set.symmetric`, no need for the poly to be SOS, see Lemma 6.33 of [BPT12]
@@ -247,7 +247,7 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
                 return Polyhedra.polar(Sets.ConvexPolySet(set.degree, p, convexity_proof))
             end
         else
-            constrain_convex(model, subs(p, d.perspective_polyvar => 1),
+            constrain_convex(model, MP.subs(p, d.perspective_polyvar => 1),
                              space_polyvars)
             if space == PrimalSpace
                 error("Non-symmetric PolySet in PrimalSpace not implemented yet")

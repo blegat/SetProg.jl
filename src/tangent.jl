@@ -53,7 +53,7 @@ function linear_algebraic_surface(set::Sets.PolarOf{<:Sets.Ellipsoid}, A, E)
 end
 function linear_algebraic_surface(set::Sets.PolarOf{<:Sets.ConvexPolySet}, A, E)
     v = variables(set.set.p)
-    @polyvar z[1:size(E, 1)]
+    DynamicPolynomials.@polyvar z[1:size(E, 1)]
     Ez = E' * z
     return JuMP.build_constraint(
         error,

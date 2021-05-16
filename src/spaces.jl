@@ -63,7 +63,7 @@ function space_polyvars(spaces::Spaces, si::SpaceIndex)
     idx = find_root!(spaces.indices, si.value)
     if !haskey(spaces.polyvars, idx)
         dim = space_dimension(spaces, si)
-        @polyvar x[1:dim]
+        DynamicPolynomials.@polyvar x[1:dim]
         spaces.polyvars[idx] = x
     end
     return spaces.polyvars[idx]

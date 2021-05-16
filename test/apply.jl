@@ -2,14 +2,14 @@ using Test
 using SetProg
 
 @testset "apply_matrix" begin
-    SetProg.@polyvar x[1:2]
-    SetProg.@polyvar y[1:2]
-    SetProg.@polyvar z[1:1]
+    SetProg.DynamicPolynomials.@polyvar x[1:2]
+    SetProg.DynamicPolynomials.@polyvar y[1:2]
+    SetProg.DynamicPolynomials.@polyvar z[1:1]
     Q = [1 2 4
          2 3 5
          4 5 6]
-    q = SetProg.GramMatrix(Q, SetProg.monomials(x, 2))
-    p = SetProg.polynomial(q)
+    q = SetProg.GramMatrix(Q, SetProg.MP.monomials(x, 2))
+    p = SetProg.MP.polynomial(q)
     @testset "2x2 Float64" begin
         B = [2.0 3.0
              4.0 5.0]

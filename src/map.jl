@@ -65,7 +65,7 @@ and given ..., we have
 """
 function apply_map(li::Sets.LinearImage{<:Sets.PerspectiveDualOf{<:Sets.Householder{T}}}, new_vars) where T
     old_vars = Sets.space_variables(li.set)
-    p = subs(Sets.perspective_gauge0(li.set.set), old_vars => li.A' * new_vars)
+    p = MP.subs(Sets.perspective_gauge0(li.set.set), old_vars => li.A' * new_vars)
     dual = Sets.Householder(Sets.UnknownSet{T}(), p, li.A * li.set.set.h,
                             Sets.perspective_variable(li.set), new_vars)
     return Sets.perspective_dual(dual)

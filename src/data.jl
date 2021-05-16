@@ -73,7 +73,7 @@ function synchronize_perspective(d::Data)
         z = synchronize_perspective(z, Sets.perspective_variable(constraint))
     end
     if z === nothing
-        @polyvar z
+        DynamicPolynomials.@polyvar z
     end
     d.perspective_polyvar = z
 end

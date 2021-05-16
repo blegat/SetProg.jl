@@ -16,7 +16,7 @@ struct PolySet{T, B, U} <: AbstractSet{U}
 end
 
 function space_variables(set::PolySet)
-    return variables(set.p)
+    return MP.variables(set.p)
 end
 
 """
@@ -51,17 +51,17 @@ function ConvexPolySet(
 end
 
 function space_variables(set::ConvexPolySet)
-    return variables(set.p)
+    return MP.variables(set.p)
 end
 function dimension(set::ConvexPolySet)
-    return nvariables(set.p)
+    return MP.nvariables(set.p)
 end
 function gauge1(set::ConvexPolySet)
     return set.p
 end
 function zero_eliminate(set::ConvexPolySet, I)
     vars = space_variables(set)[I]
-    K = findall(mono -> all(var -> iszero(degree(mono, var)), vars),
+    K = findall(mono -> all(var -> iszero(MP.degree(mono, var)), vars),
                 set.p.basis.monomials)
     Q = SumOfSquares.square_getindex(set.p.Q, K)
     monos = set.p.basis.monomials[K]
@@ -80,8 +80,8 @@ function scaling_function(set::Union{PolySet, ConvexPolySet})
     @assert dimension(set) == 2
     # We convert the GramMatrix to a polynomial to avoid having to do the
     # conversion for every substitution.
-    p = polynomial(set.p)
-    vars = variables(p)
+    p = MP.polynomial(set.p)
+    vars = MP.variables(p)
     @assert length(vars) == 2
     vx, vy = vars
     return (x, y) -> p(vx => x, vy => y)^(1 / set.degree)
