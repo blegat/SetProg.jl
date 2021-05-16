@@ -153,7 +153,7 @@ function _print_gauge_function(ell::SetProg.Sets.Ellipsoid, x)
     println(x' * round.(ell.Q, digits=3) * x)
 end
 function print_support_function(set::SetProg.Sets.Polar)
-    SetProg.@polyvar x[1:SetProg.Sets.dimension(set)]
+    SetProg.DynamicPolynomials.@polyvar x[1:SetProg.Sets.dimension(set)]
     print("h(S, x) =")
     _print_gauge_function(polar(set), x)
 end

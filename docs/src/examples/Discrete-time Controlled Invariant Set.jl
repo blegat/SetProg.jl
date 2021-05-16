@@ -95,12 +95,7 @@ plot!(mci, color=aurore)
 
 # We also plot their respective polars. Note that the inclusion is reversed in the polar space.
 
-# TODO use polar of Polyhedra
-polar_mci = polyhedron(convexhull(
-    [1.0, 0.0], [-1.0, 0.0],
-        [0.0, 1.0], [0.0, -1.0],
-        [1.0, 0.5], [-1.0, -0.5]
-), lib)
+polar_mci = polar(mci)
 plot(ratio=:equal, tickfont=Plots.font(12))
 plot!(polar_mci, color=aurore)
 plot!(◇, color=lichen)
@@ -133,14 +128,14 @@ function polar_plot(set; npoints=256, args...)
     plot!(polar_mci, color=aurore)
     plot!(◇, color=lichen)
 end
-function _print_gauge_function(ell::SetProg.Sets.Ellipsoid, x)
+function _print_gauge_function(ell::SetProg.Sets.Ellipsoid)
+    SetProg.DynamicPolynomials.@polyvar x[1:2]
     print(" ")
     println(x' * round.(ell.Q, digits=6) * x)
 end
 function print_support_function(set::SetProg.Sets.Polar)
-    SetProg.@polyvar x[1:2]
     print("h(S, x) =")
-    _print_gauge_function(SetProg.Sets.polar(set), x)
+    _print_gauge_function(SetProg.Sets.polar(set))
 end
 
 # We can see below that the control invariant set of maximal volume has support function
@@ -180,7 +175,8 @@ polar_plot(sol_ell_L1)
 #
 #Note that the constraint (29) of Program 1 of [LRJ20] is implemented with Proposition 2 of [LRJ20] for all results of this capsule.
 
-function _print_gauge_function(set, x)
+function _print_gauge_function(set::SetProg.Sets.Piecewise)
+    SetProg.DynamicPolynomials.@polyvar x[1:2]
     println()
     for (set, piece) in zip(set.sets, set.pieces)
         print("         ")
@@ -245,3 +241,39 @@ primal_plot(sol_piece_mci)
 # And the polar plot is below:
 
 polar_plot(sol_piece_mci)
+
+# ## Polyset template
+#
+# We now use the polyset templates. As details in [LRJ20], for inclusion
+# constraints of the form `A * S ⊆ E * S`, the polar representation is used
+# so we need the set to be convex. For this, we set the argument `convex=true`.
+# We directly try `degree=4` because `degree=2` would simply give the same as
+# `sol_ell_L1`.
+
+function _print_gauge_function(set::SetProg.Sets.ConvexPolySet)
+    print(" ")
+    println(SetProg.MP.polynomial(set.p))
+end
+sol4 = maximal_invariant(PolySet(symmetric=true, degree=4, convex=true), vol -> L1_heuristic(vol, ones(2)))
+print_support_function(sol4)
+
+# The primal plot is below:
+
+primal_plot(sol4)
+
+# And the polar plot is below:
+
+polar_plot(sol4)
+
+# Let's now try degree 6.
+
+sol6 = maximal_invariant(PolySet(symmetric=true, degree=6, convex=true), vol -> L1_heuristic(vol, ones(2)))
+print_support_function(sol6)
+
+# The primal plot is below:
+
+primal_plot(sol6)
+
+# And the polar plot is below:
+
+polar_plot(sol6)
