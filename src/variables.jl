@@ -318,7 +318,7 @@ mutable struct SetVariableRef{M <: JuMP.AbstractModel,
     space_index::Union{Nothing, SpaceIndex}
 end
 JuMP.name(vref::SetVariableRef) = vref.name
-function JuMP.build_variable(_error, info::JuMP.VariableInfo, set::AbstractVariable)
+function JuMP.build_variable(_error::Function, info::JuMP.VariableInfo, set::AbstractVariable)
     @assert !info.has_lb && !info.has_ub && !info.has_fix && !info.binary && !info.integer && !info.has_start
     return set
 end
