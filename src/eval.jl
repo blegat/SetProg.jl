@@ -1,10 +1,10 @@
 function poly_eval(p::AbstractPolynomial{JuMP.AffExpr},
                    a::AbstractVector{Float64})
-    vars = variables(p)
+    vars = MP.variables(p)
     aff = zero(JuMP.AffExpr)
-    for term in terms(p)
-        mono = monomial(term)
-        aff = MA.add_mul!(aff, mono(vars => a), coefficient(term))
+    for term in MP.terms(p)
+        mono = MP.monomial(term)
+        aff = MA.add_mul!(aff, mono(vars => a), MP.coefficient(term))
     end
     return aff
 end

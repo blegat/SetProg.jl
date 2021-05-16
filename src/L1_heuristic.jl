@@ -13,7 +13,7 @@ function power_integrate(exponent, bound)
     @assert isodd(exp)
     return (2/exp) * bound^exp
 end
-function rectangle_integrate(m::MultivariatePolynomials.AbstractMonomialLike,
+function rectangle_integrate(m::MP.AbstractMonomialLike,
                              vertex)
     exp = exponents(m)
     if any(isodd, exp)
@@ -23,13 +23,13 @@ function rectangle_integrate(m::MultivariatePolynomials.AbstractMonomialLike,
         return prod(power_integrate.(exp, vertex))
     end
 end
-function rectangle_integrate(t::MultivariatePolynomials.AbstractTermLike,
+function rectangle_integrate(t::MP.AbstractTermLike,
                              vertex)
-    return coefficient(t) * rectangle_integrate(monomial(t), vertex)
+    return MP.coefficient(t) * rectangle_integrate(MP.monomial(t), vertex)
 end
-function rectangle_integrate(p::MultivariatePolynomials.AbstractPolynomialLike,
+function rectangle_integrate(p::MP.AbstractPolynomialLike,
                             vertex)
-    return sum(rectangle_integrate(t, vertex) for t in terms(p))
+    return sum(rectangle_integrate(t, vertex) for t in MP.terms(p))
 end
 
 struct PowerOfLinearForm
@@ -86,7 +86,7 @@ function integrate_monomials(monos::AbstractVector{<:AbstractMonomial}, polytope
     return integrate_decompositions(decompose.(monos), polytope)
 end
 function integrate(p::AbstractPolynomial, polytope::Polyhedron)
-    return coefficients(p)'integrate_monomials(monomials(p), polytope)
+    return MP.coefficients(p)'integrate_monomials(MP.monomials(p), polytope)
 end
 
 function integrate_gauge_like(set, polytope, decs, val, cache)

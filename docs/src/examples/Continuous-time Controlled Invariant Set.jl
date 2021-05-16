@@ -6,7 +6,7 @@ using Test     #src
 #
 # ## Introduction
 #
-# This capsule reproduces the result of the Section 4 of [LJ21].
+# This reproduces reproduces the numerical result of the Section 4 of [LJ21].
 #
 # This example considers the continuous-time constrained linear control system:
 # ```math
@@ -51,9 +51,6 @@ using Test     #src
 # [LJ21] B. Legat and R. M. Jungers.
 # *Continuous-time controlled invariant sets, a geometric approach*.
 # 7th IFAC Conference on Analysis and Design of Hybrid Systems ADHS 2021, **2021**.
-
-# The goal is to take the state vector toward a target set **XT** by visiting one of the squares
-# **A** or **B** and avoiding the obstacles **O1** and **O2**
 
 # The matricial form of this system is given by $\dot{x}(t) = Ax(t) + Bu(t)$ where `A` and `B` are as defined below.
 # As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is invariant for the algebraic system

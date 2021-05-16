@@ -16,6 +16,8 @@ Reexport.@reexport using Polyhedra
 using SumOfSquares
 using MultivariateMoments
 using DynamicPolynomials
+import MultivariatePolynomials
+const MP = MultivariatePolynomials
 const SpaceVariable = DynamicPolynomials.PolyVar{true}
 
 export Ellipsoid, PolySet
