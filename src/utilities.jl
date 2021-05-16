@@ -50,7 +50,7 @@ end
 # vars for A * new_vars in x. We want to compute the matrix M such that
 # y = M z where z is the vector of monomials of degree d of new_vars
 # Then we will have y' Q y = z' M' Q M z
-struct GramTransformation{T, MT <: MultivariatePolynomials.AbstractMonomial,
+struct GramTransformation{T, MT <: MP.AbstractMonomial,
                           MVT <: AbstractVector{MT}}
     M::Matrix{T}
     monos::MVT
@@ -87,8 +87,8 @@ function transformation(old_monos, A::AbstractMatrix, new_vars, d)
         end
         return powers[i][n]::eltype(mapped_vars)
     end
-    function _map(mono::MultivariatePolynomials.AbstractMonomial)
-        exps = exponents(mono)
+    function _map(mono::MP.AbstractMonomial)
+        exps = MP.exponents(mono)
         length(exps) == length(mapped_vars) || throw(ArgumentError("A monomial have less variables than `new_vars`"))
         cur = one(eltype(mapped_vars))
         for i in eachindex(exps)
@@ -101,12 +101,12 @@ function transformation(old_monos, A::AbstractMatrix, new_vars, d)
     for i in eachindex(old_monos)
         y = _map(old_monos[i])
         j = 1
-        for term in terms(y)
-            mono = monomial(term)
+        for term in MP.terms(y)
+            mono = MP.monomial(term)
             while j <= length(new_monos) && mono < new_monos[j]
                 j += 1
             end
-            M[i, j] = coefficient(term)
+            M[i, j] = MP.coefficient(term)
         end
     end
     return GramTransformation(M, new_monos)
