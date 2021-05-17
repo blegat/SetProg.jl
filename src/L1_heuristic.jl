@@ -161,21 +161,26 @@ decompose(mono::MP.AbstractMonomial) = decompose(MP.exponents(mono))
 function all_exponents(set::Union{Sets.PolySet, Sets.ConvexPolySet})
     return MP.exponents.(MP.monomials(Sets.space_variables(set), set.degree))
 end
-function all_exponents(set::Sets.Ellipsoid)
-    return [ell_exponents(i, j, Sets.dimension(set)) for j in 1:Sets.dimension(set) for i in 1:j]
-end
-function all_exponents(set::Sets.Piecewise)
-    # TODO check that all polysets have same exponents
-    return all_exponents(set.sets[1])
-end
 function ell_exponents(i, j, n)
     exps = zeros(Int, n)
     exps[i] += 1
     exps[j] += 1
     return exps
 end
-function all_exponents(set::Sets.Piecewise{<:Any, <:Sets.Ellipsoid})
+function all_exponents(set::Union{Sets.Ellipsoid,Sets.Piecewise{<:Any, <:Sets.Ellipsoid}})
     return [ell_exponents(i, j, Sets.dimension(set)) for j in 1:Sets.dimension(set) for i in 1:j]
+end
+function all_exponents(set::Sets.Piecewise)
+    # TODO check that all polysets have same exponents
+    return all_exponents(set.sets[1])
+end
+function lin_exponents(i, n)
+    exps = zeros(Int, n)
+    exps[i] += 1
+    return exps
+end
+function all_exponents(set::Union{Sets.PolarPoint,Sets.Piecewise{<:Any,<:Sets.PolarPoint}})
+    return [lin_exponents(i, Sets.dimension(set)) for i in 1:Sets.dimension(set)]
 end
 function evaluate_monomials(monomial_value::Function,
                             set::Union{Sets.PolySet{T}, Sets.ConvexPolySet{T}}) where T
@@ -196,7 +201,15 @@ function evaluate_monomials(monomial_value::Function, set::Sets.Ellipsoid{T}) wh
     end
     return total
 end
-function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.Ellipsoid{T}, Sets.PolySet{T}}},
+function evaluate_monomials(monomial_value::Function, set::Sets.PolarPoint{T}) where T
+    U = MA.promote_operation(*, Float64, T)
+    total = zero(MA.promote_operation(+, U, U))
+    for i in 1:Sets.dimension(set)
+        total = MA.add_mul!(total, monomial_value(lin_exponents(i, Sets.dimension(set))), set.a[i])
+    end
+    return total
+end
+function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.PolarPoint{T}, Sets.Ellipsoid{T}, Sets.PolySet{T}}},
                      ::Nothing) where T
     decs = Decomposition[]
     val = Dict(exps => length(push!(decs, decompose(exps)))

@@ -148,16 +148,7 @@ upper = [[[-1, 1]]; [[x1[i], x2[i]] for i in eachindex(x2)]]
 mci = polyhedron(vrep([upper; (-).(upper)]), lib)
 polar_mci = polar(mci)
 
-function _print_gauge_function(ell::SetProg.Sets.Ellipsoid, x)
-    print(" ")
-    println(x' * round.(ell.Q, digits=3) * x)
-end
-function print_support_function(set::SetProg.Sets.Polar)
-    SetProg.DynamicPolynomials.@polyvar x[1:SetProg.Sets.dimension(set)]
-    print("h(S, x) =")
-    _print_gauge_function(polar(set), x)
-end
-print_support_function(project(sol_ell, 1:2))
+SetProg.Sets.print_support_function(project(sol_ell, 1:2))
 
 # We can plot the primal solution as follows:
 

@@ -16,6 +16,10 @@ function apply_map(li::Sets.LinearImage{<:Sets.Polar}, new_vars)
     return Sets.polar(apply_map(Sets.LinearPreImage(Sets.polar(li.set), li.A'), new_vars))
 end
 
+function apply_map(li::Sets.LinearPreImage{<:Sets.PolarPoint}, new_vars)
+    return Sets.PolarPoint(li.A' * li.set.a)
+end
+
 """
     apply_map(li::Sets.LinearPreImage{<:Sets.Ellipsoid}, new_vars)
 

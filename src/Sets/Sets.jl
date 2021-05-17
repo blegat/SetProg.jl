@@ -36,6 +36,11 @@ Return the polar of `set`.
 Polyhedra.polar(set::AbstractSet) = Polar(set)
 Polyhedra.polar(set::Polar) = set.set
 
+function print_support_function(set::Polar; kws...)
+    print("h(S, x) =")
+    _print_gauge_function(polar(set); kws...)
+end
+
 """
     polar_representation(set::AbstractSet)
 
@@ -202,6 +207,32 @@ function zero_eliminate(set::Piecewise, I)
     )
 end
 
+function _print_gauge_function(set::Piecewise; digits=6)
+    DynamicPolynomials.@polyvar x[1:2]
+    println()
+    for (set, piece) in zip(set.sets, set.pieces)
+        print("         ")
+        _print_gauge_function(set, digits=digits)
+        print("              if ")
+        for (i, h) in enumerate(halfspaces(piece))
+            if i > 1
+                print(", ")
+            end
+            a = -h.a
+            if count(!iszero, a) == 1
+                a /= abs(sum(a)) # Simplify printing
+            end
+            if digits !== nothing
+                a = round.(a, digits=digits)
+            end
+            print(a'x)
+            print(" ≥ 0")
+        end
+        println()
+    end
+end
+
+include("polytope.jl")
 include("ellipsoids.jl")
 include("polynomials.jl")
 include("recipe.jl")

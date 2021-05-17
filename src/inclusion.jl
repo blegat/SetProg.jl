@@ -119,6 +119,48 @@ function JuMP.add_constraint(model::JuMP.Model,
                                            constraint.kws...), name)
 end
 
+_add_constraint_or_not(model, ::Nothing) = nothing
+_add_constraint_or_not(model, con) = JuMP.add_constraint(model, con)
+
+function _preprocess_domain(domain)
+    # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from
+    #      `zero_eliminate` of `[1e-17, 0, 1]` so we remove duplicates to drop it
+    domain = polyhedron(
+        removeduplicates(hrep(domain), Polyhedra.default_solver(domain)),
+        library(domain)
+    )
+    detecthlinearity!(domain)
+    return domain
+end
+function _linear_part(model, domain)
+    Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain)]
+    for (i, h) in enumerate(halfspaces(domain))
+        iszero(h.β) || error("only cones are supported")
+        λ = @variable(model, lower_bound = 0.0, base_name = "λ[$i]")
+        Λ = MA.mutable_broadcast!(MA.add_mul, Λ, λ, h.a)
+    end
+    return Λ
+end
+function lin_in_domain(model, h::Vector, domain::Polyhedra.HRep)
+    domain = _preprocess_domain(domain)
+    dim(domain) <= 0 && return
+    a = h + _linear_part(model, domain)
+    if hashyperplanes(domain)
+        # If we are in lower dimension,
+        # we can reduce the size of `a` so that the linear constraint has smaller size.
+        V = _linspace(domain)
+        a = V' * a
+    end
+    return JuMP.build_constraint(error, a, MOI.Zeros(length(a)))
+end
+function add_constraint_inclusion_domain(
+    model::JuMP.Model,
+    subset::Sets.PolarPoint,
+    supset::Sets.PolarPoint,
+    domain::Polyhedra.Polyhedron)
+    return _add_constraint_or_not(model, lin_in_domain(model, (subset.a - supset.a), domain))
+end
+
 function _quadratic_part(model, domain)
     Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain), j in 1:fulldim(domain)]
     for (i, hi) in enumerate(halfspaces(domain))
@@ -141,13 +183,7 @@ function _linspace(domain)
     return LinearAlgebra.nullspace(L)
 end
 function psd_in_domain(model, Q::Symmetric, domain::Polyhedra.HRep)
-    # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from
-    #      `zero_eliminate` of `[1e-17, 0, 1]` so we remove duplicates to drop it
-    domain = polyhedron(
-        removeduplicates(hrep(domain), Polyhedra.default_solver(domain)),
-        library(domain)
-    )
-    detecthlinearity!(domain)
+    domain = _preprocess_domain(domain)
     dim(domain) <= 0 && return
     A = Q - _quadratic_part(model, domain)
     if hashyperplanes(domain)
@@ -183,9 +219,6 @@ function lifted_psd_in_domain(model, Q::Symmetric, domain)
     end
     return psd_constraint(Symmetric(A))
 end
-_add_constraint_or_not(model, ::Nothing) = nothing
-_add_constraint_or_not(model, con) = JuMP.add_constraint(model, con)
-
 function add_constraint_inclusion_domain(
     model::JuMP.Model,
     subset::Sets.Ellipsoid,

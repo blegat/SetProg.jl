@@ -87,6 +87,15 @@ function scaling_function(set::Union{PolySet, ConvexPolySet})
     return (x, y) -> p(vx => x, vy => y)^(1 / set.degree)
 end
 
+function _print_gauge_function(set::ConvexPolySet; digits=6)
+    print(" ")
+    p = MP.polynomial(set.p)
+    if digits !== nothing
+        p = round(p, digits=digits)
+    end
+    println(p)
+end
+
 """
     struct ConvexPolynomialSet{T, U} <: AbstractSet{U}
         degree::Int

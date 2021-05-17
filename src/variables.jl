@@ -50,6 +50,82 @@ function perspective_dual_polyset(degree, q, point::InteriorPoint, z, x)
     perspective_dual_polyset(set, point, z, x)
 end
 
+### Polytope ###
+struct Polytope <: AbstractVariable
+    symmetric::Bool
+    dimension::Union{Nothing, Int}
+    piecewise::Union{Polyhedra.Rep, Nothing}
+end
+function Polytope(;
+    symmetric::Bool=false,
+    dimension::Union{Int, Nothing}=nothing,
+    piecewise::Union{Polyhedra.Rep, Nothing}=nothing,
+)
+    function update_dim(object, dim_fun)
+        if object !== nothing
+            d = dim_fun(object)
+            if dimension === nothing
+                dimension = d
+            elseif dimension != d
+                throw(DimensionMismatch())
+            end
+        end
+    end
+    update_dim(piecewise, Polyhedra.fulldim)
+    return Polytope(symmetric, dimension, piecewise)
+end
+Sets.space_variables(::Polytope) = nothing
+
+function variable_set(model::JuMP.AbstractModel, ell::Polytope, space::Space,
+                      space_dimension, space_polyvars)
+    n = space_dimension
+    if ell.symmetric
+        if ell.piecewise === nothing
+            set = Sets.PolarPoint(@variable(model, [1:n], base_name = "a"))
+        else
+            hashyperplanes(ell.piecewise) && error("hyperplanes not supported for piecewise")
+            a = @variable(model, [1:nhalfspaces(ell.piecewise), 1:n], base_name="a")
+            sets = [Sets.PolarPoint(a[i, :]) for i in 1:nhalfspaces(ell.piecewise)]
+            set = Sets.Piecewise(sets, ell.piecewise)
+            for i in eachindex(set.graph)
+                for (j, v) in set.graph[i]
+                    if i < j # The constraints are the same for (i, j) and (j, i)
+                        λ = @variable(model, base_name="λc[$i,$j]")
+                        # Ensures continuity
+                        @constraint(model, sets[i].a - sets[j].a .== λ * v)
+                        # Ensures convexity
+                        # We need to ensure that `dot(sets[i].a, x)` is maximal
+                        # over when `piece[i]`; see Proposition 5 of [R21].
+                        #
+                        # [R21] Raković, S. V.
+                        # *Control Minkowski–Lyapunov functions*
+                        # Automatica, Elsevier BV, 2021, 128, 109598
+                        #
+                        # In fact, we only need this to hold locally to prove
+                        # convexity of each point so we can just check for every
+                        # neighbor.
+                        # Because <ai, x> = <aj, x> by the previous constraint,
+                        # we can check the gradient.
+                        @constraint(model, dot(sets[i].a, v) <= dot(sets[j].a, v), base_name="conv[$i,$j]")
+                    end
+                end
+            end
+        end
+        if space == PrimalSpace
+            return set
+        else
+            return Polyhedra.polar(set)
+        end
+    else
+        error("Non-symmetric polytope not supported yet")
+    end
+end
+function JuMP.value(h::Sets.PolarPoint)
+    return Sets.PolarPoint(JuMP.value.(h.a))
+end
+
+
+
 ### Ellipsoid ###
 struct Ellipsoid <: AbstractVariable
     point::Union{Nothing, HintPoint}

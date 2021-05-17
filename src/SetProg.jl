@@ -20,7 +20,7 @@ import MultivariatePolynomials
 const MP = MultivariatePolynomials
 const SpaceVariable = DynamicPolynomials.PolyVar{true}
 
-export Ellipsoid, PolySet
+export Polytope, Ellipsoid, PolySet
 export nth_root, L1_heuristic
 
 @enum Space Undecided PrimalSpace DualSpace
