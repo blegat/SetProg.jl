@@ -70,16 +70,7 @@ upper = [[[-1, 1]]; [[x1[i], x2[i]] for i in eachindex(x2)]]
 mci = polyhedron(vrep([upper; (-).(upper)]), lib)
 polar_mci = polar(mci)
 
-function _print_gauge_function(ell::SetProg.Sets.Ellipsoid, x)
-    print(" ")
-    println(x' * round.(ell.Q, digits=3) * x)
-end
-function print_support_function(set::SetProg.Sets.Polar)
-    SetProg.@polyvar x[1:SetProg.Sets.dimension(set)]
-    print("h(S, x) =")
-    _print_gauge_function(polar(set), x)
-end
-print_support_function(project(sol_ell, 1:2))
+SetProg.Sets.print_support_function(project(sol_ell, 1:2))
 
 function primal_plot(set, γ=nothing; npoints=256, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05), args...)
     plot(ratio=:equal, tickfont=Plots.font(12); xlim=xlim, ylim=ylim, args...)

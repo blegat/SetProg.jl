@@ -1,10 +1,12 @@
 using SetProg
+import GLPK
+lp_solver = optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() => true)
 import CSDP
-solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() => true)
+sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() => true)
 A = [1.0 0.5]
 E = [1.0 0.0]
 using Polyhedra
-lib = DefaultLibrary{Float64}(solver)
+lib = DefaultLibrary{Float64}(lp_solver)
 h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1)
 □ = polyhedron(h, lib) # [0, 1]^2
 v = convexhull([1.0, 0], [0, 1], [-1, 0], [0, -1])
@@ -36,16 +38,17 @@ plot(ratio=:equal, tickfont=Plots.font(12))
 plot!(□, color=lichen)
 plot!(mci, color=aurore)
 
-polar_mci = polyhedron(convexhull(
-    [1.0, 0.0], [-1.0, 0.0],
-        [0.0, 1.0], [0.0, -1.0],
-        [1.0, 0.5], [-1.0, -0.5]
-), lib)
+polar_mci = polar(mci)
 plot(ratio=:equal, tickfont=Plots.font(12))
 plot!(polar_mci, color=aurore)
 plot!(◇, color=lichen)
 
 function maximal_invariant(template, heuristic::Function)
+    solver = if template isa Polytope
+        lp_solver
+    else
+        sdp_solver
+    end
     model = Model(solver)
     @variable(model, S, template)
     @constraint(model, S ⊆ □)
@@ -69,71 +72,87 @@ function polar_plot(set; npoints=256, args...)
     plot!(polar_mci, color=aurore)
     plot!(◇, color=lichen)
 end
-function _print_gauge_function(ell::SetProg.Sets.Ellipsoid, x)
-    print(" ")
-    println(x' * round.(ell.Q, digits=6) * x)
-end
-function print_support_function(set::SetProg.Sets.Polar)
-    SetProg.@polyvar x[1:2]
-    print("h(S, x) =")
-    _print_gauge_function(SetProg.Sets.polar(set), x)
-end
+
+sol_polytope_◇ = maximal_invariant(Polytope(symmetric=true, piecewise=◇), L1_heuristic)
+SetProg.Sets.print_support_function(sol_polytope_◇)
+
+sol_polytope_□ = maximal_invariant(Polytope(symmetric=true, piecewise=□), L1_heuristic)
+SetProg.Sets.print_support_function(sol_polytope_□)
+
+primal_plot(sol_polytope_□)
+
+polar_plot(sol_polytope_□)
+
+pieces8 = convexhull(□, 1.25 * ◇)
+sol_polytope_8 = maximal_invariant(Polytope(symmetric=true, piecewise=pieces8), L1_heuristic)
+SetProg.Sets.print_support_function(sol_polytope_8)
+
+primal_plot(sol_polytope_8)
+
+polar_plot(sol_polytope_8)
+
+sol_polytope_mci = maximal_invariant(Polytope(symmetric=true, piecewise=polar_mci), L1_heuristic)
+SetProg.Sets.print_support_function(sol_polytope_mci)
+
+primal_plot(sol_polytope_mci)
+
+polar_plot(sol_polytope_mci)
 
 sol_ell_vol = maximal_invariant(Ellipsoid(symmetric=true, dimension=2), nth_root)
-print_support_function(sol_ell_vol)
+SetProg.Sets.print_support_function(sol_ell_vol)
 
 primal_plot(sol_ell_vol)
 
 polar_plot(sol_ell_vol)
 
 sol_ell_L1 = maximal_invariant(Ellipsoid(symmetric=true, dimension=2), vol -> L1_heuristic(vol, ones(2)))
-print_support_function(sol_ell_L1)
+SetProg.Sets.print_support_function(sol_ell_L1)
 
 primal_plot(sol_ell_L1)
 
 polar_plot(sol_ell_L1)
 
-# Piecewise semi-ellipsoidal template
-
-#We now study the maximal piecewise semi-ellipsoidal control invariant sets of a given conic partition.
-#The volume is not directly maximized. Instead, for each cone, we compute the sum $s$ of the normalized rays and consider the polytope obtained by intersecting the cone with the halfspace $s^\top x \le \|s\|_2^2$. We integrate the quadratic form corresponding to this cone, i.e. $h^2(S, x)$ over the polytope. The sum of the integrals over each polytope is the objective function we use. This can be seen as the generalization of the sum of the squares of the semi-axes of the polar of the ellipsoid.
-
-#Note that the constraint (29) of Program 1 of [LRJ20] is implemented with Proposition 2 of [LRJ20] for all results of this capsule.
-
-function _print_gauge_function(set, x)
-    println()
-    for (set, piece) in zip(set.sets, set.pieces)
-        print("         ")
-        _print_gauge_function(set, x)
-        print("              if ")
-        for (i, h) in enumerate(halfspaces(piece))
-            if i > 1
-                print(", ")
-            end
-            a = -h.a
-            if count(!iszero, a) == 1
-                a /= abs(sum(a)) # Simplify printing
-            end
-            print(a'x)
-            print(" ≥ 0")
-        end
-        println()
-    end
-end
-
 sol_piece_◇ = maximal_invariant(Ellipsoid(symmetric=true, piecewise=◇), L1_heuristic)
-print_support_function(sol_piece_◇)
+SetProg.Sets.print_support_function(sol_piece_◇)
 
 primal_plot(sol_piece_◇, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
 polar_plot(sol_piece_◇, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
+sol_piece_□ = maximal_invariant(Ellipsoid(symmetric=true, piecewise=□), L1_heuristic)
+SetProg.Sets.print_support_function(sol_piece_□)
+
+primal_plot(sol_piece_□, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
+
+polar_plot(sol_piece_□, xlim=(-1.6, 1.6), ylim=(-1.6, 1.6))
+
+sol_piece_8 = maximal_invariant(Ellipsoid(symmetric=true, piecewise=pieces8), L1_heuristic)
+SetProg.Sets.print_support_function(sol_piece_8)
+
+primal_plot(sol_piece_8, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
+
+polar_plot(sol_piece_8, xlim=(-1.1, 1.1), ylim=(-1.05, 1.05))
+
 sol_piece_mci = maximal_invariant(Ellipsoid(symmetric=true, piecewise=polar_mci), L1_heuristic)
-print_support_function(sol_piece_mci)
+SetProg.Sets.print_support_function(sol_piece_mci)
 
 primal_plot(sol_piece_mci)
 
 polar_plot(sol_piece_mci)
+
+sol4 = maximal_invariant(PolySet(symmetric=true, degree=4, convex=true), vol -> L1_heuristic(vol, ones(2)))
+SetProg.Sets.print_support_function(sol4)
+
+primal_plot(sol4)
+
+polar_plot(sol4)
+
+sol6 = maximal_invariant(PolySet(symmetric=true, degree=6, convex=true), vol -> L1_heuristic(vol, ones(2)))
+SetProg.Sets.print_support_function(sol6)
+
+primal_plot(sol6)
+
+polar_plot(sol6)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 
