@@ -7,18 +7,6 @@
 
 JuMP extension for Set Programming : optimization with set variables and inclusion/containment constraints. This package allows the formulation of a mathematical programming involving both classical variables and constraints supported by JuMP and set variables and constraints.
 
-Three options exist to solve Set Programming:
-* [Polyhedral Computation](https://github.com/JuliaPolyhedra/Polyhedra.jl).
-* Automatically reformulation into a semidefinite program using [Sum-Of-Squares Programming](https://github.com/JuliaOpt/SumOfSquares.jl) and the S-procedure.
-* [Dual Dynamic Programming](https://github.com/JuliaStochOpt/StructDualDynProg.jl).
-
-In fact, the option to use can be automatically chosen depending on the variables created and the objective function set:
-
-| Variable/Objective | Volume of set  | Affine of point |
-|--------------------|----------------|-----------------|
-| Polyhedron         | Polyhedral     | Dual Dynamic    |
-| Ellipsoid/PolySet  | Sum-of-Squares | Sum-of-Squares  |
-
 ## Documentation
 
 - [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
@@ -27,23 +15,18 @@ In fact, the option to use can be automatically chosen depending on the variable
 ## Variables
 
 The variables can either be
-* an Ellipsoid or more generally the 1-sublevel set of a polynomial of degree `2d`;
-* a polyhedron (*not yet implemented*);
-* a quadratic cone or more generally the 0-sublevel set of a polynomial of degree `2d` (*not yet implemented*).
+* a `Polytope`;
+* an `Ellipsoid`, or a piecewise semi-ellipsoid;
+* a `Polyset`, that is the 1-sublevel set of a polynomial of degree `2d`.
 
 ```julia
-@variable m S Ellipsoid()
-@variable m S PolySet(d) # 1-sublevel set of a polynomial of degree 2d
-@variable m S PolySet(d, convex=true) # Convex 1-sublevel set of a polynomial of degree 2d
-@variable m S PolySet(d, symmetric=true) # 1-sublevel set of a polynomial of degree 2d symmetric around the origin
-@variable m S PolySet(d, symmetric=true, point=SetProg.CenterPoint([1, 0])) # 1-sublevel set of a polynomial of degree 2d symmetric around the [1, 0]
-```
-
-*not yet implemented*:
-```julia
-@variable m S Polyhedron()
-@variable m S QuadCone()  # Quadratic cone
-@variable m S PolyCone(d) # 0-sublevel set of a polynomial of degree 2d
+@variable model S Polytope(piecewise=p) # polytope defined over the pieces defined by `p`
+@variable model S Ellipsoid()
+@variable model S Ellipsoid(piecewise=p) # piecewise semi-ellipsoid defined over the pieces defined by `p`
+@variable model S PolySet(d) # 1-sublevel set of a polynomial of degree 2d
+@variable model S PolySet(d, convex=true) # Convex 1-sublevel set of a polynomial of degree 2d
+@variable model S PolySet(d, symmetric=true) # 1-sublevel set of a polynomial of degree 2d symmetric around the origin
+@variable model S PolySet(d, symmetric=true, point=SetProg.CenterPoint([1, 0])) # 1-sublevel set of a polynomial of degree 2d symmetric around the [1, 0]
 ```
 
 ## Expressions
@@ -73,12 +56,6 @@ The following constraints are implemented
 | x ∈ S     | `x` is contained in `S`  |
 | S1 ⊆ S2   | `S1` is included in `S2` |
 | S1 ⊇ S2   | `S1` is included in `S2` |
-
-But more are planned to be added:
-
-| Operation | Description              |
-|-----------|--------------------------|
-| S1 == S2  | `S1` is equal to `S2`    |
 
 ## Examples
 
