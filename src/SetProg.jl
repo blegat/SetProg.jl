@@ -15,12 +15,12 @@ Reexport.@reexport using Polyhedra
 
 using SumOfSquares
 using MultivariateMoments
-using DynamicPolynomials
+import DynamicPolynomials
 import MultivariatePolynomials
 const MP = MultivariatePolynomials
 const SpaceVariable = DynamicPolynomials.PolyVar{true}
 
-export Ellipsoid, PolySet
+export Polytope, Ellipsoid, PolySet
 export nth_root, L1_heuristic
 
 @enum Space Undecided PrimalSpace DualSpace

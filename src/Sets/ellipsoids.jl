@@ -48,6 +48,16 @@ function zero_eliminate(ell::Ellipsoid, I)
     return Ellipsoid(Symmetric(ell.Q[J, J]))
 end
 
+function _print_gauge_function(ell::Ellipsoid; digits=6)
+    DynamicPolynomials.@polyvar x[1:2]
+    print(" ")
+    Q = ell.Q
+    if digits !== nothing
+        Q = round.(Q, digits=digits)
+    end
+    println(x' * Q * x)
+end
+
 struct LiftedEllipsoid{T}
     P::Matrix{T}
 end

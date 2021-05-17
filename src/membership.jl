@@ -217,6 +217,12 @@ end
 
 function JuMP.build_constraint(_error::Function,
                                member::Point,
+                               h::Sets.PolarPoint)
+    r = Polyhedra.coord(member)
+    JuMP.build_constraint(_error, r'h.a - scaling(member), MOI.LessThan(0.0))
+end
+function JuMP.build_constraint(_error::Function,
+                               member::Point,
                                h::Polyhedra.HalfSpace{AffExpr})
     r = Polyhedra.coord(member)
     JuMP.build_constraint(_error, r'h.a - scaling(member) * h.β, MOI.LessThan(0.0))

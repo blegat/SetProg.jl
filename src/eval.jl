@@ -1,4 +1,4 @@
-function poly_eval(p::AbstractPolynomial{JuMP.AffExpr},
+function poly_eval(p::MP.AbstractPolynomial{JuMP.AffExpr},
                    a::AbstractVector{Float64})
     vars = MP.variables(p)
     aff = zero(JuMP.AffExpr)
@@ -15,7 +15,7 @@ end
 function sublevel_eval(set::Union{Sets.PolySet,
                                   Sets.ConvexPolySet},
                        a::AbstractVector)
-    return poly_eval(polynomial(set.p), a)
+    return poly_eval(MP.polynomial(set.p), a)
 end
 function sublevel_eval(set::Sets.Householder, a::AbstractVector, β)
     x = Sets.space_variables(set)

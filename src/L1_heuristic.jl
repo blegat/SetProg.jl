@@ -15,7 +15,7 @@ function power_integrate(exponent, bound)
 end
 function rectangle_integrate(m::MP.AbstractMonomialLike,
                              vertex)
-    exp = exponents(m)
+    exp = MP.exponents(m)
     if any(isodd, exp)
         return zero(power_integrate(2, vertex[1]))
     else
@@ -82,10 +82,10 @@ function integrate_decompositions(decs::Vector{Decomposition}, polytope::Polyhed
     end
     return integrals
 end
-function integrate_monomials(monos::AbstractVector{<:AbstractMonomial}, polytope::Polyhedron)
+function integrate_monomials(monos::AbstractVector{<:MP.AbstractMonomial}, polytope::Polyhedron)
     return integrate_decompositions(decompose.(monos), polytope)
 end
-function integrate(p::AbstractPolynomial, polytope::Polyhedron)
+function integrate(p::MP.AbstractPolynomial, polytope::Polyhedron)
     return MP.coefficients(p)'integrate_monomials(MP.monomials(p), polytope)
 end
 
@@ -156,17 +156,10 @@ function decompose(exps::Vector{Int})
     end
     return Decomposition(coefficients, forms)
 end
-decompose(mono::AbstractMonomial) = decompose(exponents(mono))
+decompose(mono::MP.AbstractMonomial) = decompose(MP.exponents(mono))
 
 function all_exponents(set::Union{Sets.PolySet, Sets.ConvexPolySet})
-    return exponents.(monomials(Sets.space_variables(set), set.degree))
-end
-function all_exponents(set::Sets.Ellipsoid)
-    return [ell_exponents(i, j, Sets.dimension(set)) for j in 1:Sets.dimension(set) for i in 1:j]
-end
-function all_exponents(set::Sets.Piecewise)
-    # TODO check that all polysets have same exponents
-    return all_exponents(set.sets[1])
+    return MP.exponents.(MP.monomials(Sets.space_variables(set), set.degree))
 end
 function ell_exponents(i, j, n)
     exps = zeros(Int, n)
@@ -174,15 +167,27 @@ function ell_exponents(i, j, n)
     exps[j] += 1
     return exps
 end
-function all_exponents(set::Sets.Piecewise{<:Any, <:Sets.Ellipsoid})
+function all_exponents(set::Union{Sets.Ellipsoid,Sets.Piecewise{<:Any, <:Sets.Ellipsoid}})
     return [ell_exponents(i, j, Sets.dimension(set)) for j in 1:Sets.dimension(set) for i in 1:j]
+end
+function all_exponents(set::Sets.Piecewise)
+    # TODO check that all polysets have same exponents
+    return all_exponents(set.sets[1])
+end
+function lin_exponents(i, n)
+    exps = zeros(Int, n)
+    exps[i] += 1
+    return exps
+end
+function all_exponents(set::Union{Sets.PolarPoint,Sets.Piecewise{<:Any,<:Sets.PolarPoint}})
+    return [lin_exponents(i, Sets.dimension(set)) for i in 1:Sets.dimension(set)]
 end
 function evaluate_monomials(monomial_value::Function,
                             set::Union{Sets.PolySet{T}, Sets.ConvexPolySet{T}}) where T
     U = MA.promote_operation(*, Float64, T)
     total = zero(MA.promote_operation(+, U, U))
-    for t in terms(set.p)
-        total = MA.add_mul!(total, monomial_value(exponents(monomial(t))), coefficient(t))
+    for t in MP.terms(set.p)
+        total = MA.add_mul!(total, monomial_value(MP.exponents(MP.monomial(t))), MP.coefficient(t))
     end
     return total
 end
@@ -196,7 +201,15 @@ function evaluate_monomials(monomial_value::Function, set::Sets.Ellipsoid{T}) wh
     end
     return total
 end
-function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.Ellipsoid{T}, Sets.PolySet{T}}},
+function evaluate_monomials(monomial_value::Function, set::Sets.PolarPoint{T}) where T
+    U = MA.promote_operation(*, Float64, T)
+    total = zero(MA.promote_operation(+, U, U))
+    for i in 1:Sets.dimension(set)
+        total = MA.add_mul!(total, monomial_value(lin_exponents(i, Sets.dimension(set))), set.a[i])
+    end
+    return total
+end
+function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.PolarPoint{T}, Sets.Ellipsoid{T}, Sets.PolySet{T}}},
                      ::Nothing) where T
     decs = Decomposition[]
     val = Dict(exps => length(push!(decs, decompose(exps)))
@@ -249,7 +262,7 @@ function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.ConvexPolynomialSet},
                      vertex)
-    return rectangle_integrate(subs(set.set.set.q, set.set.set.z => 0),
+    return rectangle_integrate(MP.subs(set.set.set.q, set.set.set.z => 0),
                                1 ./ vertex)
 end
 
