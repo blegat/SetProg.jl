@@ -1,5 +1,6 @@
 [deps]
 CSDP = "0a46da34-8e4b-519e-b418-48813639ff34"
+Clp = "e2554f3b-3117-50c0-817c-e040a3ddf72d"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
