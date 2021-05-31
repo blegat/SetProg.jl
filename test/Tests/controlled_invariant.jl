@@ -98,7 +98,7 @@ function ci_piecewise_semiell_homogeneous_test(optimizer, config)
             @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
             @test ◯.sets[4].Q ≈ Q1 atol=config.atol rtol=config.rtol
         end,
-        28
+        24,
     )
 end
 
@@ -126,7 +126,7 @@ function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
             @test ◯.sets[5].Q ≈ Q2 atol=config.atol rtol=config.rtol
             @test ◯.sets[6].Q ≈ Q3 atol=config.atol rtol=config.rtol
         end,
-        92
+        109,
     )
 end
 

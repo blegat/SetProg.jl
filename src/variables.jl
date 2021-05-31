@@ -114,6 +114,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Polytope, space::Space,
         if space == PrimalSpace
             return set
         else
+            @assert space == DualSpace
             return Polyhedra.polar(set)
         end
     else

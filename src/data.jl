@@ -16,6 +16,9 @@ mutable struct Data
     spaces::Union{Nothing, Spaces}
 end
 
+function JuMP.copy_extension_data(::SetProg.Data, ::JuMP.Model, ::JuMP.Model)
+end
+
 function lift_space_variables(data::Data,
                               x::Vector{SpaceVariable})
     @assert data.perspective_polyvar > x[1]
