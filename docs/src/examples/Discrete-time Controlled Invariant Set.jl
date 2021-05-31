@@ -1,19 +1,19 @@
 using Test     #src
 # # Discrete-time Controlled Invariant Set
 #
-#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/Continuous-time Controlled Invariant Set.ipynb)
-#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/Continuous-time Controlled Invariant Set.ipynb)
+#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/Discrete-time Controlled Invariant Set.ipynb)
+#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/Discrete-time Controlled Invariant Set.ipynb)
 #
 # An similar example is available in a [codeocean capsule](https://doi.org/10.24433/CO.6396918.v1).
 #
 # ## Introduction
 #
-# This example considers the linear control system already introduced in the Example 2 of [LTJ20] (see also Example 2 of [LRJ20]):
+# This example considers the linear control system already introduced in the Example 2 of [LTJ20]; see also Example 2 of [LRJ20]:
 # ```math
-# \begin{align*}
+# \begin{aligned}
 # x_{k+1} & = x_k + u_k / 2\\
 # u_{k+1} & = u_k'
-# \end{align*}
+# \end{aligned}
 # ```
 # with $(x_k, u_k) \in [-1, 1]^2$.
 #
@@ -42,9 +42,9 @@ using Test     #src
 #
 # [LTJ18] B. Legat, P. Tabuada and R. M. Jungers.
 # *Computing controlled invariant sets for hybrid systems with applications to model-predictive control*.
-# 6th IFAC Conference on Analysis and Design of Hybrid Systems ADHS 2018, **2018**.
+# 6th IFAC Conference on Analysis and Design of Hybrid Systems ADHS (2018).
 
-# We need to pick an LP and an SDP solver, see [here](https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers) for a list of available ones. Run one of the following two cells to choose choose the solver.
+# We need to pick an LP and an SDP solver, see [here](https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers) for a list of available ones.
 
 using SetProg
 import GLPK
@@ -89,8 +89,7 @@ function hexcolor(rgb::UInt32)
     g = ((0x00ff00 & rgb) >>  8) / 255
     b = ((0x0000ff & rgb)      ) / 255
     Plots.RGBA(r, g, b)
-end
-# Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
+end # Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
 lichen = hexcolor(0x85c17e)
 canard = hexcolor(0x048b9a)
 aurore = hexcolor(0xffcb60)
@@ -136,7 +135,7 @@ function polar_plot(set; npoints=256, args...)
     plot!(◇, color=lichen)
 end
 
-# ## Linear programming approach
+# ### Linear programming approach
 #
 # As introduced in [R21], given a fixed polyhedral conic partition of the state-space,
 # we can search over all polyhedra for which the gauge or support function
@@ -167,11 +166,11 @@ SetProg.Sets.print_support_function(sol_polytope_□)
 
 # The primal plot is below:
 
-primal_plot(sol_polytope_□)
+primal_plot(sol_polytope_□, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
 # And the polar plot is below:
 
-polar_plot(sol_polytope_□)
+polar_plot(sol_polytope_□, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
 # Let's now use a partition with 8 pieces.
 
@@ -181,11 +180,11 @@ SetProg.Sets.print_support_function(sol_polytope_8)
 
 # The primal plot is below:
 
-primal_plot(sol_polytope_8)
+primal_plot(sol_polytope_8, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
 # And the polar plot is below:
 
-polar_plot(sol_polytope_8)
+polar_plot(sol_polytope_8, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
 # We can use the polar of the polytope resulting from the first fixed point iteration to generate a refined conic partition.
 # With this partition, the maximal piecewise semi-ellipsoidal control invariant set matches the maximal control invariant set.
