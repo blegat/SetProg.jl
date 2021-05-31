@@ -2,6 +2,7 @@ struct PolarPoint{T} <: AbstractSet{T}
     a::Vector{T}
 end
 dimension(h::PolarPoint) = length(h.a)
+space_variables(::PolarPoint) = nothing
 
 function scaling_function(h::PolarPoint)
     @assert dimension(h) == 2

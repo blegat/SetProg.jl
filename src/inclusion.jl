@@ -234,7 +234,7 @@ function JuMP.add_constraint(model::JuMP.Model,
     supset = constraint.supset
     for (i, si) in enumerate(subset.sets)
         for (j, sj) in enumerate(supset.sets)
-            add_constraint_inclusion_domain(model, si, sj, subset.pieces[i] ∩ subset.pieces[j])
+            add_constraint_inclusion_domain(model, si, sj, subset.pieces[i] ∩ supset.pieces[j])
         end
     end
 end

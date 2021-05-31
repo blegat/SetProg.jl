@@ -44,7 +44,7 @@ function ConvexPolySet(
     degree::Int,
     p::GramMatrix{S},
     convexity_proof::SumOfSquares.SymMatrix{T}) where {S, T}
-    V = promote_type(S, T)
+    U = promote_type(S, T)
     _convert(mat) = SumOfSquares.SymMatrix(convert(Vector{U}, mat.Q), mat.n)
     return ConvexPolySet(
         degree, GramMatrix(_convert(p.Q), p.basis), _convert(convexity_proof))
