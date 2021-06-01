@@ -199,7 +199,6 @@ polar_plot(min_ell_vol, max_ell_vol)
 max_ell_L1 = maximal_invariant(Ellipsoid(symmetric=true), vol -> L1_heuristic(vol, ones(2)))
 min_ell_L1 = minimal_invariant(Ellipsoid(symmetric=true), vol -> L1_heuristic(vol, ones(2)))
 primal_plot(min_ell_L1, max_ell_L1)
-savefig("AJPR14e54ell.png")
 
 # ## Polyset template
 
