@@ -28,8 +28,7 @@ function hexcolor(rgb::UInt32)
     g = ((0x00ff00 & rgb) >>  8) / 255
     b = ((0x0000ff & rgb)      ) / 255
     Plots.RGBA(r, g, b)
-end
-
+end # Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
 lichen = hexcolor(0x85c17e)
 canard = hexcolor(0x048b9a)
 aurore = hexcolor(0xffcb60)
@@ -79,17 +78,17 @@ SetProg.Sets.print_support_function(sol_polytope_◇)
 sol_polytope_□ = maximal_invariant(Polytope(symmetric=true, piecewise=□), L1_heuristic)
 SetProg.Sets.print_support_function(sol_polytope_□)
 
-primal_plot(sol_polytope_□)
+primal_plot(sol_polytope_□, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
-polar_plot(sol_polytope_□)
+polar_plot(sol_polytope_□, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
 pieces8 = convexhull(□, 1.25 * ◇)
 sol_polytope_8 = maximal_invariant(Polytope(symmetric=true, piecewise=pieces8), L1_heuristic)
 SetProg.Sets.print_support_function(sol_polytope_8)
 
-primal_plot(sol_polytope_8)
+primal_plot(sol_polytope_8, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
-polar_plot(sol_polytope_8)
+polar_plot(sol_polytope_8, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))
 
 sol_polytope_mci = maximal_invariant(Polytope(symmetric=true, piecewise=polar_mci), L1_heuristic)
 SetProg.Sets.print_support_function(sol_polytope_mci)

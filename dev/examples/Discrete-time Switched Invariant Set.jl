@@ -1,22 +1,26 @@
 using Test     #src
 # # Discrete-time Invariant Set
 #
-#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/Discrete-time Controlled Invariant Set.ipynb)
-#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/Continuous-time Controlled Invariant Set.ipynb)
+#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/Discrete-time Switched Invariant Set.ipynb)
+#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/Discrete-time Switched Invariant Set.ipynb)
+#
+# ## Introduction
 #
 # In this notebook, we compute the maximal (resp. minimal) invariant set contained in the square with vertices $(\pm 1, \pm 1)$ for the system
-# $$\begin{align*}
+# ```math
+# \begin{aligned}
 # x_{k+1} & = -y_k\\
 # y_{k+1} & =  x_k.
-# \end{align*}$$
+# \end{aligned}
+# ```
 #
 # The system is $x_{k+1} = Ax_k$ where
-# $$
+# ```math
 # A = \begin{bmatrix}
 # 0 & -1\\
 # 1 & 0
 # \end{bmatrix}.
-# $$
+# ```
 # A set $S$ is controlled invariant if
 # $$AS \subseteq S.$$
 
@@ -83,8 +87,7 @@ function hexcolor(rgb::UInt32)
     g = ((0x00ff00 & rgb) >>  8) / 255
     b = ((0x0000ff & rgb)      ) / 255
     Plots.RGBA(r, g, b)
-end
-# Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
+end # Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
 lichen = hexcolor(0x85c17e)
 canard = hexcolor(0x048b9a)
 aurore = hexcolor(0xffcb60)
@@ -159,7 +162,7 @@ plot!(min_polytope_1, color=aurore)
 plot!(□, color=lichen)
 plot!(max_polytope_1, color=frambo)
 
-# ## Linear programming approach
+# ### Linear programming approach
 #
 # As introduced in [R21], we can search over all polyhedra with a given face fan.
 # The partition can be defined by the face fan of a given polytope as described in [Eq. (4.6), R21].
@@ -181,7 +184,7 @@ max_polytope = maximal_invariant(Polytope(symmetric=true, piecewise=pieces8), L1
 min_polytope = minimal_invariant(Polytope(symmetric=true, piecewise=polar(pieces8)), L1_heuristic)
 primal_plot(min_polytope, max_polytope)
 
-## Ellipsoidal template
+# ## Ellipsoidal template
 
 # We now consider the ellipsoidal template.
 # The ellipsoids of maximal volume are given as follows:
@@ -198,12 +201,12 @@ min_ell_L1 = minimal_invariant(Ellipsoid(symmetric=true), vol -> L1_heuristic(vo
 primal_plot(min_ell_L1, max_ell_L1)
 savefig("AJPR14e54ell.png")
 
-## Polyset template
+# ## Polyset template
 
 # We generalize the previous template to homogeneous polynomials of degree $2d$.
 # As objective, we use the integral of the polynomial used to represent
 # the set (either in the support function for `maximal_invariant`
-# or in the gauge function for `minimal_invariant`) over the square.
+# or in the gauge function for `minimal_invariant`) over the square `□`.
 # We start with quartic polynomials.
 
 max_4 = maximal_invariant(PolySet(symmetric=true, convex=true, degree=4), vol -> L1_heuristic(vol, ones(2)))

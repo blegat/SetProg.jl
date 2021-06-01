@@ -56,8 +56,7 @@ function hexcolor(rgb::UInt32)
     g = ((0x00ff00 & rgb) >>  8) / 255
     b = ((0x0000ff & rgb)      ) / 255
     Plots.RGBA(r, g, b)
-end
-
+end # Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
 lichen = hexcolor(0x85c17e)
 canard = hexcolor(0x048b9a)
 aurore = hexcolor(0xffcb60)

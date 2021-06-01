@@ -59,8 +59,7 @@ function hexcolor(rgb::UInt32)
     g = ((0x00ff00 & rgb) >>  8) / 255
     b = ((0x0000ff & rgb)      ) / 255
     Plots.RGBA(r, g, b)
-end
-
+end # Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
 lichen = hexcolor(0x85c17e)
 canard = hexcolor(0x048b9a)
 aurore = hexcolor(0xffcb60)
@@ -115,8 +114,6 @@ max_polytope = maximal_invariant(Polytope(symmetric=true, piecewise=pieces8), L1
 min_polytope = minimal_invariant(Polytope(symmetric=true, piecewise=polar(pieces8)), L1_heuristic)
 primal_plot(min_polytope, max_polytope)
 
-# Ellipsoidal template
-
 max_ell_vol = maximal_invariant(Ellipsoid(symmetric=true), nth_root)
 min_ell_vol = minimal_invariant(Ellipsoid(symmetric=true), nth_root)
 primal_plot(min_ell_vol, max_ell_vol)
@@ -126,8 +123,6 @@ max_ell_L1 = maximal_invariant(Ellipsoid(symmetric=true), vol -> L1_heuristic(vo
 min_ell_L1 = minimal_invariant(Ellipsoid(symmetric=true), vol -> L1_heuristic(vol, ones(2)))
 primal_plot(min_ell_L1, max_ell_L1)
 savefig("AJPR14e54ell.png")
-
-# Polyset template
 
 max_4 = maximal_invariant(PolySet(symmetric=true, convex=true, degree=4), vol -> L1_heuristic(vol, ones(2)))
 min_4 = minimal_invariant(PolySet(symmetric=true, degree=4), vol -> L1_heuristic(vol, ones(2)))
