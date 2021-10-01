@@ -31,6 +31,7 @@ function unwind(AB::AbstractArray{Tuple{S,T}}) where {S,T}
     return A, B
 end
 
+using SetProg
 function system(A, B, τ)
     n = length(A)
     R = JuMP.Containers.@container(
@@ -65,7 +66,7 @@ function boost(R, L, Ro, Co)
            0   -1/(Ro * Co)]
     A2 = [-R/L  -1/L
            1/Co -1/(Ro * Co)]
-    B1 = [1/L, 0.0]
+    B1 = B2 = [1/L, 0.0]
     return [A1, A1], [B1, B2]
 end
 
@@ -84,7 +85,7 @@ lp_solver = optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() => true, "pre
 import CSDP
 sdp_solver = optimizer_with_attributes(CSDP.Optimizer) #, MOI.Silent() => true)
 using MosekTools
-sdp_solver = optimizer_with_attributes(Mosek.Optimizer) #, MOI.Silent() => true)
+sdp_solver = optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true)
 using Polyhedra
 interval = HalfSpace([1.0], 1.0) ∩ HalfSpace([-1.0], 1.0)
 lib = Polyhedra.DefaultLibrary{Float64}(lp_solver)
@@ -124,4 +125,6 @@ function maximal_invariant(family, C, E, T, U, γ = nothing; dirs=dirs)
 end
 
 maximal_invariant(Ellipsoid(symmetric=true), system(buck(R, L, Ro, Co)..., τ)...)
+maximal_invariant(Ellipsoid(symmetric=true), system(boost(R, L, Ro, Co)..., τ)...)
+maximal_invariant(Ellipsoid(symmetric=true), system(buck_boost(R, L, Ro, Co)..., τ)...)
 #sol_ell, γ_ell = maximal_invariant(Ellipsoid(symmetric=true), system(buck(R, L, Ro, Co)..., τ)...)
