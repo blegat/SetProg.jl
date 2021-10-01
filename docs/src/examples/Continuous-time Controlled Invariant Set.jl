@@ -29,29 +29,6 @@ using Test     #src
 # ```
 # with state constraint $x \in [-1, 1]^3$.
 #
-# $\dot{x}(t) = Ax(t) + Bu(t)$
-# ```math
-# A = \begin{bmatrix}
-# 0 & 1\\
-# 0 & 0
-# \end{bmatrix}.
-# ```
-# As shown in [LTJ18], a set $S$ is controlled invariant if
-# ```math
-# \begin{bmatrix}
-# 1 & \Delta t
-# \end{bmatrix}
-# S \subseteq
-# \begin{bmatrix}
-# 1 & 0
-# \end{bmatrix}
-# S
-# ```
-#
-# [LJ21] B. Legat and R. M. Jungers.
-# *Continuous-time controlled invariant sets, a geometric approach*.
-# 7th IFAC Conference on Analysis and Design of Hybrid Systems ADHS 2021, **2021**.
-
 # The matricial form of this system is given by $\dot{x}(t) = Ax(t) + Bu(t)$ where `A` and `B` are as defined below.
 # As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is invariant for the algebraic system
 # ```math
@@ -61,6 +38,11 @@ using Test     #src
 # \end{aligned}
 # ```
 # The matricial form of this system is given by $E\dot{x}(t) = Cx(t)$ where
+#
+# [LJ21] B. Legat and R. M. Jungers.
+# *Continuous-time controlled invariant sets, a geometric approach*.
+# 7th IFAC Conference on Analysis and Design of Hybrid Systems ADHS 2021, **2021**.
+
 
 A = [0.0 1.0 0.0
      0.0 0.0 1.0
