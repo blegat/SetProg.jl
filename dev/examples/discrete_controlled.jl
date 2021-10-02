@@ -1,8 +1,8 @@
 using Test     #src
 # # Discrete-time Controlled Invariant Set
 #
-#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/Discrete-time Controlled Invariant Set.ipynb)
-#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/Discrete-time Controlled Invariant Set.ipynb)
+#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/discrete_controlled.ipynb)
+#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/discrete_controlled.ipynb)
 #
 # An similar example is available in a [codeocean capsule](https://doi.org/10.24433/CO.6396918.v1).
 #

@@ -1,8 +1,8 @@
 using Test     #src
 # # Discrete-time Switched Invariant Set
 #
-#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/Discrete-time Switched Invariant Set.ipynb)
-#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/Discrete-time Switched Invariant Set.ipynb)
+#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/discrete_switched.ipynb)
+#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/discrete_switched.ipynb)
 #
 # ## Introduction
 #
@@ -184,6 +184,10 @@ max_polytope = maximal_invariant(Polytope(symmetric=true, piecewise=pieces8), L1
 min_polytope = minimal_invariant(Polytope(symmetric=true, piecewise=polar(pieces8)), L1_heuristic)
 primal_plot(min_polytope, max_polytope)
 
+# The polar plot is as follows:
+
+polar_plot(min_polytope, max_polytope)
+
 # ## Ellipsoidal template
 
 # We now consider the ellipsoidal template.
@@ -192,6 +196,9 @@ primal_plot(min_polytope, max_polytope)
 max_ell_vol = maximal_invariant(Ellipsoid(symmetric=true), nth_root)
 min_ell_vol = minimal_invariant(Ellipsoid(symmetric=true), nth_root)
 primal_plot(min_ell_vol, max_ell_vol)
+
+# All ellipsoids are convex so we can also obtain the polar plot:
+
 polar_plot(min_ell_vol, max_ell_vol)
 
 # The ellipsoids of maximal sum of squared length of its axis.
@@ -199,6 +206,10 @@ polar_plot(min_ell_vol, max_ell_vol)
 max_ell_L1 = maximal_invariant(Ellipsoid(symmetric=true), vol -> L1_heuristic(vol, ones(2)))
 min_ell_L1 = minimal_invariant(Ellipsoid(symmetric=true), vol -> L1_heuristic(vol, ones(2)))
 primal_plot(min_ell_L1, max_ell_L1)
+
+# And the polar plot is:
+
+polar_plot(min_ell_vol, max_ell_vol)
 
 # ## Polyset template
 
@@ -213,7 +224,8 @@ min_4 = minimal_invariant(PolySet(symmetric=true, degree=4), vol -> L1_heuristic
 primal_plot(min_4, max_4)
 
 # We now obtain the results for sextic polynomials, note that we do not
-# impose the sets to be convex for `minimal_invariant`.
+# impose the sets to be convex for `minimal_invariant`. This is why we don't
+# show the polar plot for polysets.
 
 max_6 = maximal_invariant(PolySet(symmetric=true, convex=true, degree=6), vol -> L1_heuristic(vol, ones(2)))
 min_6 = minimal_invariant(PolySet(symmetric=true, degree=6), vol -> L1_heuristic(vol, ones(2)))
