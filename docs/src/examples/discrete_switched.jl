@@ -186,7 +186,7 @@ primal_plot(min_polytope, max_polytope)
 
 # The polar plot is as follows:
 
-polar_plot(min_ell_vol, max_ell_vol)
+polar_plot(min_polytope, max_polytope)
 
 # ## Ellipsoidal template
 
