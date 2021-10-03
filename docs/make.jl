@@ -26,6 +26,13 @@ makedocs(
             name = string(split(jl_file, ".")[1])
             return name => "generated/$name.md"
         end
+        "Tutorials" => map(
+            file -> joinpath("generated", file),
+            filter(
+                file -> endswith(file, ".md"),
+                sort(readdir(OUTPUT_DIR)),
+            ),
+        ),
     ],
 )
 

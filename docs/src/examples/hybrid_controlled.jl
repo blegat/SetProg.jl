@@ -1,4 +1,3 @@
-using Test     #src
 # # Continuous-time Controlled Invariant Set
 #
 #md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/continuous_controlled.ipynb)
@@ -79,7 +78,7 @@ using Test     #src
 # x_1^+ & = -x_1 + x_3/8\\
 # x_2^+ & = x_2 - x_3/8.
 # \end{aligned}
-# ``
+# ```
 #
 # The matricial form of this system is given by $E\dot{x}(t) = Cx(t)$ with a first jump
 # $Ex^+ = Ex$ and a second jump $Ex^+ = Ux$ where:
