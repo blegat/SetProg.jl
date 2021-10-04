@@ -21,11 +21,6 @@ makedocs(
     strict = true,
     pages = [
         "Index" => "index.md",
-        "Examples" => map(EXAMPLES) do jl_file
-            # Need `string` as Documenter fails if `name` is a `SubString{String}`.
-            name = string(split(jl_file, ".")[1])
-            return name => "generated/$name.md"
-        end
         "Tutorials" => map(
             file -> joinpath("generated", file),
             filter(
