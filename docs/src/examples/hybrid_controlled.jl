@@ -1,4 +1,4 @@
-# # Continuous-time Controlled Invariant Set
+# # Hybrid Controlled Invariant Set
 #
 #md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/continuous_controlled.ipynb)
 #md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/continuous_controlled.ipynb)
@@ -16,8 +16,8 @@
 # and the jump:
 # ```math
 # \begin{aligned}
-# \dot{x}_1(t) & = -x_1(t) + u(t)/8\\
-# \dot{x}_2(t) & = x_2(x) - u(t)/8
+# x_1^+ & = -x_1 + u/8\\
+# x_2^+ & = x_2 - u/8
 # \end{aligned}
 # ```
 # with state constraint $x \in [-1, 1]^2$ and input constraint $u \in [-1, 1]$
@@ -56,7 +56,7 @@
 # for the state `x_3` of the continuous-time system.
 #
 # The matricial form of this system is given by $\dot{x}(t) = Ax(t) + Bu(t)$ where `A` and `B` are as defined below.
-# As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is invariant for the algebraic system
+# As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is weakly invariant for the algebraic system
 # ```math
 # \begin{aligned}
 # \dot{x}_1(t) & = x_2(t)\\
