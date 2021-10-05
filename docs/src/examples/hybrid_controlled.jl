@@ -1,7 +1,7 @@
 # # Hybrid Controlled Invariant Set
 #
-#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/continuous_controlled.ipynb)
-#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/continuous_controlled.ipynb)
+#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/hybrid_controlled.ipynb)
+#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/hybrid_controlled.ipynb)
 #
 # ## Introduction
 #

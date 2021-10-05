@@ -9,8 +9,8 @@ const EXAMPLES = readdir(EXAMPLES_DIR)
 for example in EXAMPLES
     example_filepath = joinpath(EXAMPLES_DIR, example)
     Literate.markdown(example_filepath, OUTPUT_DIR)
-    #Literate.notebook(example_filepath, OUTPUT_DIR)
-    #Literate.script(example_filepath, OUTPUT_DIR)
+    Literate.notebook(example_filepath, OUTPUT_DIR)
+    Literate.script(example_filepath, OUTPUT_DIR)
 end
 
 makedocs(
