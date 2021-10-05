@@ -1,93 +1,3 @@
-# # Hybrid Controlled Invariant Set
-#
-#md # [![Binder](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/hybrid_controlled.ipynb)
-#md # [![nbviewer](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/hybrid_controlled.ipynb)
-#
-# ## Introduction
-#
-# This example considers the hybrid constrained linear control system:
-# ```math
-# \begin{aligned}
-# \dot{x}_1(t) & = x_2(t)\\
-# \dot{x}_2(t) & = u(t)
-# \end{aligned}
-# ```
-# with state constraint $x \in [-1, 1]^2$ and input constraint $u \in [-1, 1]$
-# and the jump:
-# ```math
-# \begin{aligned}
-# x_1^+ & = -x_1 + u/8\\
-# x_2^+ & = x_2 - u/8
-# \end{aligned}
-# ```
-# with state constraint $x \in [-1, 1]^2$ and input constraint $u \in [-1, 1]$
-# that can occur anytime.
-#
-# In order to compute controlled invariant sets for this system, we consider
-# the projection onto the first two dimensions of controlled invariant sets of the
-# following lifted system:
-# ```math
-# \begin{aligned}
-# \dot{x}_1(t) & = x_2(t)\\
-# \dot{x}_2(t) & = x_3(t)\\
-# \dot{x}_3(t) & = u(t)
-# \end{aligned}
-# ```
-# with state constraint $x \in [-1, 1]^3$;
-# with a first jump to a temporary mode:
-# ```math
-# \begin{aligned}
-# x_1^+ & = x_1\\
-# x_2^+ & = x_2\\
-# x_3^+ & = u
-# \end{aligned}
-# ```
-# with state constraint $x \in [-1, 1]^3$ and unconstrained input;
-# and a second jump back to the original mode:
-# ```math
-# \begin{aligned}
-# x_1^+ & = -x_1 + x_3/8\\
-# x_2^+ & = x_2 - x_3/8\\
-# x_3^+ & = u.
-# \end{aligned}
-# ```
-# Note that the input `u` chosen in the first jump is the input that will be used for
-# the reset map and the input `u` chosen for the second jump is the input that will be used
-# for the state `x_3` of the continuous-time system.
-#
-# The matricial form of this system is given by $\dot{x}(t) = Ax(t) + Bu(t)$ where `A` and `B` are as defined below.
-# As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is weakly invariant for the algebraic system
-# ```math
-# \begin{aligned}
-# \dot{x}_1(t) & = x_2(t)\\
-# \dot{x}_2(t) & = x_3(t)
-# \end{aligned}
-# ```
-# with state constraint $x \in [-1, 1]^3$;
-# with a first jump to a temporary mode:
-# ```math
-# \begin{aligned}
-# x_1^+ & = x_1\\
-# x_2^+ & = x_2
-# \end{aligned}
-# ```
-# with state constraint $x \in [-1, 1]^3$
-# and a second jump back to the original mode:
-# ```math
-# \begin{aligned}
-# x_1^+ & = -x_1 + x_3/8\\
-# x_2^+ & = x_2 - x_3/8.
-# \end{aligned}
-# ```
-#
-# The matricial form of this system is given by $E\dot{x}(t) = Cx(t)$ with a first jump
-# $Ex^+ = Ex$ and a second jump $Ex^+ = Ux$ where:
-#
-# [LJ21] B. Legat and R. M. Jungers.
-# *Continuous-time controlled invariant sets, a geometric approach*.
-# 7th IFAC Conference on Analysis and Design of Hybrid Systems ADHS 2021, **2021**.
-
-
 A = [0.0 1.0 0.0
      0.0 0.0 1.0
      0.0 0.0 0.0]
@@ -142,11 +52,6 @@ all_dirs = [dirs; (-).(dirs)]
 inner = polyhedron(vrep(all_dirs), lib)
 outer = polar(inner)
 
-# ## Ellipsoidal template
-#
-# We start with the ellipsoidal template. The objective consider is to maximize `γ`
-# such that `γ * inner` is included in the set.
-
 sol_ell, γ_ell = maximal_invariant(Ellipsoid(symmetric=true))
 
 using Plots
@@ -172,8 +77,6 @@ polar_mci = polar(mci)
 
 SetProg.Sets.print_support_function(project(sol_ell, 1:2))
 
-# We can plot the primal solution as follows:
-
 function primal_plot(set, γ=nothing; npoints=256, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05), args...)
     plot(ratio=:equal, tickfont=Plots.font(12); xlim=xlim, ylim=ylim, args...)
     plot!(□_2, color=lichen)
@@ -184,8 +87,6 @@ function primal_plot(set, γ=nothing; npoints=256, xlim=(-1.05, 1.05), ylim=(-1.
 end
 primal_plot(project(sol_ell, 1:2), γ_ell)
 
-# and the dual plot as follows:
-
 function polar_plot(set, γ; npoints=256, xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), args...)
     plot(ratio=:equal, tickfont=Plots.font(12); xlim=xlim, ylim=ylim, args...)
     γ === nothing || plot!(inv(γ) * outer, color=frambo)
@@ -195,43 +96,26 @@ function polar_plot(set, γ; npoints=256, xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), ar
 end
 polar_plot(project(sol_ell, 1:2), γ_ell)
 
-# ## Polyset template
-
-# We start with quartic polynomials:
-
 p4, γ4 = maximal_invariant(PolySet(symmetric=true, degree=4, convex=true), 0.896)
 γ4
 
-# Below is the primal plot:
-
 primal_plot(project(p4, 1:2), γ4)
 
-# and here is the polar plot:
-
 polar_plot(project(p4, 1:2), γ4)
-
-# We now try it with sextic polynomials:
 
 p6, γ6 = maximal_invariant(PolySet(symmetric=true, degree=6, convex=true), 0.93)
 γ6
 
-# Below is the primal plot:
-
 primal_plot(project(p6, 1:2), γ6)
 
-# and here is the polar plot:
-
 polar_plot(project(p6, 1:2), γ6)
-
-# We now try it with octic polynomials:
 
 p8, γ8 = maximal_invariant(PolySet(symmetric=true, degree=8, convex=true), 0.96)
 γ8
 
-# Below is the primal plot:
-
 primal_plot(project(p8, 1:2), γ8)
 
-# and here is the polar plot:
-
 polar_plot(project(p8, 1:2), γ8)
+
+# This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
+
