@@ -9,7 +9,7 @@ using JuMP
 const MOIT = MOI.Test
 
 @testset "Controlled invariant" begin
-    config = MOIT.TestConfig()
+    config = MOIT.Config()
     @testset "Ellipsoid" begin
         # Q = [1 0
         #      0 1]

@@ -187,7 +187,7 @@ function evaluate_monomials(monomial_value::Function,
     U = MA.promote_operation(*, Float64, T)
     total = zero(MA.promote_operation(+, U, U))
     for t in MP.terms(set.p)
-        total = MA.add_mul!(total, monomial_value(MP.exponents(MP.monomial(t))), MP.coefficient(t))
+        total = MA.add_mul!!(total, monomial_value(MP.exponents(MP.monomial(t))), MP.coefficient(t))
     end
     return total
 end
@@ -196,7 +196,7 @@ function evaluate_monomials(monomial_value::Function, set::Sets.Ellipsoid{T}) wh
     total = zero(MA.promote_operation(+, U, U))
     for j in 1:Sets.dimension(set)
         for i in 1:Sets.dimension(set)
-            total = MA.add_mul!(total, monomial_value(ell_exponents(i, j, Sets.dimension(set))), set.Q[i, j])
+            total = MA.add_mul!!(total, monomial_value(ell_exponents(i, j, Sets.dimension(set))), set.Q[i, j])
         end
     end
     return total
@@ -205,7 +205,7 @@ function evaluate_monomials(monomial_value::Function, set::Sets.PolarPoint{T}) w
     U = MA.promote_operation(*, Float64, T)
     total = zero(MA.promote_operation(+, U, U))
     for i in 1:Sets.dimension(set)
-        total = MA.add_mul!(total, monomial_value(lin_exponents(i, Sets.dimension(set))), set.a[i])
+        total = MA.add_mul!!(total, monomial_value(lin_exponents(i, Sets.dimension(set))), set.a[i])
     end
     return total
 end
@@ -225,7 +225,7 @@ function l1_integral(set::Sets.Piecewise{T, <:Union{Sets.PolarPoint{T}, Sets.Ell
         # We normalize as the norm of each ray is irrelevant
         cut = normalize(sum(normalize ∘ Polyhedra.coord, rays(piece))) # Just a heuristic, open to better ideas
         polytope = piece ∩ HalfSpace(cut, one(eltype(cut)))
-        total = MA.add!(total, integrate_gauge_like(set, polytope, decs, val, cache))
+        total = MA.add!!(total, integrate_gauge_like(set, polytope, decs, val, cache))
     end
     return total
 end

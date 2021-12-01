@@ -14,7 +14,7 @@ const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPol
 using JuMP
 const MOIT = MOI.Test
 
-function ci_square_test(optimizer, config::MOIT.TestConfig,
+function ci_square_test(optimizer, config::MOIT.Config,
                         inner::Bool, variable::SetProg.AbstractVariable,
                         metric::Function, objective_value, set_test, nvars=nothing)
     model = _model(optimizer)

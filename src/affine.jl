@@ -29,7 +29,7 @@ end
 function objective_function(model::JuMP.Model, aff::AffineExpression)
     obj = convert(JuMP.AffExpr, aff.constant)
     for t in aff.terms
-        obj = MA.add_mul!(obj, t.coefficient, objective_function(t.func))
+        obj = MA.add_mul!!(obj, t.coefficient, objective_function(t.func))
     end
     return obj
 end

@@ -13,7 +13,7 @@ const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPol
 using JuMP
 const MOIT = MOI.Test
 
-function switched_system_test(optimizer, config::MOIT.TestConfig,
+function switched_system_test(optimizer, config::MOIT.Config,
                               variable::SetProg.AbstractVariable, γ,
                               feasible, objective_value, set_test, dual_test)
     model = _model(optimizer)
