@@ -31,7 +31,7 @@ macro test_suite(setname, subsets=false)
     end
     esc(:(
       function $testname(model,
-                         config::$MOI.Test.TestConfig,
+                         config::$MOI.Test.Config,
                          exclude::Vector{String} = String[])
             for (name,f) in $testdict
                 if name in exclude
@@ -71,7 +71,7 @@ function inner_variable_value(model, atol=1e-4)
         end
         print("])")
     else
-        print("tuple()")
+        print("MOI.NO_SOLUTION")
     end
     println(",")
     if JuMP.dual_status(model) != MOI.NO_SOLUTION

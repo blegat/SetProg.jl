@@ -1,8 +1,8 @@
-function JuMP.parse_one_operator_constraint(_error::Function, vectorized::Bool,
+function JuMP.parse_constraint_call(_error::Function, vectorized::Bool,
                                             ::Val{:⊂}, lhs, rhs)
     _error("Unrecognized symbol ⊂ you mean ⊆ ?")
 end
-function JuMP.parse_one_operator_constraint(_error::Function, vectorized::Bool,
+function JuMP.parse_constraint_call(_error::Function, vectorized::Bool,
                                             ::Val{:⊆}, lhs, rhs)
     parse_code = :()
     if vectorized
@@ -12,11 +12,11 @@ function JuMP.parse_one_operator_constraint(_error::Function, vectorized::Bool,
     end
     return parse_code, build_call
 end
-function JuMP.parse_one_operator_constraint(_error::Function, vectorized::Bool,
+function JuMP.parse_constraint_call(_error::Function, vectorized::Bool,
                                             ::Val{:⊃}, lhs, rhs)
     _error("Unrecognized symbol ⊃, did you mean ⊇ ?")
 end
-function JuMP.parse_one_operator_constraint(_error::Function, vectorized::Bool,
+function JuMP.parse_constraint_call(_error::Function, vectorized::Bool,
                                             ::Val{:⊇}, lhs, rhs)
     parse_one_operator_constraint(_error, vectorized, Val(:⊆), rhs, lhs)
 end

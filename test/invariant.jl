@@ -9,7 +9,7 @@ using JuMP
 const MOIT = MOI.Test
 
 @testset "Invariant" begin
-    config = MOIT.TestConfig()
+    config = MOIT.Config()
     @testset "Maximal" begin
         # Q = [1 0
         #      0 1]

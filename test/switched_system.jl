@@ -10,7 +10,7 @@ using JuMP
 const MOIT = MOI.Test
 
 @testset "Switched System" begin
-    config = MOIT.TestConfig()
+    config = MOIT.Config()
     @testset "Ellipsoid" begin
         @testset "Feasible" begin
             optimize!(mock) = MOIU.mock_optimize!(
@@ -19,7 +19,7 @@ const MOIT = MOI.Test
         end
         @testset "Infeasible" begin
             optimize!(mock) = MOIU.mock_optimize!(
-                mock, MOI.INFEASIBLE, tuple(),
+                mock, MOI.INFEASIBLE, MOI.NO_SOLUTION, MOI.INFEASIBILITY_CERTIFICATE,
                 (MOI.VectorOfVariables, SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle) => [[0.00282108, 0.0, 0.00282108]],
                 (MOI.VectorAffineFunction{Float64}, SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle) => [[0.00117187, 0.0, 2.82044], [2.82044, 0.0, 0.00117187]]
             )

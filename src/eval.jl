@@ -4,7 +4,7 @@ function poly_eval(p::MP.AbstractPolynomial{JuMP.AffExpr},
     aff = zero(JuMP.AffExpr)
     for term in MP.terms(p)
         mono = MP.monomial(term)
-        aff = MA.add_mul!(aff, mono(vars => a), MP.coefficient(term))
+        aff = MA.add_mul!!(aff, mono(vars => a), MP.coefficient(term))
     end
     return aff
 end

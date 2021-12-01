@@ -23,7 +23,7 @@ const quartic_outer_convexity = [3.621308885857567, 0.0, quartic_outer_α, 0.0, 
                                  quartic_outer_α, 1.5, 0.0, 0.0, 3.6212933687704307]
 
 @testset "Square" begin
-    config = MOIT.TestConfig()
+    config = MOIT.Config()
     @testset "Ellipsoid" begin
         @testset "John" begin
             # Q = [1 0

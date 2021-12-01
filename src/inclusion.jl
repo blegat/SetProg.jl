@@ -137,7 +137,7 @@ function _linear_part(model, domain)
     for (i, h) in enumerate(halfspaces(domain))
         iszero(h.β) || error("only cones are supported")
         λ = @variable(model, lower_bound = 0.0, base_name = "λ[$i]")
-        Λ = MA.mutable_broadcast!(MA.add_mul, Λ, λ, h.a)
+        Λ = MA.broadcast!(MA.add_mul, Λ, λ, h.a)
     end
     return Λ
 end
@@ -169,7 +169,7 @@ function _quadratic_part(model, domain)
             (iszero(hi.β) && iszero(hj.β)) || error("only cones are supported")
             A = hi.a * hj.a' + hj.a * hi.a'
             λ = @variable(model, lower_bound = 0.0, base_name = "λ[$i,$j]")
-            Λ = MA.mutable_broadcast!(MA.add_mul, Λ, λ, A)
+            Λ = MA.broadcast!(MA.add_mul, Λ, λ, A)
         end
     end
     return Λ
@@ -206,7 +206,7 @@ function lifted_psd_in_domain(model, Q::Symmetric, domain)
     Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain)]
     for (i, hi) in enumerate(halfspaces(domain))
         λ = @variable(model, lower_bound = 0.0, base_name = "λ[$i]")
-        Λ = MA.mutable_broadcast!(MA.add_mul, Λ, λ, hi.a)
+        Λ = MA.broadcast!(MA.add_mul, Λ, λ, hi.a)
     end
     off = Q[2:end, 1] - Λ
     A = [Q[1, 1] off'

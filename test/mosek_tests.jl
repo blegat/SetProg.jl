@@ -1,7 +1,7 @@
 include("solver_preamble.jl")
 using MosekTools
 optimizer_constructor = optimizer_with_attributes(Mosek.Optimizer, "QUIET" => true)
-config = MOI.Test.TestConfig(atol=1e-3, rtol=1e-3)
+config = MOI.Test.Config(atol=1e-3, rtol=1e-3)
 @testset "Mosek" begin
     @testset "Square" begin
         Tests.square_test(optimizer_constructor, config)

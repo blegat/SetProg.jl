@@ -31,7 +31,7 @@ function quad_form(a::AbstractVector,
     out = zero(MA.promote_operation(+, U, U))
     for j in 1:m
         for i in 1:n
-            out = MA.add_mul!(out, a[i], Q[i, j], b[j])
+            out = MA.add_mul!!(out, a[i], Q[i, j], b[j])
         end
     end
     return out
