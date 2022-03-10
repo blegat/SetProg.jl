@@ -6,6 +6,7 @@ GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Polyhedra = "67491407-f73d-577b-9b50-8179a7c68029"
+SetProg = "39881422-4b75-5582-a5c7-0feb14562a65"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]

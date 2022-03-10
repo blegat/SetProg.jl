@@ -13,9 +13,8 @@ function power_integrate(exponent, bound)
     @assert isodd(exp)
     return (2/exp) * bound^exp
 end
-function rectangle_integrate(m::MP.AbstractMonomialLike,
-                             vertex)
-    exp = MP.exponents(m)
+function rectangle_integrate(m::MP.AbstractMonomialLike, vars, vertex)
+    exp = MP.degree.(m, vars)
     if any(isodd, exp)
         return zero(power_integrate(2, vertex[1]))
     else
@@ -23,13 +22,11 @@ function rectangle_integrate(m::MP.AbstractMonomialLike,
         return prod(power_integrate.(exp, vertex))
     end
 end
-function rectangle_integrate(t::MP.AbstractTermLike,
-                             vertex)
-    return MP.coefficient(t) * rectangle_integrate(MP.monomial(t), vertex)
+function rectangle_integrate(t::MP.AbstractTermLike, vars, vertex)
+    return MP.coefficient(t) * rectangle_integrate(MP.monomial(t), vars, vertex)
 end
-function rectangle_integrate(p::MP.AbstractPolynomialLike,
-                            vertex)
-    return sum(rectangle_integrate(t, vertex) for t in MP.terms(p))
+function rectangle_integrate(p::MP.AbstractPolynomialLike, vars, vertex)
+    return sum(rectangle_integrate(t, vars, vertex) for t in MP.terms(p))
 end
 
 struct PowerOfLinearForm
@@ -131,7 +128,7 @@ International Journal of Control, **2012**.
 function l1_integral(set::Union{Sets.PolySet,
                                 Sets.ConvexPolySet},
                      vertex::AbstractVector)
-    return rectangle_integrate(set.p, vertex)
+    return rectangle_integrate(set.p, MP.variables(set.p), vertex)
 end
 
 # See (13) of [BBDKV11]
@@ -262,8 +259,11 @@ function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
 end
 function l1_integral(set::Sets.HouseDualOf{<:Sets.ConvexPolynomialSet},
                      vertex)
-    return rectangle_integrate(MP.subs(set.set.set.q, set.set.set.z => 0),
-                               1 ./ vertex)
+    return rectangle_integrate(
+        MP.subs(set.set.set.q, set.set.set.z => 0),
+        set.set.set.x,
+        1 ./ vertex,
+    )
 end
 
 function invert_objective_sense(::Union{Sets.Polar,
