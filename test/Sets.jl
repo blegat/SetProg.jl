@@ -1,4 +1,5 @@
 using Test
+using LinearAlgebra
 using DynamicPolynomials
 using SetProg, SetProg.Sets
 
@@ -22,5 +23,19 @@ using SetProg, SetProg.Sets
         @test el.p.Q == [2 3; 3 4]
         el = Sets.zero_eliminate(set, 2:2)
         @test el.p.Q == [2 4; 4 6]
+
+        @testset "Householder" begin
+            p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i + j),
+                                            monovec([x, y]))
+            set = SetProg.perspective_dual_polyset(2, p, SetProg.InteriorPoint(zeros(2)), z, [x, y])
+            @test set.set.p == 2x^2 + 6x*y + 4y^2 - z^2
+            @test set.set.h == zeros(2)
+            @test set.set.x == [x, y]
+            @test Sets.gauge1(set.set.set) == 2x^2 + 6x*y + 4y^2
+            set2 = Sets.project(set, [2])
+            @test set2.set.p == 4y^2 - z^2
+            @test set2.set.h == zeros(1)
+            @test set2.set.x == [y]
+        end
     end
 end
