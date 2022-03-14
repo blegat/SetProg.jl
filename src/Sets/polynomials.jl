@@ -119,5 +119,5 @@ perspective_gauge0(set) = set.q - set.z^set.degree
 perspective_variable(set::ConvexPolynomialSet) = set.z
 space_variables(set::ConvexPolynomialSet) = set.x
 function gauge1(set::ConvexPolynomialSet{T}) where T
-    return subs(set.q, perspective_variable(set) => one(T))
+    return MP.subs(set.q, perspective_variable(set) => one(T))
 end
