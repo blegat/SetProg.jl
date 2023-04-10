@@ -5,7 +5,7 @@
 | [![][docs-stable-img]][docs-stable-url] | [![Build Status][build-img]][build-url] | [![Gitter][gitter-img]][gitter-url] |
 | [![][docs-latest-img]][docs-latest-url] | [![Codecov branch][codecov-img]][codecov-url] | [<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Discourse_logo.png/799px-Discourse_logo.png" width="64">][discourse-url] |
 
-JuMP extension for Set Programming : optimization with set variables and inclusion/containment constraints. This package allows the formulation of a mathematical program involving and set variables and inclusion/membership constraints in addition to classical variables and constraints supported by JuMP.
+JuMP extension for Set Programming : optimization with set variables and inclusion/containment constraints. This package allows the formulation of a mathematical program involving set variables and inclusion/membership constraints in addition to classical variables and constraints supported by JuMP.
 
 ## Documentation
 
@@ -121,7 +121,7 @@ To compute the maximal invariant set contained in a polytope (*not yet implement
 ```julia
 using SetProg
 model = Model(optimizer_constructor)
-@variable(model, S, Polyhedron())
+@variable(model, S, Polytope())
 @constraint(model, S ⊆ diamond)
 @constraint(model, A*S ⊆ S) # Invariance constraint
 @objective(model, Max, volume(S))
