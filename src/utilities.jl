@@ -57,7 +57,7 @@ struct GramTransformation{T, MT <: MP.AbstractMonomial,
 end
 
 function apply_transformation(p::SumOfSquares.GramMatrix,
-                              t::GramTransformation) where T
+                              t::GramTransformation)
     new_n = length(t.monos)
     new_Q = [quad_form(t.M[:, i], p.Q, t.M[:, j]) for j in 1:new_n for i in 1:j]
     return GramMatrix(SymMatrix(new_Q, new_n), t.monos)
