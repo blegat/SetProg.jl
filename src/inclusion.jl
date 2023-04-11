@@ -27,7 +27,7 @@ end
 
 JuMP.function_string(print_mode, c::InclusionConstraint) = string(c.subset)
 function JuMP.in_set_string(print_mode, c::InclusionConstraint)
-    string(print_mode == JuMP.IJuliaMode ? "\\subseteq" : "⊆", " ", c.supset)
+    string(print_mode == MIME("text/latex") ? "\\subseteq" : "⊆", " ", c.supset)
 end
 struct PowerSet{S}
     set::S
