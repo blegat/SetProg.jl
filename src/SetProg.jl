@@ -18,7 +18,7 @@ using MultivariateMoments
 import DynamicPolynomials
 import MultivariatePolynomials
 const MP = MultivariatePolynomials
-const SpaceVariable = DynamicPolynomials.PolyVar{true}
+const SpaceVariable = DynamicPolynomials.Variable{true}
 
 export Polytope, Ellipsoid, PolySet
 export nth_root, L1_heuristic

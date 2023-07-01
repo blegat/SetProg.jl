@@ -9,7 +9,7 @@ const MB = MultivariateBases
 const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPolynomials.MonomialVector{true}}
 using Polyhedra
 
-const SpaceVariable = DynamicPolynomials.PolyVar{true}
+const SpaceVariable = DynamicPolynomials.Variable{true}
 
 abstract type AbstractSet{T} end
 

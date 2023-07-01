@@ -280,7 +280,7 @@ function constrain_convex(model, p, vars)
     hessian = MP.differentiate(p, vars, 2)
     # We do not just do `@constraint(model, p in SOSConvex())` as we would
     # like to have access to the PSD matrix of variables for the det volume heuristic
-    y = [MP.similarvariable(eltype(hessian), gensym()) for i in 1:LinearAlgebra.checksquare(hessian)]
+    y = [MP.similar_variable(eltype(hessian), gensym()) for i in 1:LinearAlgebra.checksquare(hessian)]
     q = dot(y, hessian * y)
     X = SumOfSquares.Certificate.monomials_half_newton_polytope(MP.monomials(q), (y,))
     # If `X` is empty, we will need the following bridge
@@ -294,7 +294,7 @@ function constrain_convex(model, p, vars)
     s = SumOfSquares.build_gram_matrix(
         Q, MonomialBasis(X), MOI.PositiveSemidefiniteConeTriangle, Float64)
     @constraint(model, q == s)
-    return MultivariateMoments.getmat(s)
+    return MultivariateMoments.value_matrix(s)
 end
 
 function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,

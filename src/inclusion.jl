@@ -97,7 +97,7 @@ function s_procedure(model, subset, supset; S_procedure_scaling = nothing)
         # We want to avoid creating a non-convex problem. If one of `p` and `q`
         # is a polynomial with constant coefficients, we multiply the variable
         # by this one
-        if MP.coefficienttype(q) <: Number
+        if MP.coefficient_type(q) <: Number
             s = S_procedure_scaling * q - p
         else
             s = q - S_procedure_scaling * p
@@ -448,7 +448,7 @@ function JuMP.add_constraint(model::JuMP.Model,
     h = constraint.supset
     x = Sets.space_variables(constraint.subset)
     hs = dot(h.a, x) - h.β
-    if MP.coefficienttype(p) <: Number
+    if MP.coefficient_type(p) <: Number
         λ = @variable(model, lower_bound=0.0, base_name = "λ")
         cref = @constraint(model, λ * (p - 1) - hs in SOSCone())
     elseif Polyhedra.coefficient_type(h) <: Number
