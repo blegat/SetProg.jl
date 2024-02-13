@@ -132,13 +132,9 @@ function ci_quad_nonhomogeneous_test(optimizer, config)
                    set -> L1_heuristic(set, [1.0, 1.0]), 8/3,
                    ◯ -> begin
                        @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ConvexPolynomialSet{Float64, SetProg.Sets.MonoBasis, Float64}, Float64}}
-                       @show ◯
                        z = Sets.perspective_variable(◯)
-                       @show z
                        x, y = Sets.space_variables(◯)
-                       @show x, y
                        ◯_dual = Sets.perspective_dual(◯)
-                       @show ◯_dual
                        # The coefficient of `x*y` does not influence the volume
                        # and with the values of the other parameters, it should
                        # simply be in the interval [-2, -0.5].

@@ -15,8 +15,6 @@ _b(model, h::InteriorPoint) = @variable(model, [1:length(h.h)])
 
 function polar_perspective_ellipsoid(ell, point::HintPoint, z::SpaceVariable,
                                      x::Vector{SpaceVariable})
-    @show @__LINE__
-    @show ell
     y = [z; x]
     H = Sets._householder(point.h)
     p = y' * H * Sets._perspective_cat(ell) * H * y
