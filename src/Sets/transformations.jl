@@ -59,7 +59,7 @@ _householder(h) = householder([1.0; h]) # We add 1, for perspective variable z
 
 struct Householder{T, S <: AbstractSet{T}, U} <: AbstractSet{T}
     set::S
-    p::DynamicPolynomials.Polynomial{true, U}
+    p::DynamicPolynomials.Polynomial{VariableOrder,MonomialOrder,U}
     h::Vector{Float64}
     z::SpaceVariable
     x::Vector{SpaceVariable}

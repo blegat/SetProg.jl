@@ -4,12 +4,16 @@ using RecipesBase
 import MultivariatePolynomials
 const MP = MultivariatePolynomials
 import DynamicPolynomials
-import MultivariateBases
-const MB = MultivariateBases
-const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPolynomials.MonomialVector{true}}
+import MultivariateBases as MB
+const VariableOrder =
+    DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}
+const MonomialOrder = MP.Graded{MP.LexOrder}
+const SpaceVariable = DynamicPolynomials.Variable{VariableOrder,MonomialOrder}
+const MonoBasis = MB.MonomialBasis{
+    DynamicPolynomials.Monomial{VariableOrder,MonomialOrder},
+    DynamicPolynomials.MonomialVector{VariableOrder,MonomialOrder},
+}
 using Polyhedra
-
-const SpaceVariable = DynamicPolynomials.Variable{true}
 
 abstract type AbstractSet{T} end
 

@@ -14,18 +14,18 @@ using SetProg, SetProg.Sets
     end
     @testset "zero_eliminate" begin
         @polyvar x y z
-        p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i + j),
+        p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, 8 - (i + j)),
                                            monomial_vector([x, y, z]))
         set = Sets.ConvexPolySet(2, p, nothing)
         el = Sets.zero_eliminate(set, 1:2)
         @test el.p.Q == 6ones(1, 1)
         el = Sets.zero_eliminate(set, 3:3)
-        @test el.p.Q == [2 3; 3 4]
+        @test el.p.Q == [4 3; 3 2]
         el = Sets.zero_eliminate(set, 2:2)
-        @test el.p.Q == [2 4; 4 6]
+        @test el.p.Q == [6 4; 4 2]
 
         @testset "Householder" begin
-            p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i + j),
+            p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, 6 - (i + j)),
                                             monomial_vector([x, y]))
             set = SetProg.perspective_dual_polyset(2, p, SetProg.InteriorPoint(zeros(2)), z, [x, y])
             @test set.set.p == 2x^2 + 6x*y + 4y^2 - z^2
