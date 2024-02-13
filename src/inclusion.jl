@@ -352,7 +352,7 @@ function JuMP.add_constraint(
         <:Polyhedra.VRep,
         <:Union{Sets.AbstractSet{<:JuMP.AbstractJuMPScalar},
                 Polyhedra.HRepElement{<:JuMP.AbstractJuMPScalar}}},
-    name::String = ""
+    ::String = ""
 )
     □ = constraint.subset
     ◯ = constraint.supset
@@ -399,7 +399,7 @@ function _psd_matrix(subset::Sets.Ellipsoid, hs::HalfSpace)
     ])
 end
 function JuMP.build_constraint(
-    _error::Function,
+    ::Function,
     subset::Sets.Ellipsoid,
     sup_powerset::PowerSet{<:HalfSpace}
 )

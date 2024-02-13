@@ -7,10 +7,9 @@ using MultivariatePolynomials
 import DynamicPolynomials
 
 using JuMP
-const MOIT = MOI.Test
 
 @testset "Switched System" begin
-    config = MOIT.Config()
+    config = MOI.Test.Config()
     @testset "Ellipsoid" begin
         @testset "Feasible" begin
             optimize!(mock) = MOIU.mock_optimize!(

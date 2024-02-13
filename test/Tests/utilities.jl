@@ -1,6 +1,4 @@
 using Test, JuMP
-const MOIT = MOI.Test
-const MOIB = MOI.Bridges
 
 function _model(optimizer::MOI.AbstractOptimizer)
     MOI.empty!(optimizer)

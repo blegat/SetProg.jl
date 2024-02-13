@@ -1,8 +1,7 @@
 module Sets
 using LinearAlgebra
 using RecipesBase
-import MultivariatePolynomials
-const MP = MultivariatePolynomials
+import MultivariatePolynomials as MP
 import DynamicPolynomials
 import MultivariateBases as MB
 const VariableOrder =

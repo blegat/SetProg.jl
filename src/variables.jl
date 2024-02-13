@@ -10,14 +10,16 @@ end
 struct InteriorPoint{T} <: HintPoint
     h::Vector{T}
 end
-_β(model, h::InteriorPoint) = @variable(model)
+_β(model, ::InteriorPoint) = @variable(model)
 _b(model, h::InteriorPoint) = @variable(model, [1:length(h.h)])
 
 function polar_perspective_ellipsoid(ell, point::HintPoint, z::SpaceVariable,
                                      x::Vector{SpaceVariable})
+    @show @__LINE__
+    @show ell
     y = [z; x]
     H = Sets._householder(point.h)
-    p = y' * H * Sets._HPH(ell) * H * y
+    p = y' * H * Sets._perspective_cat(ell) * H * y
     return Sets.perspective_dual(Sets.Householder(ell, p, point.h, z, x))
 end
 function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
@@ -34,7 +36,7 @@ function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
     b = @variable(model, [1:length(point.h)], base_name="b")
     psd_constraint(model, Symmetric([β+1 b'; b Q]))
     ell = Sets.ShiftedEllipsoid(Q, b, β)
-    return polar_perspective_ellipsoid(ell, point, z, x)
+        return polar_perspective_ellipsoid(ell, point, z, x)
 end
 
 function perspective_dual_polyset(set, point::HintPoint, z::SpaceVariable,
@@ -79,7 +81,7 @@ Sets.space_variables(::Polytope) = nothing
 function variable_set(model::JuMP.AbstractModel, ell::Polytope, space::Space,
                       space_dimension, space_polyvars)
     n = space_dimension
-    if ell.symmetric
+        if ell.symmetric
         if ell.piecewise === nothing
             set = Sets.PolarPoint(@variable(model, [1:n], base_name = "a"))
         else
@@ -169,9 +171,9 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
         end
         return Q
     end
-    if ell.symmetric
+        if ell.symmetric
         function new_piece()
-            if space == PrimalSpace
+                        if space == PrimalSpace
                 if ell.superset !== nothing
                     Q = Symmetric(new_Q() + ell.superset.Q)
                 else
@@ -282,7 +284,8 @@ function constrain_convex(model, p, vars)
     # like to have access to the PSD matrix of variables for the det volume heuristic
     y = [MP.similar_variable(eltype(hessian), gensym()) for i in 1:LinearAlgebra.checksquare(hessian)]
     q = dot(y, hessian * y)
-    X = SumOfSquares.Certificate.monomials_half_newton_polytope(MP.monomials(q), (y,))
+    multipartite = SumOfSquares.Certificate.NewtonDegreeBounds(tuple(y,))
+    X = SumOfSquares.Certificate.monomials_half_newton_polytope(MP.monomials(q), multipartite)
     # If `X` is empty, we will need the following bridge
     JuMP.add_bridge(model, SumOfSquares.Bridges.Constraint.EmptyBridge)
     # If `length(X)` is 2, we will need the following bridge
@@ -304,18 +307,18 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
     # General all monomials of degree `degree`, we don't want monomials of
     # lower degree as the polynomial is homogeneous
     @assert iseven(set.degree)
-    if set.symmetric
+        if set.symmetric
         monos = MP.monomials(space_polyvars, div(set.degree, 2))
     else
         monos = MP.monomials(lift_space_variables(d, space_polyvars),
                              div(set.degree, 2))
     end
     basis = MultivariateBases.basis_covering_monomials(set.basis, monos)
-    # TODO If `set.convex` and `set.symmetric`, no need for the poly to be SOS, see Lemma 6.33 of [BPT12]
+        # TODO If `set.convex` and `set.symmetric`, no need for the poly to be SOS, see Lemma 6.33 of [BPT12]
     p = @variable(model, variable_type=SOSPoly(basis))
-    if set.convex
+        if set.convex
         set.superset === nothing || error("superset not supported for convex PolySet")
-        if set.symmetric
+                if set.symmetric
             convexity_proof = constrain_convex(model, p, space_polyvars)
             if space == PrimalSpace
                 return Sets.ConvexPolySet(set.degree, p, convexity_proof)
@@ -333,7 +336,7 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
                 if set.point === nothing
                     throw(ArgumentError("Specify a point for nonsymmetric polyset, e.g. `PolySet(point=InteriorPoint([1.0, 0.0]))"))
                 end
-                return perspective_dual_polyset(set.degree, p, set.point, d.perspective_polyvar, space_polyvars)
+                                return perspective_dual_polyset(set.degree, p, set.point, d.perspective_polyvar, space_polyvars)
             end
         end
     else

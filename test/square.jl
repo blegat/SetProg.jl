@@ -6,7 +6,6 @@ using Polyhedra
 using MultivariatePolynomials
 
 using JuMP
-const MOIT = MOI.Test
 
 const quartic_inner_poly = [3.1518541833100864, -0.1617384194869734]
 const quartic_inner_obj = 6.447419478140056
@@ -23,7 +22,7 @@ const quartic_outer_convexity = [3.621308885857567, 0.0, quartic_outer_α, 0.0, 
                                  quartic_outer_α, 1.5, 0.0, 0.0, 3.6212933687704307]
 
 @testset "Square" begin
-    config = MOIT.Config()
+    config = MOI.Test.Config()
     @testset "Ellipsoid" begin
         @testset "John" begin
             # Q = [1 0

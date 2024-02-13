@@ -8,10 +8,10 @@ using Polyhedra
     p = 2x^2*y + 3x + 4y^2 - 5x^4*y^2 + 6x^2
     @test SetProg.rectangle_integrate(p, [2, 3]) ≈ -672
 
-    Q = [1 2 4
-         2 3 5
-         4 5 6]
-    q = SetProg.GramMatrix(Q, SetProg.monomials([x, y], 2))
+    Q = [6 5 4
+         5 3 2
+         4 2 1]
+    q = SetProg.GramMatrix(Q, SetProg.MP.monomials([x, y], 2))
     @test SetProg.rectangle_integrate(polynomial(q), [2, 3]) ≈ 3465.6
 
     @test SetProg.rectangle_integrate(polynomial(q), [1, 1]) ≈ 472/45

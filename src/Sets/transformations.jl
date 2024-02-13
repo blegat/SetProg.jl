@@ -20,7 +20,7 @@ struct LinearImage{S, T, MT <: AbstractMatrix{T}} <: AbstractSet{T}
     A::MT
 end
 perspective_variable(li::LinearImage) = perspective_variable(li.set)
-space_variables(li::LinearImage) = nothing
+space_variables(::LinearImage) = nothing
 dimension(li::LinearImage) = size(li.A, 1)
 
 # A^{-1} * S
@@ -40,6 +40,9 @@ function Polyhedra.project(t::Translation, I)
     return Translation(Polyhedra.project(t.set, I), t.c[I])
 end
 
+_perspective_cat(x::AbstractVector, z) = [z; x]
+_perspective_split(xz::AbstractVector) = xz[2:end], xz[1]
+
 """
     householder(x)
 
@@ -52,10 +55,10 @@ It is symmetric and orthogonal.
 function householder(x)
     y = copy(x)
     t = LinearAlgebra.reflector!(y)
-    v = [1; y[2:end]]
+    v = _perspective_cat(_perspective_split(y)[1], 1)
     I - t * v * v'
 end
-_householder(h) = householder([1.0; h]) # We add 1, for perspective variable z
+_householder(h) = householder(_perspective_cat(h, 1)) # We add 1, for perspective variable z
 
 struct Householder{T, S <: AbstractSet{T}, U} <: AbstractSet{T}
     set::S
@@ -85,7 +88,7 @@ function Polyhedra.project(set::PerspectiveDual, I)
                                            setdiff(1:dimension(set), I)))
 end
 
-function _HPH(set::Householder)
+function _perspective_cat(set::Householder)
     H = _householder(set.h)
-    return H * _HPH(set.set) * H
+    return H * _perspective_cat(set.set) * H
 end
