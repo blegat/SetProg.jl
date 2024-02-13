@@ -43,17 +43,17 @@ end
         end
     end
     @testset "Polynomial" begin
-        @polyvar z x y
+        @polyvar x y z
         @testset "Circle" begin
             p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
-                                               monovec([x, y]))
+                                               monomial_vector([x, y]))
             circle = Sets.PolySet(2, p)
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
         end
         @testset "Convex Circle" begin
             p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
-                                               monovec([x, y]))
+                                               monomial_vector([x, y]))
             circle = Sets.ConvexPolySet(2, p, nothing)
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
@@ -63,7 +63,7 @@ end
         end
         @testset "Scaled circle" begin
             p = SetProg.GramMatrix{Float64}((i, j) -> 2convert(Float64, i == j),
-                                               monovec([x, y]))
+                                               monomial_vector([x, y]))
             circle = Sets.ConvexPolySet(2, p, nothing)
             recipe_test(circle,
                         [1/√2, 0.0, -1/√2, 0.0], [0.0, 1/√2, 0.0, -1/√2])
@@ -75,7 +75,7 @@ end
             @testset "Basic" begin
                 q = SetProg.GramMatrix(Float64[0 0 0
                                                0 1 0
-                                               0 0 1], monovec([z, x, y]))
+                                               0 0 1], monomial_vector([z, y, x]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
                 recipe_test(shifted_circle,
                             [-1.0, -1.0, 1.0,  1.0, -1.0],
@@ -84,7 +84,7 @@ end
             @testset "Scaled" begin
                 q = SetProg.GramMatrix(Float64[0 0 0
                                                0 2 0
-                                               0 0 2], monovec([z, x, y]))
+                                               0 0 2], monomial_vector([z, y, x]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
                 recipe_test(shifted_circle,
 							[-√2, -√2, √2,  √2, -√2],
@@ -94,7 +94,7 @@ end
                 # z: -1/2 + 1 = 1/2
                 q = SetProg.GramMatrix([1/2 0 0
                                         0   1 0
-                                        0   0 1], monovec([z, x, y]))
+                                        0   0 1], monomial_vector([z, y, x]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
 				recipe_test(shifted_circle,
 							[-√2, -√2, √2,  √2, -√2],

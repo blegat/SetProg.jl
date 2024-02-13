@@ -6,10 +6,9 @@ using Polyhedra
 using MultivariatePolynomials
 
 using JuMP
-const MOIT = MOI.Test
 
 @testset "Controlled invariant" begin
-    config = MOIT.Config()
+    config = MOI.Test.Config()
     @testset "Ellipsoid" begin
         # Q = [1 0
         #      0 1]

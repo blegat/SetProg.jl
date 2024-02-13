@@ -1,7 +1,7 @@
 name = "SetProg"
 uuid = "39881422-4b75-5582-a5c7-0feb14562a65"
 repo = "https://github.com/blegat/SetProg.jl.git"
-version = "0.3.3"
+version = "0.4.0"
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
@@ -22,23 +22,16 @@ SumOfSquares = "4b9e565b-77fc-50a5-a571-1244f986bda1"
 
 [compat]
 Combinatorics = "1"
-DataStructures = "0.17.11, 0.18"
-DynamicPolynomials = "0.4"
-JuMP = "0.23, 1"
+DataStructures = "0.18"
+DynamicPolynomials = "0.5"
+JuMP = "1"
 MathOptInterface = "1"
-MultivariateBases = "0.1.2"
-MultivariateMoments = "0.3"
-MultivariatePolynomials = "0.4"
+MultivariateBases = "0.2"
+MultivariateMoments = "0.4"
+MultivariatePolynomials = "0.5"
 MutableArithmetics = "1"
 Polyhedra = "0.7"
-RecipesBase = "0.7, 0.8, 1"
-Reexport = "0.2, 1"
-SumOfSquares = "0.6"
+RecipesBase = "1"
+Reexport = "1"
+SumOfSquares = "0.7"
 julia = "1.6"
-
-[extras]
-GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["GLPK", "Test"]

@@ -6,14 +6,10 @@ using Polyhedra
 using MultivariatePolynomials
 
 using DynamicPolynomials
-import MultivariateBases
-const MB = MultivariateBases
-const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPolynomials.MonomialVector{true}}
 
 using JuMP
-const MOIT = MOI.Test
 
-function switched_system_test(optimizer, config::MOIT.Config,
+function switched_system_test(optimizer, config::MOI.Test.Config,
                               variable::SetProg.AbstractVariable, γ,
                               feasible, objective_value, set_test, dual_test)
     model = _model(optimizer)
@@ -98,7 +94,7 @@ function feasible_switched_system_quad_test(optimizer, config, ε=1e-3)
         PolySet(symmetric=true, degree=2, superset=superset(x, 1)),
         √2 + ε, true, 8/3,
         ◯ -> begin
-            @test ◯ isa Sets.PolySet{Float64, MonoBasis}
+            @test ◯ isa Sets.PolySet{Float64, SetProg.Sets.MonoBasis}
             @test polynomial(◯.p) ≈ x[1]^2 + x[2]^2 atol=config.atol rtol=config.rtol
         end,
         (cref1, cref2) -> begin end)
@@ -126,7 +122,7 @@ function feasible_switched_system_quartic_test(optimizer, config, ε=1e-2)
         PolySet(symmetric=true, degree=4, superset=superset(x, 2)),
         1.0 + ε, true, 10.001105454190741,
         ◯ -> begin
-            @test ◯ isa Sets.PolySet{Float64, MonoBasis}
+            @test ◯ isa Sets.PolySet{Float64, SetProg.Sets.MonoBasis}
 			α = 11.814054544955727
             @test polynomial(◯.p) ≈ (α+1) * x[1]^4 - 2α * x[1]^2*x[2]^2 + (α+1) * x[2]^4 atol=config.atol rtol=config.rtol
         end,
