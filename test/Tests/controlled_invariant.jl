@@ -7,14 +7,10 @@ using MultivariatePolynomials
 const MP = MultivariatePolynomials
 
 import DynamicPolynomials
-import MultivariateBases
-const MB = MultivariateBases
-const MonoBasis = MB.MonomialBasis{DynamicPolynomials.Monomial{true}, DynamicPolynomials.MonomialVector{true}}
 
 using JuMP
-const MOIT = MOI.Test
 
-function ci_square_test(optimizer, config::MOIT.Config,
+function ci_square_test(optimizer, config::MOI.Test.Config,
                         inner::Bool, variable::SetProg.AbstractVariable,
                         metric::Function, objective_value, set_test, nvars=nothing)
     model = _model(optimizer)
@@ -93,10 +89,10 @@ function ci_piecewise_semiell_homogeneous_test(optimizer, config)
                             -0.25 1.0])
             Q2 = Symmetric([ 1.0 -1.0
                             -1.0  1.0])
-            @test ◯.sets[1].Q ≈ Q1 atol=config.atol rtol=config.rtol
-            @test ◯.sets[2].Q ≈ Q2 atol=config.atol rtol=config.rtol
-            @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
-            @test ◯.sets[4].Q ≈ Q1 atol=config.atol rtol=config.rtol
+            _test_piece(◯, [-0.5, -0.5], Q1, config)
+            _test_piece(◯, [0.5, -0.5], Q2, config)
+            _test_piece(◯, [-0.5, 0.5], Q2, config)
+            _test_piece(◯, [0.5, 0.5], Q1, config)
         end,
         24,
     )
@@ -107,7 +103,7 @@ function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
     ci_square_test(
         optimizer, config, true,
         Ellipsoid(symmetric=true, piecewise=polar_mci),
-        set -> L1_heuristic(set), 0.9349838949990186,
+        set -> L1_heuristic(set), 2.9909434642487316,
         p◯ -> begin
             @test p◯ isa Sets.Polar
             ◯ = p◯.set
@@ -119,12 +115,12 @@ function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
                              0.0  0.0])
             Q3 = Symmetric([ 0.25 0.5
                              0.5  1.0])
-            @test ◯.sets[1].Q ≈ Q1 atol=config.atol rtol=config.rtol
-            @test ◯.sets[2].Q ≈ Q1 atol=config.atol rtol=config.rtol
-            @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
-            @test ◯.sets[4].Q ≈ Q3 atol=config.atol rtol=config.rtol
-            @test ◯.sets[5].Q ≈ Q2 atol=config.atol rtol=config.rtol
-            @test ◯.sets[6].Q ≈ Q3 atol=config.atol rtol=config.rtol
+            _test_piece(◯, [1.5, 0.5], Q2, config)
+            _test_piece(◯, [0.5, -0.5], Q1, config)
+            _test_piece(◯, [0.5, 0.75], Q3, config)
+            _test_piece(◯, [-0.5, 0.5], Q1, config)
+            _test_piece(◯, [-1.5, -0.5], Q2, config)
+            _test_piece(◯, [-1, -0.75], Q3, config)
         end,
         25,
     )
@@ -135,7 +131,7 @@ function ci_quad_nonhomogeneous_test(optimizer, config)
                    PolySet(degree=2, convex=true, point=SetProg.InteriorPoint([0.0, 0.0])),
                    set -> L1_heuristic(set, [1.0, 1.0]), 8/3,
                    ◯ -> begin
-                       @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ConvexPolynomialSet{Float64, MonoBasis, Float64}, Float64}}
+                       @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ConvexPolynomialSet{Float64, SetProg.Sets.MonoBasis, Float64}, Float64}}
                        z = Sets.perspective_variable(◯)
                        x, y = Sets.space_variables(◯)
                        ◯_dual = Sets.perspective_dual(◯)
@@ -155,7 +151,7 @@ function ci_quartic_homogeneous_test(optimizer, config)
                    set -> L1_heuristic(set, [1.0, 1.0]),
                    0.4,
                    ◯ -> begin
-                       @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolySet{Float64, MonoBasis, Float64}}
+                       @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolySet{Float64, SetProg.Sets.MonoBasis, Float64}}
                        @test Sets.polar(◯).degree == 4
                        x, y = variables(Sets.polar(◯).p)
                        α = MP.coefficient(Sets.polar(◯).p, x^3*y) / 2

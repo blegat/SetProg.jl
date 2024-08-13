@@ -7,10 +7,9 @@ using MultivariatePolynomials
 import DynamicPolynomials
 
 using JuMP
-const MOIT = MOI.Test
 
 @testset "Switched System" begin
-    config = MOIT.Config()
+    config = MOI.Test.Config()
     @testset "Ellipsoid" begin
         @testset "Feasible" begin
             optimize!(mock) = MOIU.mock_optimize!(
@@ -43,7 +42,7 @@ const MOIT = MOI.Test
 #                    if F == MOI.VectorAffineFunction{Float64}
 #                        cis = MOI.get(mock, MOI.ListOfConstraintIndices{F, S}())
 #                        function _moment_matrix(q)
-#                            SetProg.SumOfSquares.build_moment_matrix(q, monovec(x))
+#                            SetProg.SumOfSquares.build_moment_matrix(q, monomial_vector(x))
 #                        end
 #                        MOI.set(mock, SetProg.SumOfSquares.MomentMatrixAttribute(),
 #                                cis[1], _moment_matrix([0.00336272, 0.0, 5.64559]))

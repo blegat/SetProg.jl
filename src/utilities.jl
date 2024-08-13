@@ -64,7 +64,7 @@ function apply_transformation(p::SumOfSquares.GramMatrix,
 end
 
 function transformation(old_monos, A::AbstractMatrix, new_vars, d)
-    new_monos = monomials(new_vars, d)
+    new_monos = MP.monomials(new_vars, d)
     new_n = length(new_monos)
     M = zeros(eltype(A), length(old_monos), new_n)
     mapped_vars = A * new_vars
@@ -103,7 +103,7 @@ function transformation(old_monos, A::AbstractMatrix, new_vars, d)
         j = 1
         for term in MP.terms(y)
             mono = MP.monomial(term)
-            while j <= length(new_monos) && mono < new_monos[j]
+            while j <= length(new_monos) && mono > new_monos[j]
                 j += 1
             end
             M[i, j] = MP.coefficient(term)

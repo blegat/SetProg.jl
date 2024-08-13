@@ -6,10 +6,9 @@ using Polyhedra
 using MultivariatePolynomials
 
 using JuMP
-const MOIT = MOI.Test
 
 @testset "Controlled invariant" begin
-    config = MOIT.Config()
+    config = MOI.Test.Config()
     @testset "Ellipsoid" begin
         # Q = [1 0
         #      0 1]
@@ -33,10 +32,10 @@ const MOIT = MOI.Test
                 Q = [1.0, -0.5, 1.0]
 
                 Tests.ci_quad_nonhomogeneous_test(bridged_mock(mock -> begin
-                         # β+1 b[1] b[2]
-                         #  .  Q[1] Q[2]
-                         #  .   .   Q[3]
-                         MOI.Utilities.mock_optimize!(mock, [β+1; b[1]; Q[1]; b[2]; Q[2]; Q[3]; 2Q])
+                        # Q[3] Q[2] b[2]
+                        #  .   Q[1] b[1]
+                        #  .    .   β+1
+                        MOI.Utilities.mock_optimize!(mock, [Q; b; β+1; 2Q])
                      end),
                 config)
             end
@@ -55,13 +54,15 @@ const MOIT = MOI.Test
                 Q1 = [1.0, -1.0, 1.0]
                 Q2 = [1.0, 0.0, 0.0]
                 Q3 = [0.25, 0.5, 1.0]
-                # FIXME See https://github.com/blegat/SetProg.jl/runs/4384813153?check_suite_focus=true
+                # 32-bit is failing: https://github.com/blegat/SetProg.jl/runs/4384813153?check_suite_focus=true
                 if Sys.WORD_SIZE != 32
                     Tests.ci_piecewise_semiell_mci_homogeneous_test(
                         bridged_mock(mock -> MOI.Utilities.mock_optimize!(
                             mock,
-                            [Q1; Q1; Q2; Q3; Q2; Q3; collect(1:MOI.get(mock, MOI.NumberOfVariables()) - 18)])),
-                        config)
+                            [Q3; Q2; Q3; Q2; Q1; Q1; zeros(MOI.get(mock, MOI.NumberOfVariables()) - 18)],
+                        )),
+                        config,
+                    )
                 end
             end
         end

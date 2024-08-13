@@ -6,7 +6,6 @@ using Polyhedra
 using MultivariatePolynomials
 
 using JuMP
-const MOIT = MOI.Test
 
 const quartic_inner_poly = [3.1518541833100864, -0.1617384194869734]
 const quartic_inner_obj = 6.447419478140056
@@ -23,7 +22,7 @@ const quartic_outer_convexity = [3.621308885857567, 0.0, quartic_outer_α, 0.0, 
                                  quartic_outer_α, 1.5, 0.0, 0.0, 3.6212933687704307]
 
 @testset "Square" begin
-    config = MOIT.Config()
+    config = MOI.Test.Config()
     @testset "Ellipsoid" begin
         @testset "John" begin
             # Q = [1 0
@@ -46,10 +45,10 @@ const quartic_outer_convexity = [3.621308885857567, 0.0, quartic_outer_α, 0.0, 
                     β = 1.0
                     b = [0.0, 0.0]
                     Tests.john_nonhomogeneous_quad_square_test(bridged_mock(mock -> begin
-                        # β-1 b[1] b[2]
-                        #  .  Q[1] Q[2]
-                        #  .   .   Q[3]
-                        MOI.Utilities.mock_optimize!(mock, [β-1; b[1]; Q[1]; b[2]; Q[2]; Q[3]; 2Q])
+                        # Q[3] Q[2] b[2]
+                        #  .   Q[1] b[1]
+                        #  .    .   β-1
+                        MOI.Utilities.mock_optimize!(mock, [Q[3]; Q[2]; Q[1]; b[2]; b[1]; β-1; 2Q])
                     end), config)
                 end
             end

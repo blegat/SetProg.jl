@@ -1,6 +1,4 @@
 using Test, JuMP
-const MOIT = MOI.Test
-const MOIB = MOI.Bridges
 
 function _model(optimizer::MOI.AbstractOptimizer)
     MOI.empty!(optimizer)
@@ -87,3 +85,13 @@ function inner_variable_value(model, atol=1e-4)
     println(")")
 end
 # Constraint dual values for inner bridged model
+
+# The order between the pieces might vary so it's more robust
+# to find at which index is a piece using a known point in the interior of the piece
+function _test_piece(set, point, Q, config)
+    is_in = [point in piece for piece in set.pieces]
+    @test count(is_in) == 1
+    i = findfirst(is_in)
+    @test set.sets[i].Q ≈ Q atol=config.atol rtol=config.rtol
+    return
+end

@@ -1,6 +1,5 @@
 using Test
 using SetProg
-const MOIT = MOI.Test
 
 function bridged_mock(mock_optimize!::Function...;
                       # We use a UF to add support for SOSCone, ... so that
