@@ -32,10 +32,10 @@ using JuMP
                 Q = [1.0, -0.5, 1.0]
 
                 Tests.ci_quad_nonhomogeneous_test(bridged_mock(mock -> begin
-                         # β+1 b[1] b[2]
-                         #  .  Q[1] Q[2]
-                         #  .   .   Q[3]
-                         MOI.Utilities.mock_optimize!(mock, [β+1; b[1]; Q[1]; b[2]; Q[2]; Q[3]; 2Q])
+                        # Q[3] Q[2] b[2]
+                        #  .   Q[1] b[1]
+                        #  .    .   β+1
+                        MOI.Utilities.mock_optimize!(mock, [Q; b; β+1; 2Q])
                      end),
                 config)
             end
