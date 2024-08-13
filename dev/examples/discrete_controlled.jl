@@ -244,12 +244,12 @@ polar_plot(sol_ell_L1)
 # The conic partition are obtained by considering the conic hull of each facets of a given polytope.
 # We first consider the conic partition corresponding to the polar of the safe set $[-1, 1]^2$. This gives the four quadrants as cones of the conic partition.
 # The maximal piecewise semi-ellipsoidal control invariant set with this partition has the following support function:
-# $$
+# ```math
 # h^2(S, x) = \begin{cases}
 # (x_1 - x_2)^2 & \text{ if }x_1x_2 \le 0,\\
 # x_1^2 - x_1x_2/2 + x_2^2 & \text{ if }x_1x_2 \ge 0.
 # \end{cases}
-# $$
+# ```
 # For the cones $x_1x_2 \le 0$, the semi-ellipsoid matches the safe set and the maximal control invariant set.
 # For the cones $x_1x_2 \ge 0$, the semi-ellipsoid matches the maximal volume control invariant ellipsoid.
 # This illustrates one key feature of piecewise semi-ellipsoidal sets, they can combines advantages of both polyhedra and ellipsoids. It can be polyhedral on the directions where the maximal control invariant set is polyhedral and be ellipsoidal on the directions where the maximal control invariant set is smooth or requires many halfspaces in its representation.
@@ -293,13 +293,13 @@ polar_plot(sol_piece_8, xlim=(-1.1, 1.1), ylim=(-1.05, 1.05))
 
 # We can use the polar of the polytope resulting from the first fixed point iteration to generate a refined conic partition.
 # With this partition, the maximal piecewise semi-ellipsoidal control invariant set matches the maximal control invariant set. The support function is
-# $$
+# ```math
 # h^2(S, x) = \begin{cases}
 # (x_1 - x_2)^2 & \text{ if }x_1x_2 \le 0,\\
 # x_1^2 & \text{ if }x_2(x_1-2x_2) \ge 0,\\
 # (x_1/2 + x_2)^2 & \text{ if }x_1(2x_2-x_1) \ge 0.\\
 # \end{cases}
-# $$
+# ```
 
 sol_piece_mci = maximal_invariant(Ellipsoid(symmetric=true, piecewise=polar_mci), L1_heuristic)
 SetProg.Sets.print_support_function(sol_piece_mci)
