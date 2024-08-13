@@ -89,10 +89,10 @@ function ci_piecewise_semiell_homogeneous_test(optimizer, config)
                             -0.25 1.0])
             Q2 = Symmetric([ 1.0 -1.0
                             -1.0  1.0])
-            @test ◯.sets[1].Q ≈ Q1 atol=config.atol rtol=config.rtol
-            @test ◯.sets[2].Q ≈ Q2 atol=config.atol rtol=config.rtol
-            @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
-            @test ◯.sets[4].Q ≈ Q1 atol=config.atol rtol=config.rtol
+            _test_piece(◯, [-0.5, -0.5], Q1, config)
+            _test_piece(◯, [0.5, -0.5], Q2, config)
+            _test_piece(◯, [-0.5, 0.5], Q2, config)
+            _test_piece(◯, [0.5, 0.5], Q1, config)
         end,
         24,
     )
@@ -103,7 +103,7 @@ function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
     ci_square_test(
         optimizer, config, true,
         Ellipsoid(symmetric=true, piecewise=polar_mci),
-        set -> L1_heuristic(set), 0.9349838949990186,
+        set -> L1_heuristic(set), 2.9909434642487316,
         p◯ -> begin
             @test p◯ isa Sets.Polar
             ◯ = p◯.set
@@ -115,12 +115,12 @@ function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
                              0.0  0.0])
             Q3 = Symmetric([ 0.25 0.5
                              0.5  1.0])
-            @test ◯.sets[1].Q ≈ Q1 atol=config.atol rtol=config.rtol
-            @test ◯.sets[2].Q ≈ Q1 atol=config.atol rtol=config.rtol
-            @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
-            @test ◯.sets[4].Q ≈ Q3 atol=config.atol rtol=config.rtol
-            @test ◯.sets[5].Q ≈ Q2 atol=config.atol rtol=config.rtol
-            @test ◯.sets[6].Q ≈ Q3 atol=config.atol rtol=config.rtol
+            _test_piece(◯, [1.5, 0.5], Q2, config)
+            _test_piece(◯, [0.5, -0.5], Q1, config)
+            _test_piece(◯, [0.5, 0.75], Q3, config)
+            _test_piece(◯, [-0.5, 0.5], Q1, config)
+            _test_piece(◯, [-1.5, -0.5], Q2, config)
+            _test_piece(◯, [-1, -0.75], Q3, config)
         end,
         25,
     )

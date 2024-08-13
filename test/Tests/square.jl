@@ -100,10 +100,10 @@ function piecewise_semiell_inner_homogeneous_◇_square_test(optimizer, config)
                                      1.0  1.0])
                     Q2 = Symmetric([ 1.0 -1.0
                                     -1.0  1.0])
-                    @test ◯.sets[1].Q ≈ Q1 atol=config.atol rtol=config.rtol
-                    @test ◯.sets[2].Q ≈ Q2 atol=config.atol rtol=config.rtol
-                    @test ◯.sets[3].Q ≈ Q2 atol=config.atol rtol=config.rtol
-                    @test ◯.sets[4].Q ≈ Q1 atol=config.atol rtol=config.rtol
+                    _test_piece(◯, [-0.5, -0.5], Q1, config)
+                    _test_piece(◯, [0.5, -0.5], Q2, config)
+                    _test_piece(◯, [-0.5, 0.5], Q2, config)
+                    _test_piece(◯, [0.5, 0.5], Q1, config)
                 end)
 end
 
