@@ -169,9 +169,9 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
         end
         return Q
     end
-        if ell.symmetric
+    if ell.symmetric
         function new_piece()
-                        if space == PrimalSpace
+            if space == PrimalSpace
                 if ell.superset !== nothing
                     Q = Symmetric(new_Q() + ell.superset.Q)
                 else
@@ -305,18 +305,18 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
     # General all monomials of degree `degree`, we don't want monomials of
     # lower degree as the polynomial is homogeneous
     @assert iseven(set.degree)
-        if set.symmetric
+    if set.symmetric
         monos = MP.monomials(space_polyvars, div(set.degree, 2))
     else
         monos = MP.monomials(lift_space_variables(d, space_polyvars),
                              div(set.degree, 2))
     end
     basis = MultivariateBases.basis_covering_monomials(set.basis, monos)
-        # TODO If `set.convex` and `set.symmetric`, no need for the poly to be SOS, see Lemma 6.33 of [BPT12]
+    # TODO If `set.convex` and `set.symmetric`, no need for the poly to be SOS, see Lemma 6.33 of [BPT12]
     p = @variable(model, variable_type=SOSPoly(basis))
-        if set.convex
+    if set.convex
         set.superset === nothing || error("superset not supported for convex PolySet")
-                if set.symmetric
+        if set.symmetric
             convexity_proof = constrain_convex(model, p, space_polyvars)
             if space == PrimalSpace
                 return Sets.ConvexPolySet(set.degree, p, convexity_proof)
@@ -334,7 +334,7 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
                 if set.point === nothing
                     throw(ArgumentError("Specify a point for nonsymmetric polyset, e.g. `PolySet(point=InteriorPoint([1.0, 0.0]))"))
                 end
-                                return perspective_dual_polyset(set.degree, p, set.point, d.perspective_polyvar, space_polyvars)
+                return perspective_dual_polyset(set.degree, p, set.point, d.perspective_polyvar, space_polyvars)
             end
         end
     else
