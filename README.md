@@ -155,7 +155,7 @@ optimize!(model)
 [docs-stable-url]: https://blegat.github.io/SetProg.jl/stable
 [docs-latest-url]: https://blegat.github.io/SetProg.jl/dev
 
-[build-img]: https://github.com/blegat/SetProg.jl/workflows/CI/badge.svg?branch=master
+[build-img]: https://github.com/blegat/SetProg.jl/actions/workflows/ci.yml/badge.svg?branch=master
 [build-url]: https://github.com/blegat/SetProg.jl/actions?query=workflow%3ACI
 [codecov-img]: http://codecov.io/github/blegat/SetProg.jl/coverage.svg?branch=master
 [codecov-url]: http://codecov.io/github/blegat/SetProg.jl?branch=master
