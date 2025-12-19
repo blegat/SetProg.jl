@@ -108,9 +108,9 @@ upper = [[[-1/2, 1.0]]; [[x1l[i], x2l[i]] for i in eachindex(x2l)]; [[x1[i], x2[
 mci = polyhedron(vrep([upper; (-).(upper)]), lib)
 polar_mci = polar(mci)
 
-SetProg.Sets.print_support_function(project(sol_ell, 1:2))</code></pre><pre class="documenter-example-output">solve_time(model) = 0.014600992202758789
+SetProg.Sets.print_support_function(project(sol_ell, 1:2))</code></pre><pre class="documenter-example-output">solve_time(model) = 0.01480412483215332
 JuMP.termination_status(model) = OPTIMAL
-JuMP.objective_value(model) = 0.8944271812306852
+JuMP.objective_value(model) = 0.8944271817062278
 h(S, x) = x[2]^2 + x[1]^2</pre><p>We can plot the primal solution as follows:</p><pre><code class="language-julia">function primal_plot(set, γ=nothing; npoints=256, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05), args...)
     plot(ratio=:equal, tickfont=Plots.font(12); xlim=xlim, ylim=ylim, args...)
     plot!(□_2, color=lichen)
