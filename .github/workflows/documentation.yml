@@ -12,8 +12,8 @@ jobs:
       # Fix for Plots with GR backend, see https://github.com/JuliaPolyhedra/Polyhedra.jl/pull/265
       GKSwstype: nul
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@latest
+      - uses: actions/checkout@v5
+      - uses: julia-actions/setup-julia@v2
         with:
           # Build documentation on the latest Julia 1.x
           version: '1'

@@ -1,15 +1,20 @@
 using DataStructures
+if isdefined(DataStructures, :IntDisjointSet)
+    const IntDisjointSet = DataStructures.IntDisjointSet  # changed in DataStructures v0.19.0
+else
+    const IntDisjointSet = DataStructures.IntDisjointSets
+end
 
 struct SpaceIndex
     value::Int
 end
 
 struct Spaces
-    indices::IntDisjointSets # Union-Find datastructure
+    indices::IntDisjointSet # Union-Find datastructure
     dimensions::Dict{Int, Int}
     polyvars::Dict{Int, Vector{SpaceVariable}}
 end
-Spaces() = Spaces(IntDisjointSets(0), Dict{Int, Int}(),
+Spaces() = Spaces(IntDisjointSet(0), Dict{Int, Int}(),
                   Dict{Int, Vector{SpaceVariable}}())
 function new_space(spaces::Spaces)
     return SpaceIndex(push!(spaces.indices))
