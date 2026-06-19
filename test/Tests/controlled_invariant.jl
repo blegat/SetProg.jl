@@ -131,7 +131,7 @@ function ci_quad_nonhomogeneous_test(optimizer, config)
                    PolySet(degree=2, convex=true, point=SetProg.InteriorPoint([0.0, 0.0])),
                    set -> L1_heuristic(set, [1.0, 1.0]), 8/3,
                    ◯ -> begin
-                       @test ◯ isa Sets.PerspectiveDual{Float64, Sets.Householder{Float64, Sets.ConvexPolynomialSet{Float64, SetProg.Sets.MonoBasis, Float64}, Float64}}
+                       @test ◯ isa Sets.PerspectiveDual{Float64, <:Sets.Householder{Float64, <:Sets.ConvexPolynomialSet{Float64, <:SetProg.Sets.MonoBasis, Float64}, Float64}}
                        z = Sets.perspective_variable(◯)
                        x, y = Sets.space_variables(◯)
                        ◯_dual = Sets.perspective_dual(◯)
@@ -151,7 +151,7 @@ function ci_quartic_homogeneous_test(optimizer, config)
                    set -> L1_heuristic(set, [1.0, 1.0]),
                    0.4,
                    ◯ -> begin
-                       @test ◯ isa Sets.Polar{Float64, Sets.ConvexPolySet{Float64, SetProg.Sets.MonoBasis, Float64}}
+                       @test ◯ isa Sets.Polar{Float64, <:Sets.ConvexPolySet{Float64, <:SetProg.Sets.MonoBasis, Float64}}
                        @test Sets.polar(◯).degree == 4
                        x, y = variables(Sets.polar(◯).p)
                        α = MP.coefficient(Sets.polar(◯).p, x^3*y) / 2
