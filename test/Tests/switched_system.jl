@@ -84,9 +84,8 @@ end
 
 function superset(x, d)
     monos = x.^d
-    basis = SetProg.MultivariateBases.SubBasis{SetProg.MultivariateBases.Monomial}(monos)
     Q = Matrix{Float64}(LinearAlgebra.I, length(monos), length(monos))
-    q = SetProg.SumOfSquares.GramMatrix(Q, basis)
+    q = SetProg.SumOfSquares.GramMatrix(Q, monos)
     return SetProg.Sets.PolySet(2d, q)
 end
 
