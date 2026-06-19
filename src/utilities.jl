@@ -113,9 +113,9 @@ function transformation(old_monos, A::AbstractMatrix, new_vars, d)
 end
 
 # computes p ∘ A or more precisely p(variables(p) => A * new_vars)
-function apply_matrix(p::SumOfSquares.GramMatrix{T, <:MonomialBasis},
+function apply_matrix(p::SumOfSquares.GramMatrix{T, <:MultivariateBases.SubBasis{MultivariateBases.Monomial}},
                       A::AbstractMatrix, new_vars, d) where T
-    return apply_transformation(p, transformation(p.basis.monomials, A, new_vars, d))
+    return apply_transformation(p, transformation(MultivariateBases.keys_as_monomials(p.basis), A, new_vars, d))
 end
 
 # computes A # μ or more precisely p(variables(p) => A * new_vars)

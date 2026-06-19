@@ -8,10 +8,7 @@ const VariableOrder =
     DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}
 const MonomialOrder = MP.Graded{MP.LexOrder}
 const SpaceVariable = DynamicPolynomials.Variable{VariableOrder,MonomialOrder}
-const MonoBasis = MB.MonomialBasis{
-    DynamicPolynomials.Monomial{VariableOrder,MonomialOrder},
-    DynamicPolynomials.MonomialVector{VariableOrder,MonomialOrder},
-}
+const MonoBasis = MB.SubBasis{MB.Monomial}
 using Polyhedra
 
 abstract type AbstractSet{T} end

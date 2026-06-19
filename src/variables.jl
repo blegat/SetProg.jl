@@ -248,7 +248,7 @@ function PolySet(; point::Union{Nothing, HintPoint}=nothing,
                  convex::Bool=false,
                  variables::Union{Vector{SpaceVariable}, Nothing}=nothing,
                  superset::Union{Sets.PolySet, Nothing}=nothing,
-                 basis::Type=MultivariateBases.MonomialBasis)
+                 basis::Type=MultivariateBases.Monomial)
     if degree === nothing
         error("Degree of PolySet not specified, use PolySet(degree=..., ...)")
     end
@@ -293,7 +293,7 @@ function constrain_convex(model, p, vars)
     Q = @variable(model, [1:MOI.dimension(set)])
     @constraint(model, Q in set)
     s = SumOfSquares.build_gram_matrix(
-        Q, MonomialBasis(X), MOI.PositiveSemidefiniteConeTriangle, Float64)
+        Q, MultivariateBases.SubBasis{MultivariateBases.Monomial}(X), MOI.PositiveSemidefiniteConeTriangle, Float64)
     @constraint(model, q == s)
     return MultivariateMoments.value_matrix(s)
 end
@@ -311,7 +311,10 @@ function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
         monos = MP.monomials(lift_space_variables(d, space_polyvars),
                              div(set.degree, 2))
     end
-    basis = MultivariateBases.basis_covering_monomials(set.basis, monos)
+    basis = MultivariateBases.explicit_basis_covering(
+        MultivariateBases.FullBasis{set.basis}(MP.variables(monos)),
+        MultivariateBases.SubBasis{MultivariateBases.Monomial}(monos),
+    )
     # TODO If `set.convex` and `set.symmetric`, no need for the poly to be SOS, see Lemma 6.33 of [BPT12]
     p = @variable(model, variable_type=SOSPoly(basis))
     if set.convex

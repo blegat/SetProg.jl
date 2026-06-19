@@ -83,7 +83,10 @@ function infeasible_switched_system_ell_test(optimizer, config, ε=1e-3)
 end
 
 function superset(x, d)
-    q = SetProg.SumOfSquares.GramMatrix(SetProg.SumOfSquares.SOSDecomposition(x.^d))
+    monos = x.^d
+    basis = SetProg.MultivariateBases.SubBasis{SetProg.MultivariateBases.Monomial}(monos)
+    Q = Matrix{Float64}(LinearAlgebra.I, length(monos), length(monos))
+    q = SetProg.SumOfSquares.GramMatrix(Q, basis)
     return SetProg.Sets.PolySet(2d, q)
 end
 
@@ -94,7 +97,7 @@ function feasible_switched_system_quad_test(optimizer, config, ε=1e-3)
         PolySet(symmetric=true, degree=2, superset=superset(x, 1)),
         √2 + ε, true, 8/3,
         ◯ -> begin
-            @test ◯ isa Sets.PolySet{Float64, SetProg.Sets.MonoBasis}
+            @test ◯ isa Sets.PolySet{Float64, <:SetProg.Sets.MonoBasis}
             @test polynomial(◯.p) ≈ x[1]^2 + x[2]^2 atol=config.atol rtol=config.rtol
         end,
         (cref1, cref2) -> begin end)
@@ -122,7 +125,7 @@ function feasible_switched_system_quartic_test(optimizer, config, ε=1e-2)
         PolySet(symmetric=true, degree=4, superset=superset(x, 2)),
         1.0 + ε, true, 10.001105454190741,
         ◯ -> begin
-            @test ◯ isa Sets.PolySet{Float64, SetProg.Sets.MonoBasis}
+            @test ◯ isa Sets.PolySet{Float64, <:SetProg.Sets.MonoBasis}
 			α = 11.814054544955727
             @test polynomial(◯.p) ≈ (α+1) * x[1]^4 - 2α * x[1]^2*x[2]^2 + (α+1) * x[2]^4 atol=config.atol rtol=config.rtol
         end,

@@ -61,16 +61,17 @@ function gauge1(set::ConvexPolySet)
 end
 function zero_eliminate(set::ConvexPolySet, I)
     vars = space_variables(set)[I]
+    basis_monos = MB.keys_as_monomials(set.p.basis)
     K = findall(mono -> all(var -> iszero(MP.degree(mono, var)), vars),
-                set.p.basis.monomials)
+                basis_monos)
     Q = SumOfSquares.square_getindex(set.p.Q, K)
-    monos = set.p.basis.monomials[K]
+    monos = basis_monos[K]
     J = setdiff(1:dimension(set), I)
     monos = DynamicPolynomials.MonomialVector(
         monos.vars[J],
         Vector{Int}[z[J] for z in monos.Z]
     )
-    p = SumOfSquares.GramMatrix(Q, MB.MonomialBasis(monos))
+    p = SumOfSquares.GramMatrix(Q, MB.SubBasis{MB.Monomial}(monos))
     return ConvexPolySet(set.degree, p, nothing)
 end
 
