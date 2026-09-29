@@ -1,9 +1,9 @@
 # SetProg
 
-| **Documentation** | **Build Status** | **Social** |
-|:-----------------:|:----------------:|:----------:|
+| **Documentation** | **Build Status** |
+|:-----------------:|:----------------:|
 | [![][docs-stable-img]][docs-stable-url] | [![Build Status][build-img]][build-url] | [![Gitter][gitter-img]][gitter-url] |
-| [![][docs-latest-img]][docs-latest-url] | [![Codecov branch][codecov-img]][codecov-url] | [<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Discourse_logo.png/799px-Discourse_logo.png" width="64">][discourse-url] |
+| [![][docs-latest-img]][docs-latest-url] | [![Codecov branch][codecov-img]][codecov-url] |
 
 JuMP extension for Set Programming : optimization with set variables and inclusion/containment constraints. This package allows the formulation of a mathematical program involving set variables and inclusion/membership constraints in addition to classical variables and constraints supported by JuMP.
 
