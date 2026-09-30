@@ -3,8 +3,8 @@ h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) �
 □ = polyhedron(h)
 
 using SetProg
-import CSDP
-sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() => true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true)
 
 Δt = 0.5
 A = [1.0 Δt]

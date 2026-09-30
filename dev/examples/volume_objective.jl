@@ -18,8 +18,8 @@ p = polyhedron(h)
 # for a list of available ones.
 
 using SetProg
-import CSDP
-sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() => true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true)
 
 # ## John ellipsoid
 #
@@ -35,6 +35,60 @@ optimize!(model)
 @show termination_status(model)
 @show objective_value(model)
 SetProg.Sets.print_support_function(value(john))
+
+# ### Which cone does the solver receive ?
+#
+# The objective `nth_root(volume(john))` is reformulated by SetProg into a
+# new variable `t` constrained by `[t; vec(Q)] in MOI.RootDetConeTriangle(2)`
+# where `Q` is the matrix of the ellipsoid. We can see these reformulated
+# constraints with `list_of_constraint_types`:
+
+list_of_constraint_types(model)
+
+# The solver may not support every one of these constraints natively. In that
+# case, JuMP transforms them using *bridges*. For instance, a solver only
+# supporting positive semidefinite constraints would receive the
+# `RootDetConeTriangle` reformulated with a `GeometricMeanCone` and a
+# `PositiveSemidefiniteConeTriangle`, so with additional variables and
+# constraints. Hypatia supports the root-determinant cone natively, and we can
+# check that with `print_active_bridges`. It shows, for each constraint
+# type of the model, which bridges are used and which constraints the solver
+# receives in the end.
+
+print_active_bridges(model)
+
+# To only look at the root-determinant cone, we give its function and set type:
+
+print_active_bridges(model, Vector{VariableRef}, MOI.RootDetConeTriangle)
+
+# The only bridge is `SetDotScalingBridge`. It only rescales the off-diagonal
+# entries into the `MOI.Scaled{MOI.RootDetConeTriangle}` set, which is the
+# form in which Hypatia supports the cone natively. There is no
+# `GeometricMeanCone` or `PositiveSemidefiniteConeTriangle`.
+
+# ### Log-determinant objective
+#
+# Instead of the `n`th root of the determinant, we can also maximize its
+# logarithm with `log(volume(john))`. The optimal ellipsoid is the same, but
+# the objective value is now `log(det(Q)) = log(1) = 0` instead of
+# `det(Q)^(1/2) = 1`.
+
+model = Model(sdp_solver)
+@variable(model, john_log, Ellipsoid(symmetric=true, dimension=2))
+@constraint(model, john_log ⊆ p)
+@objective(model, Max, log(volume(john_log)))
+optimize!(model)
+@show termination_status(model)
+@show objective_value(model)
+@test objective_value(model) ≈ 0 atol=1e-5 #src
+SetProg.Sets.print_support_function(value(john_log))
+
+# The objective is now reformulated into `[t; 1; vec(Q)] in MOI.LogDetConeTriangle(2)`
+# which means `t ≤ log(det(Q))`. As the constant `1` is part of the function,
+# it is a `Vector{AffExpr}` instead of a `Vector{VariableRef}`.
+# Hypatia also supports this cone natively:
+
+print_active_bridges(model, Vector{AffExpr}, MOI.LogDetConeTriangle)
 
 # ## Löwner ellipsoid
 #

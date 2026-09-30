@@ -31,8 +31,8 @@ h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) �
 # for a list of available ones.
 
 using SetProg
-import CSDP
-sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() => true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true)
 
 A = [0.0 -1.0
      1.0  0.0]

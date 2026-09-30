@@ -38,7 +38,7 @@ function maximal_invariant(family, γ = nothing; dirs=dirs)
     @show solve_time(model)
     @show JuMP.termination_status(model)
     @show JuMP.objective_value(model)
-    if JuMP.termination_status(model) == MOI.OPTIMAL
+    if is_solved_and_feasible(model, allow_almost = true)
         return JuMP.value(S), JuMP.objective_value(model)
     else
         return
@@ -47,8 +47,8 @@ end
 
 import GLPK
 lp_solver = optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() =&gt; true, &quot;presolve&quot; =&gt; GLPK.GLP_ON)
-import CSDP
-sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() =&gt; true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() =&gt; true)
 using Polyhedra
 interval = HalfSpace([1.0], 1.0) ∩ HalfSpace([-1.0], 1.0)
 lib = Polyhedra.DefaultLibrary{Float64}(lp_solver)
@@ -85,9 +85,9 @@ polar_mci = polar(mci)
 
 SetProg.Sets.print_support_function(project(sol_ell, 1:2))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">γ = γ
 JuMP.objective_function(model) = γ
-solve_time(model) = 0.0072689056396484375
-JuMP.termination_status(model) = OPTIMAL
-JuMP.objective_value(model) = 0.8068982210085669
+solve_time(model) = 0.0036170482635498047
+JuMP.termination_status(model) = ALMOST_OPTIMAL
+JuMP.objective_value(model) = 0.8068982007566238
 h(S, x) = x[2]^2 - 0.604338*x[1]*x[2] + x[1]^2</code></pre><p>We can plot the primal solution as follows:</p><pre><code class="language-julia hljs">function primal_plot(set, γ=nothing; npoints=256, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05), args...)
     plot(ratio=:equal, tickfont=Plots.font(12); xlim=xlim, ylim=ylim, args...)
     plot!(□_2, color=lichen)
@@ -96,13 +96,13 @@ h(S, x) = x[2]^2 - 0.604338*x[1]*x[2] + x[1]^2</code></pre><p>We can plot the pr
     γ === nothing || plot!(γ * inner, color=frambo)
     plot!()
 end
-primal_plot(project(sol_ell, 1:2), γ_ell)</code></pre><img src="93373f1c.svg" alt="Example block output"/><p>and the dual plot as follows:</p><pre><code class="language-julia hljs">function polar_plot(set, γ; npoints=256, xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), args...)
+primal_plot(project(sol_ell, 1:2), γ_ell)</code></pre><img src="61aa90fd.svg" alt="Example block output"/><p>and the dual plot as follows:</p><pre><code class="language-julia hljs">function polar_plot(set, γ; npoints=256, xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), args...)
     plot(ratio=:equal, tickfont=Plots.font(12); xlim=xlim, ylim=ylim, args...)
     γ === nothing || plot!(inv(γ) * outer, color=frambo)
     plot!(polar(set), color=canard, npoints=npoints)
     plot!(polar_mci, color=aurore)
     plot!(polar(□_2), color=lichen)
 end
-polar_plot(project(sol_ell, 1:2), γ_ell)</code></pre><img src="2dec6702.svg" alt="Example block output"/><h2 id="Polyset-template"><a class="docs-heading-anchor" href="#Polyset-template">Polyset template</a><a id="Polyset-template-1"></a><a class="docs-heading-anchor-permalink" href="#Polyset-template" title="Permalink"></a></h2><pre><code class="language-julia hljs">p4, γ4 = maximal_invariant(PolySet(symmetric=true, degree=4, convex=true), 0.91)
-γ4</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.91</code></pre><p>Below is the primal plot:</p><pre><code class="language-julia hljs">primal_plot(project(p4, 1:2), γ4)</code></pre><img src="a6cee1bb.svg" alt="Example block output"/><p>and here is the polar plot:</p><pre><code class="language-julia hljs">polar_plot(project(p4, 1:2), γ4)</code></pre><img src="c8ab3bee.svg" alt="Example block output"/><h2 id="Piecewise-semi-ellipsoidal-template"><a class="docs-heading-anchor" href="#Piecewise-semi-ellipsoidal-template">Piecewise semi-ellipsoidal template</a><a id="Piecewise-semi-ellipsoidal-template-1"></a><a class="docs-heading-anchor-permalink" href="#Piecewise-semi-ellipsoidal-template" title="Permalink"></a></h2><pre><code class="language-julia hljs">sol_piece_◇, γ_piece_◇ = maximal_invariant(Ellipsoid(symmetric=true, piecewise=polar(□_3)), dirs=all_dirs)
-γ_piece_◇</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.8948889543799605</code></pre><p>Below is the primal plot:</p><pre><code class="language-julia hljs">primal_plot(project(sol_piece_◇, 1:2), γ_piece_◇)</code></pre><img src="98d9648e.svg" alt="Example block output"/><p>and here is the polar plot:</p><pre><code class="language-julia hljs">polar_plot(project(sol_piece_◇, 1:2), γ_piece_◇)</code></pre><img src="887ce98c.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Index</a><a class="docs-footer-nextpage" href="../controlled_invariant/">Controlled Invariant Set »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 30 September 2026 14:11">Wednesday 30 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+polar_plot(project(sol_ell, 1:2), γ_ell)</code></pre><img src="292d4ea5.svg" alt="Example block output"/><h2 id="Polyset-template"><a class="docs-heading-anchor" href="#Polyset-template">Polyset template</a><a id="Polyset-template-1"></a><a class="docs-heading-anchor-permalink" href="#Polyset-template" title="Permalink"></a></h2><pre><code class="language-julia hljs">p4, γ4 = maximal_invariant(PolySet(symmetric=true, degree=4, convex=true), 0.91)
+γ4</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.91</code></pre><p>Below is the primal plot:</p><pre><code class="language-julia hljs">primal_plot(project(p4, 1:2), γ4)</code></pre><img src="e98d660a.svg" alt="Example block output"/><p>and here is the polar plot:</p><pre><code class="language-julia hljs">polar_plot(project(p4, 1:2), γ4)</code></pre><img src="ea3b3046.svg" alt="Example block output"/><h2 id="Piecewise-semi-ellipsoidal-template"><a class="docs-heading-anchor" href="#Piecewise-semi-ellipsoidal-template">Piecewise semi-ellipsoidal template</a><a id="Piecewise-semi-ellipsoidal-template-1"></a><a class="docs-heading-anchor-permalink" href="#Piecewise-semi-ellipsoidal-template" title="Permalink"></a></h2><pre><code class="language-julia hljs">sol_piece_◇, γ_piece_◇ = maximal_invariant(Ellipsoid(symmetric=true, piecewise=polar(□_3)), dirs=all_dirs)
+γ_piece_◇</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.8948888763804502</code></pre><p>Below is the primal plot:</p><pre><code class="language-julia hljs">primal_plot(project(sol_piece_◇, 1:2), γ_piece_◇)</code></pre><img src="be2b896e.svg" alt="Example block output"/><p>and here is the polar plot:</p><pre><code class="language-julia hljs">polar_plot(project(sol_piece_◇, 1:2), γ_piece_◇)</code></pre><img src="b848a4fb.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Index</a><a class="docs-footer-nextpage" href="../controlled_invariant/">Controlled Invariant Set »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 30 September 2026 14:35">Wednesday 30 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

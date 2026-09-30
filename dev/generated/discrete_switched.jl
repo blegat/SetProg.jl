@@ -1,8 +1,8 @@
 using SetProg
-import Clp
-lp_solver = optimizer_with_attributes(Clp.Optimizer, MOI.Silent() => true)
-import CSDP
-sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() => true)
+import HiGHS
+lp_solver = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true)
 using Polyhedra
 lib = DefaultLibrary{Float64}(lp_solver)
 h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1)

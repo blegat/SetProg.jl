@@ -119,7 +119,7 @@ function maximal_invariant(family, γ = nothing; dirs=dirs)
     @show solve_time(model)
     @show JuMP.termination_status(model)
     @show JuMP.objective_value(model)
-    if JuMP.termination_status(model) == MOI.OPTIMAL
+    if is_solved_and_feasible(model, allow_almost = true)
         return JuMP.value(S), JuMP.objective_value(model)
     else
         return
@@ -128,8 +128,8 @@ end
 
 import GLPK
 lp_solver = optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() => true, "presolve" => GLPK.GLP_ON)
-import CSDP
-sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() => true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true)
 using Polyhedra
 interval = HalfSpace([1.0], 1.0) ∩ HalfSpace([-1.0], 1.0)
 lib = Polyhedra.DefaultLibrary{Float64}(lp_solver)

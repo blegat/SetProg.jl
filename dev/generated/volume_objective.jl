@@ -3,8 +3,8 @@ h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) �
 p = polyhedron(h)
 
 using SetProg
-import CSDP
-sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() => true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true)
 
 model = Model(sdp_solver)
 @variable(model, john, Ellipsoid(symmetric=true, dimension=2))
@@ -15,6 +15,23 @@ optimize!(model)
 @show termination_status(model)
 @show objective_value(model)
 SetProg.Sets.print_support_function(value(john))
+
+list_of_constraint_types(model)
+
+print_active_bridges(model)
+
+print_active_bridges(model, Vector{VariableRef}, MOI.RootDetConeTriangle)
+
+model = Model(sdp_solver)
+@variable(model, john_log, Ellipsoid(symmetric=true, dimension=2))
+@constraint(model, john_log ⊆ p)
+@objective(model, Max, log(volume(john_log)))
+optimize!(model)
+@show termination_status(model)
+@show objective_value(model)
+SetProg.Sets.print_support_function(value(john_log))
+
+print_active_bridges(model, Vector{AffExpr}, MOI.LogDetConeTriangle)
 
 model = Model(sdp_solver)
 @variable(model, löwner, Ellipsoid(symmetric=true, dimension=2))

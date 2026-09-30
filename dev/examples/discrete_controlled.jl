@@ -49,8 +49,8 @@ using Test     #src
 using SetProg
 import GLPK
 lp_solver = optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() => true)
-import CSDP
-sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() => true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true)
 A = [1.0 0.5]
 E = [1.0 0.0]
 using Polyhedra
