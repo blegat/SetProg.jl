@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Controlled Invariant Set · SetProg</title><meta name="title" content="Controlled Invariant Set · SetProg"/><meta property="og:title" content="Controlled Invariant Set · SetProg"/><meta property="twitter:title" content="Controlled Invariant Set · SetProg"/><meta name="description" content="Documentation for SetProg."/><meta property="og:description" content="Documentation for SetProg."/><meta property="twitter:description" content="Documentation for SetProg."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SetProg</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Index</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../continuous_controlled/">Continuous-time Controlled Invariant Set</a></li><li class="is-active"><a class="tocitem" href>Controlled Invariant Set</a><ul class="internal"><li><a class="tocitem" href="#Ellipsoidal-template"><span>Ellipsoidal template</span></a></li><li><a class="tocitem" href="#Polynomial-sublevel-sets"><span>Polynomial sublevel sets</span></a></li><li><a class="tocitem" href="#Plotting"><span>Plotting</span></a></li></ul></li><li><a class="tocitem" href="../discrete_controlled/">Discrete-time Controlled Invariant Set</a></li><li><a class="tocitem" href="../discrete_switched/">Discrete-time Switched Invariant Set</a></li><li><a class="tocitem" href="../hybrid_controlled/">Hybrid Controlled Invariant Set</a></li><li><a class="tocitem" href="../invariant/">Discrete-time Invariant Set</a></li><li><a class="tocitem" href="../plot_2d/">2D plotting</a></li><li><a class="tocitem" href="../volume_objective/">Volume Objective</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Controlled Invariant Set</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Controlled Invariant Set</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl/blob/master/docs/src/examples/controlled_invariant.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Controlled-Invariant-Set"><a class="docs-heading-anchor" href="#Controlled-Invariant-Set">Controlled Invariant Set</a><a id="Controlled-Invariant-Set-1"></a><a class="docs-heading-anchor-permalink" href="#Controlled-Invariant-Set" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/blegat/SetProg.jl/gh-pages?filepath=previews/PR71/generated/controlled_invariant.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt="Binder"/></a> <a href="https://nbviewer.jupyter.org/github/blegat/SetProg.jl/blob/gh-pages/previews/PR71/generated/controlled_invariant.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt="nbviewer"/></a></p><p>In this example, we compute the maximal (resp. minimal) controlled invariant set contained in the square with vertices <span>$(\pm 1, \pm 1)$</span> for the system</p><p class="math-container">\[\begin{aligned}
+v_{k+1} &amp; = v_k + a_k \Delta t\\
+a_{k+1} &amp; = u_k
+\end{aligned}\]</p><p>using the technique developed in [LTJ18].</p><p>The system is <span>$x_{k+1} = A x_k + B u_k$</span> where <span>$B = (0, 1)$</span> and</p><p class="math-container">\[A = \begin{bmatrix}
+1 &amp; \Delta t\\
+0 &amp; 0
+\end{bmatrix}.\]</p><p>As shown in [LTJ18], a set <span>$S$</span> is controlled invariant if</p><p class="math-container">\[\begin{bmatrix}
+1 &amp; \Delta t
+\end{bmatrix} S
+\subseteq
+\begin{bmatrix}
+1 &amp; 0
+\end{bmatrix} S.\]</p><p>[LTJ18] B. Legat, P. Tabuada and R. M. Jungers. <em>Computing controlled invariant sets for hybrid systems with applications to model-predictive control</em>. 6th IFAC Conference on Analysis and Design of Hybrid Systems ADHS 2018, <strong>2018</strong>.</p><pre><code class="language-julia hljs">using Polyhedra
+h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1)
+□ = polyhedron(h)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+4-element iterator of HalfSpace{Float64, Vector{Float64}}:
+ HalfSpace([1.0, 0.0], 1.0)
+ HalfSpace([-1.0, 0.0], 1.0)
+ HalfSpace([0.0, 1.0], 1.0)
+ HalfSpace([0.0, -1.0], 1.0)</code></pre><p>We need to pick an SDP solver, see <a href="https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers">here</a> for a list of available ones.</p><pre><code class="language-julia hljs">using SetProg
+import CSDP
+sdp_solver = optimizer_with_attributes(CSDP.Optimizer, MOI.Silent() =&gt; true)
+
+Δt = 0.5
+A = [1.0 Δt]
+E = [1.0 0.0]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1×2 Matrix{Float64}:
+ 1.0  0.0</code></pre><h2 id="Ellipsoidal-template"><a class="docs-heading-anchor" href="#Ellipsoidal-template">Ellipsoidal template</a><a id="Ellipsoidal-template-1"></a><a class="docs-heading-anchor-permalink" href="#Ellipsoidal-template" title="Permalink"></a></h2><p>We first look for the largest controlled invariant ellipsoid contained in the square.</p><pre><code class="language-julia hljs">model = Model(sdp_solver)
+@variable(model, S, Ellipsoid(symmetric=true))
+@constraint(model, S ⊆ □)
+@constraint(model, A * S ⊆ E * S)
+@objective(model, Max, nth_root(volume(S)))
+optimize!(model)
+@show solve_time(model)
+@show termination_status(model)
+@show objective_value(model)
+ell = value(S)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SetProg.Sets.Polar{Float64, SetProg.Sets.Ellipsoid{Float64}}(SetProg.Sets.Ellipsoid{Float64}([0.9999999996484535 -0.2500000002510476; -0.2500000002510476 0.9999999995982133]))</code></pre><h2 id="Polynomial-sublevel-sets"><a class="docs-heading-anchor" href="#Polynomial-sublevel-sets">Polynomial sublevel sets</a><a id="Polynomial-sublevel-sets-1"></a><a class="docs-heading-anchor-permalink" href="#Polynomial-sublevel-sets" title="Permalink"></a></h2><p>To allow for tighter approximations, we now use sublevel sets of polynomials of degree <span>$d$</span>. The <code>L1_heuristic</code> objective is a tractable proxy for the volume; see Section 4.2 of [L20] for details.</p><p>[L20] Legat, B. (2020). <em>Set programming : theory and computation</em>. Ph.D. thesis, UCLouvain.</p><pre><code class="language-julia hljs">function Sd(d)
+    model = Model(sdp_solver)
+    @variable(model, S, PolySet(degree=d, convex=true, symmetric=true))
+    @constraint(model, S ⊆ □)
+    @constraint(model, A * S ⊆ E * S)
+    @objective(model, Max, L1_heuristic(volume(S), [1.0, 1.0]))
+    optimize!(model)
+    @show solve_time(model)
+    @show termination_status(model)
+    @show objective_value(model)
+    return value(S)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Sd (generic function with 1 method)</code></pre><p>We compute the maximal controlled invariant sublevel set for several degrees.</p><pre><code class="language-julia hljs">S4 = Sd(4)
+S8 = Sd(8)
+S12 = Sd(12)
+S16 = Sd(16)
+S20 = Sd(20)
+S22 = Sd(22)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SetProg.Sets.Polar{Float64, SetProg.Sets.ConvexPolySet{Float64, StarAlgebras.SubBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Int64, Vector{Int64}, StarAlgebras.MappedBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Vector{Int64}, MultivariatePolynomials.ExponentsIterator{MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}, Nothing, Vector{Int64}}, MultivariateBases.Variables{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}}, typeof(MultivariatePolynomials.exponents)}, Vector{Vector{Int64}}}, Float64}}(SetProg.Sets.ConvexPolySet{Float64, StarAlgebras.SubBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Int64, Vector{Int64}, StarAlgebras.MappedBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Vector{Int64}, MultivariatePolynomials.ExponentsIterator{MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}, Nothing, Vector{Int64}}, MultivariateBases.Variables{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}}, typeof(MultivariatePolynomials.exponents)}, Vector{Vector{Int64}}}, Float64}(22, GramMatrix with row/column basis:
+ SubBasis{Monomial}([x[2]^11, x[1]*x[2]^10, x[1]^2*x[2]^9, x[1]^3*x[2]^8, x[1]^4*x[2]^7, x[1]^5*x[2]^6, x[1]^6*x[2]^5, x[1]^7*x[2]^4, x[1]^8*x[2]^3, x[1]^9*x[2]^2, x[1]^10*x[2], x[1]^11])
+And entries in a 12×12 MultivariateMoments.SymMatrix{Float64}:
+  0.9999858004930751     -4.178822424627798   …    0.08106886035683537
+ -4.178822424627798      97.87574260498228         1.9541458110025054
+ -3.001896386424988    -111.0599742581826        -14.331079912521364
+  5.569601619685772      60.40055354235483        24.635058715510947
+ -4.116054677776162    -139.9822963230627        -19.721373391513453
+ -3.539419675580151     163.58458268257004    …   13.970076286362092
+  4.0094187699773975   -188.08250329453756       -11.466505776604194
+ -8.28060501267543      239.70186732275852        10.422634649062681
+ 10.04413333762849     -274.7335041379562         -5.754806686598075
+ -4.102459660665635     165.40679528885727         9.798340749172809
+  0.17972460551149594   -37.10537892260427    …   -6.394407177833311
+  0.08106886035683537     1.9541458110025054       0.99998552365271, [461.99343982782875 -175.5105418343545 … 91.7199501974356 -144.07790888958397; -175.5105418343545 183.74389966421006 … -62.89333543779558 108.60711366815698; … ; 91.7199501974356 -62.89333543779558 … 161.02223229194183 -268.5651014689861; -144.07790888958397 108.60711366815698 … -268.5651014689861 461.99331192755096]))</code></pre><h2 id="Plotting"><a class="docs-heading-anchor" href="#Plotting">Plotting</a><a id="Plotting-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting" title="Permalink"></a></h2><p>Below are reference polytopes used in the plots: the maximal controlled invariant polytope <code>mci</code> and its polar.</p><pre><code class="language-julia hljs">mci = □ ∩ HalfSpace([1.0, 0.5], 1.0) ∩ HalfSpace([-1.0, -0.5], 1.0)
+polar_□ = polar(□)
+polar_mci = polar(mci)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+6-element iterator of Vector{Float64}:
+ [1.0, 0.0]
+ [-1.0, 0.0]
+ [0.0, 1.0]
+ [0.0, -1.0]
+ [1.0, 0.5]
+ [-1.0, -0.5]</code></pre><p>We plot the polynomial sublevel sets together with the square and <code>mci</code>.</p><pre><code class="language-julia hljs">using Plots
+plot(ratio=:equal)
+plot!(□)
+plot!(mci)
+plot!(S22)
+plot!(S16)
+plot!(S8)
+plot!(S4)
+plot!(ell)</code></pre><img src="07347d4b.svg" alt="Example block output"/><p>And the corresponding polar plot:</p><pre><code class="language-julia hljs">plot(ratio=:equal)
+plot!(SetProg.Sets.polar(S4); npoints=512)
+plot!(SetProg.Sets.polar(S8); npoints=512)
+plot!(SetProg.Sets.polar(S16); npoints=512)
+plot!(SetProg.Sets.polar(S22); npoints=512)
+plot!(polar_mci)
+plot!(polar_□)</code></pre><img src="08c1899f.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../continuous_controlled/">« Continuous-time Controlled Invariant Set</a><a class="docs-footer-nextpage" href="../discrete_controlled/">Discrete-time Controlled Invariant Set »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 30 September 2026 13:48">Wednesday 30 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
