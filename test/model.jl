@@ -232,3 +232,14 @@ end
     @test length(cs) == 2
     @test all(c -> JuMP.constraint_object(c).subset === S, cs)
 end
+
+@testset "Log volume of PolySet" begin
+    model = _mock_model()
+    @variable(model, S, PolySet(symmetric = true, degree = 4, dimension = 2, convex = true))
+    @constraint(model, S ⊆ _square(2))
+    @objective(model, Max, log(volume(S)))
+    SetProg.optimize!(model)
+    @test JuMP.objective_sense(model) == MOI.MAX_SENSE
+    @test _num_constraints(model, MOI.VectorAffineFunction{Float64}, MOI.LogDetConeTriangle) == 1
+    @test _num_constraints(model, MOI.VectorOfVariables, MOI.RootDetConeTriangle) == 0
+end
