@@ -63,7 +63,7 @@ struct LiftedEllipsoid{T}
 end
 dimension(ell::LiftedEllipsoid) = LinearAlgebra.checksquare(ell.P) - 1
 
-function perspective_variables(ell::Union{Ellipsoid, LiftedEllipsoid})
+function perspective_variable(ell::Union{Ellipsoid, LiftedEllipsoid})
     return nothing
 end
 function space_variables(ell::Union{Ellipsoid, LiftedEllipsoid})

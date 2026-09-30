@@ -185,6 +185,7 @@ function Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron{U
 end
 dimension(set::Piecewise) = Polyhedra.fulldim(set.polytope)
 space_variables(set::Piecewise) = space_variables(set.sets[1])
+perspective_variable(set::Piecewise) = perspective_variable(set.sets[1])
 function scaling_function(set::Piecewise)
     g = scaling_function.(set.sets)
     return (x, y) -> begin

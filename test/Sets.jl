@@ -76,7 +76,7 @@ end
             lifted = Sets.LiftedEllipsoid(t)
             @test Sets.dimension(lifted) == 2
             @test Sets.space_variables(lifted) === nothing
-            @test Sets.perspective_variables(lifted) === nothing
+            @test Sets.perspective_variable(lifted) === nothing
             back = Sets.ellipsoid(lifted)
             @test back isa Sets.Translation{Sets.Ellipsoid{Float64}}
             @test back.set.Q ≈ Q
