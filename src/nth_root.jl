@@ -99,7 +99,8 @@ end
 
 # The volume of a piecewise set is the sum of the volumes of each piece
 # intersected with its cone. We use the sum of the heuristic of each piece,
-# ignoring the size of the cones.
+# ignoring the size of the cones, see the warning in the docstring of
+# `Sets.Piecewise`.
 function det_volume(model::JuMP.Model, cone_volume::Function,
                     set::Sets.Piecewise)
     return sum(det_volume(model, cone_volume, piece) for piece in set.sets)
