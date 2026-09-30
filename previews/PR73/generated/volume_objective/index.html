@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Volume Objective · SetProg</title><meta name="title" content="Volume Objective · SetProg"/><meta property="og:title" content="Volume Objective · SetProg"/><meta property="twitter:title" content="Volume Objective · SetProg"/><meta name="description" content="Documentation for SetProg."/><meta property="og:description" content="Documentation for SetProg."/><meta property="twitter:description" content="Documentation for SetProg."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SetProg</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Index</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../continuous_controlled/">Continuous-time Controlled Invariant Set</a></li><li><a class="tocitem" href="../controlled_invariant/">Controlled Invariant Set</a></li><li><a class="tocitem" href="../discrete_controlled/">Discrete-time Controlled Invariant Set</a></li><li><a class="tocitem" href="../discrete_switched/">Discrete-time Switched Invariant Set</a></li><li><a class="tocitem" href="../hybrid_controlled/">Hybrid Controlled Invariant Set</a></li><li><a class="tocitem" href="../invariant/">Discrete-time Invariant Set</a></li><li><a class="tocitem" href="../plot_2d/">2D plotting</a></li><li class="is-active"><a class="tocitem" href>Volume Objective</a><ul class="internal"><li><a class="tocitem" href="#John-ellipsoid"><span>John ellipsoid</span></a></li><li><a class="tocitem" href="#Löwner-ellipsoid"><span>Löwner ellipsoid</span></a></li><li><a class="tocitem" href="#Higher-degree-polynomials"><span>Higher degree polynomials</span></a></li><li><a class="tocitem" href="#Non-homogeneous-case"><span>Non-homogeneous case</span></a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Volume Objective</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Volume Objective</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl/blob/master/docs/src/examples/volume_objective.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Volume-Objective"><a class="docs-heading-anchor" href="#Volume-Objective">Volume Objective</a><a id="Volume-Objective-1"></a><a class="docs-heading-anchor-permalink" href="#Volume-Objective" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/blegat/SetProg.jl/gh-pages?filepath=previews/PR73/generated/volume_objective.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt="Binder"/></a> <a href="https://nbviewer.jupyter.org/github/blegat/SetProg.jl/blob/gh-pages/previews/PR73/generated/volume_objective.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt="nbviewer"/></a></p><p>In this example, we compute the maximal (resp. minimal) volume ellipsoids and polynomial sublevel sets contained in (resp. containing) the square with vertices <span>$(\pm 1, \pm 1)$</span>. We start by defining the square with <a href="https://github.com/JuliaPolyhedra/Polyhedra.jl">Polyhedra</a>.</p><pre><code class="language-julia hljs">using Polyhedra
+h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1)
+p = polyhedron(h)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+4-element iterator of HalfSpace{Float64, Vector{Float64}}:
+ HalfSpace([1.0, 0.0], 1.0)
+ HalfSpace([-1.0, 0.0], 1.0)
+ HalfSpace([0.0, 1.0], 1.0)
+ HalfSpace([0.0, -1.0], 1.0)</code></pre><p>We need to pick an SDP solver, see <a href="https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers">here</a> for a list of available ones.</p><pre><code class="language-julia hljs">using SetProg
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() =&gt; true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MathOptInterface.OptimizerWithAttributes(Hypatia.Optimizer, Pair{MathOptInterface.AbstractOptimizerAttribute, Any}[MathOptInterface.Silent() =&gt; true])</code></pre><h2 id="John-ellipsoid"><a class="docs-heading-anchor" href="#John-ellipsoid">John ellipsoid</a><a id="John-ellipsoid-1"></a><a class="docs-heading-anchor-permalink" href="#John-ellipsoid" title="Permalink"></a></h2><p>The maximal volume ellipsoid contained in a convex body is called its John ellipsoid. The John ellipsoid for our square can be computed as follows.</p><pre><code class="language-julia hljs">model = Model(sdp_solver)
+@variable(model, john, Ellipsoid(symmetric=true, dimension=2))
+@constraint(model, john ⊆ p)
+@objective(model, Max, nth_root(volume(john)))
+optimize!(model)
+@show solve_time(model)
+@show termination_status(model)
+@show objective_value(model)
+SetProg.Sets.print_support_function(value(john))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.00152587890625
+termination_status(model) = ALMOST_OPTIMAL
+objective_value(model) = 0.9999999663952056
+h(S, x) = x[2]^2 + x[1]^2</code></pre><h3 id="Which-cone-does-the-solver-receive-?"><a class="docs-heading-anchor" href="#Which-cone-does-the-solver-receive-?">Which cone does the solver receive ?</a><a id="Which-cone-does-the-solver-receive-?-1"></a><a class="docs-heading-anchor-permalink" href="#Which-cone-does-the-solver-receive-?" title="Permalink"></a></h3><p>The objective <code>nth_root(volume(john))</code> is reformulated by SetProg into a new variable <code>t</code> constrained by <code>[t; vec(Q)] in MOI.RootDetConeTriangle(2)</code> where <code>Q</code> is the matrix of the ellipsoid. We can see these reformulated constraints with <code>list_of_constraint_types</code>:</p><pre><code class="language-julia hljs">list_of_constraint_types(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Tuple{Type, Type}}:
+ (AffExpr, MathOptInterface.LessThan{Float64})
+ (Vector{VariableRef}, MathOptInterface.RootDetConeTriangle)
+ (Vector{VariableRef}, SumOfSquares.PositiveSemidefinite2x2ConeTriangle)</code></pre><p>The solver may not support every one of these constraints natively. In that case, JuMP transforms them using <em>bridges</em>. For instance, a solver only supporting positive semidefinite constraints would receive the <code>RootDetConeTriangle</code> reformulated with a <code>GeometricMeanCone</code> and a <code>PositiveSemidefiniteConeTriangle</code>, so with additional variables and constraints. Hypatia supports the root-determinant cone natively, and we can check that with <code>print_active_bridges</code>. It shows, for each constraint type of the model, which bridges are used and which constraints the solver receives in the end.</p><pre><code class="language-julia hljs">print_active_bridges(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"> * Supported objective: MOI.VariableIndex
+ * Unsupported constraint: MOI.ScalarAffineFunction{Float64}-in-MOI.LessThan{Float64}
+ |  bridged by:
+ |   MOIB.Constraint.LessToGreaterBridge{Float64, MOI.ScalarAffineFunction{Float64}, MOI.ScalarAffineFunction{Float64}}
+ |  may introduce:
+ |   * Unsupported constraint: MOI.ScalarAffineFunction{Float64}-in-MOI.GreaterThan{Float64}
+ |   |  bridged by:
+ |   |   MOIB.Constraint.VectorizeBridge{Float64, MOI.VectorAffineFunction{Float64}, MOI.Nonnegatives, MOI.ScalarAffineFunction{Float64}}
+ |   |  may introduce:
+ |   |   * Supported constraint: MOI.VectorAffineFunction{Float64}-in-MOI.Nonnegatives
+ * Unsupported constraint: MOI.VectorOfVariables-in-MOI.RootDetConeTriangle
+ |  bridged by:
+ |   MOIB.Constraint.SetDotScalingBridge{Float64, MOI.RootDetConeTriangle, MOI.VectorAffineFunction{Float64}, MOI.VectorOfVariables}
+ |  may introduce:
+ |   * Supported constraint: MOI.VectorAffineFunction{Float64}-in-MOI.Scaled{MOI.RootDetConeTriangle}
+ * Unsupported constraint: MOI.VectorOfVariables-in-SumOfSquares.PositiveSemidefinite2x2ConeTriangle
+ |  bridged by:
+ |   SumOfSquares.Bridges.Constraint.PositiveSemidefinite2x2Bridge{Float64, MOI.VectorAffineFunction{Float64}}
+ |  may introduce:
+ |   * Supported constraint: MOI.VectorAffineFunction{Float64}-in-MOI.RotatedSecondOrderCone</code></pre><p>To only look at the root-determinant cone, we give its function and set type:</p><pre><code class="language-julia hljs">print_active_bridges(model, Vector{VariableRef}, MOI.RootDetConeTriangle)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"> * Unsupported constraint: MOI.VectorOfVariables-in-MOI.RootDetConeTriangle
+ |  bridged by:
+ |   MOIB.Constraint.SetDotScalingBridge{Float64, MOI.RootDetConeTriangle, MOI.VectorAffineFunction{Float64}, MOI.VectorOfVariables}
+ |  may introduce:
+ |   * Supported constraint: MOI.VectorAffineFunction{Float64}-in-MOI.Scaled{MOI.RootDetConeTriangle}</code></pre><p>The only bridge is <code>SetDotScalingBridge</code>. It only rescales the off-diagonal entries into the <code>MOI.Scaled{MOI.RootDetConeTriangle}</code> set, which is the form in which Hypatia supports the cone natively. There is no <code>GeometricMeanCone</code> or <code>PositiveSemidefiniteConeTriangle</code>.</p><h3 id="Log-determinant-objective"><a class="docs-heading-anchor" href="#Log-determinant-objective">Log-determinant objective</a><a id="Log-determinant-objective-1"></a><a class="docs-heading-anchor-permalink" href="#Log-determinant-objective" title="Permalink"></a></h3><p>Instead of the <code>n</code>th root of the determinant, we can also maximize its logarithm with <code>log(volume(john))</code>. The optimal ellipsoid is the same, but the objective value is now <code>log(det(Q)) = log(1) = 0</code> instead of <code>det(Q)^(1/2) = 1</code>.</p><pre><code class="language-julia hljs">model = Model(sdp_solver)
+@variable(model, john_log, Ellipsoid(symmetric=true, dimension=2))
+@constraint(model, john_log ⊆ p)
+@objective(model, Max, log(volume(john_log)))
+optimize!(model)
+@show termination_status(model)
+@show objective_value(model)
+SetProg.Sets.print_support_function(value(john_log))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">termination_status(model) = ALMOST_OPTIMAL
+objective_value(model) = -1.9304391854351855e-8
+h(S, x) = x[2]^2 + x[1]^2</code></pre><p>The objective is now reformulated into <code>[t; 1; vec(Q)] in MOI.LogDetConeTriangle(2)</code> which means <code>t ≤ log(det(Q))</code>. As the constant <code>1</code> is part of the function, it is a <code>Vector{AffExpr}</code> instead of a <code>Vector{VariableRef}</code>. Hypatia also supports this cone natively:</p><pre><code class="language-julia hljs">print_active_bridges(model, Vector{AffExpr}, MOI.LogDetConeTriangle)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"> * Unsupported constraint: MOI.VectorAffineFunction{Float64}-in-MOI.LogDetConeTriangle
+ |  bridged by:
+ |   MOIB.Constraint.SetDotScalingBridge{Float64, MOI.LogDetConeTriangle, MOI.VectorAffineFunction{Float64}, MOI.VectorAffineFunction{Float64}}
+ |  may introduce:
+ |   * Supported constraint: MOI.VectorAffineFunction{Float64}-in-MOI.Scaled{MOI.LogDetConeTriangle}</code></pre><h2 id="Löwner-ellipsoid"><a class="docs-heading-anchor" href="#Löwner-ellipsoid">Löwner ellipsoid</a><a id="Löwner-ellipsoid-1"></a><a class="docs-heading-anchor-permalink" href="#Löwner-ellipsoid" title="Permalink"></a></h2><p>The minimal volume ellipsoid containing a convex body is called its Löwner ellipsoid. The Löwner ellipsoid for our square can be computed as follows.</p><pre><code class="language-julia hljs">model = Model(sdp_solver)
+@variable(model, löwner, Ellipsoid(symmetric=true, dimension=2))
+@constraint(model, p ⊆ löwner)
+@objective(model, Min, nth_root(volume(löwner)))
+optimize!(model)
+@show solve_time(model)
+@show termination_status(model)
+@show objective_value(model)
+löwner_value = value(löwner)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SetProg.Sets.Ellipsoid{Float64}([0.49999998368834947 6.323710909172985e-18; 6.323710909172985e-18 0.4999999836865327])</code></pre><p>We can visualize the Löwner and John ellipsoids as follows.</p><pre><code class="language-julia hljs">using Plots
+plot(ratio=:equal)
+plot!(löwner_value)
+plot!(p)
+plot!(value(john))</code></pre><img src="f19e3c91.svg" alt="Example block output"/><h2 id="Higher-degree-polynomials"><a class="docs-heading-anchor" href="#Higher-degree-polynomials">Higher degree polynomials</a><a id="Higher-degree-polynomials-1"></a><a class="docs-heading-anchor-permalink" href="#Higher-degree-polynomials" title="Permalink"></a></h2><p>Ellipsoids are the sublevel sets of positive definite <em>quadratic</em> forms. To allow for more sophisticated shapes, we instead look for sublevel sets of <em>quartic</em> forms. For this, we simply replace <code>Ellipsoid(dimension=2)</code> by <code>PolySet(degree=4, dimension=2)</code>. Note that the quantities optimized are not exactly the volume anymore but provide a reasonable heuristic.</p><h3 id="Maximal-volume-quartic-sublevel-set-contained-in-the-square"><a class="docs-heading-anchor" href="#Maximal-volume-quartic-sublevel-set-contained-in-the-square">Maximal volume quartic sublevel set contained in the square</a><a id="Maximal-volume-quartic-sublevel-set-contained-in-the-square-1"></a><a class="docs-heading-anchor-permalink" href="#Maximal-volume-quartic-sublevel-set-contained-in-the-square" title="Permalink"></a></h3><pre><code class="language-julia hljs">model = Model(sdp_solver)
+@variable(model, quartic_inner, PolySet(degree=4, symmetric=true, convex=true))
+@constraint(model, quartic_inner ⊆ p)
+@objective(model, Max, nth_root(volume(quartic_inner)))
+optimize!(model)
+@show solve_time(model)
+@show termination_status(model)
+@show objective_value(model)
+quartic_inner_value = value(quartic_inner)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SetProg.Sets.Polar{Float64, SetProg.Sets.ConvexPolySet{Float64, StarAlgebras.SubBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Int64, Vector{Int64}, StarAlgebras.MappedBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Vector{Int64}, MultivariatePolynomials.ExponentsIterator{MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}, Nothing, Vector{Int64}}, MultivariateBases.Variables{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}}, typeof(MultivariatePolynomials.exponents)}, Vector{Vector{Int64}}}, Float64}}(SetProg.Sets.ConvexPolySet{Float64, StarAlgebras.SubBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Int64, Vector{Int64}, StarAlgebras.MappedBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Vector{Int64}, MultivariatePolynomials.ExponentsIterator{MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}, Nothing, Vector{Int64}}, MultivariateBases.Variables{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}}, typeof(MultivariatePolynomials.exponents)}, Vector{Vector{Int64}}}, Float64}(4, GramMatrix with row/column basis:
+ SubBasis{Monomial}([x[2]^2, x[1]*x[2], x[1]^2])
+And entries in a 3×3 MultivariateMoments.SymMatrix{Float64}:
+  0.9999999853674684     -1.618967945420618e-11   -0.14542692691517345
+ -1.618967945420618e-11   3.119280865022582       -1.0583473835805435e-11
+ -0.14542692691517345    -1.0583473835805435e-11   0.999999985367468, [11.999999824409617 -9.713807672523707e-11 -9.713722415988084e-11 8.485281139359092; -9.713807672523707e-11 5.656854022384468 2.828426905409852 -6.34913988442545e-11; -9.713722415988084e-11 2.828426905409852 5.656854022384474 -6.349705117710575e-11; 8.485281139359092 -6.34913988442545e-11 -6.349705117710575e-11 11.999999824409617]))</code></pre><h3 id="Minimal-volume-quartic-sublevel-set-containing-the-square"><a class="docs-heading-anchor" href="#Minimal-volume-quartic-sublevel-set-containing-the-square">Minimal volume quartic sublevel set containing the square</a><a id="Minimal-volume-quartic-sublevel-set-containing-the-square-1"></a><a class="docs-heading-anchor-permalink" href="#Minimal-volume-quartic-sublevel-set-containing-the-square" title="Permalink"></a></h3><pre><code class="language-julia hljs">model = Model(sdp_solver)
+@variable(model, quartic_outer, PolySet(symmetric=true, degree=4, convex=true))
+@constraint(model, p ⊆ quartic_outer)
+@objective(model, Min, nth_root(volume(quartic_outer)))
+optimize!(model)
+@show solve_time(model)
+@show termination_status(model)
+@show objective_value(model)
+quartic_outer_value = value(quartic_outer)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SetProg.Sets.ConvexPolySet{Float64, StarAlgebras.SubBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Int64, Vector{Int64}, StarAlgebras.MappedBasis{MultivariateBases.Polynomial{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}, Vector{Int64}}, Vector{Int64}, MultivariatePolynomials.ExponentsIterator{MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}, Nothing, Vector{Int64}}, MultivariateBases.Variables{Monomial, Vector{DynamicPolynomials.Variable{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}}}}, typeof(MultivariatePolynomials.exponents)}, Vector{Vector{Int64}}}, Float64}(4, GramMatrix with row/column basis:
+ SubBasis{Monomial}([x[2]^2, x[1]*x[2], x[1]^2])
+And entries in a 3×3 MultivariateMoments.SymMatrix{Float64}:
+  0.3017766934996899     -7.395550080495531e-13  -0.09365064570406897
+ -7.395550080495531e-13   0.5837479004421742      7.395714491831187e-13
+ -0.09365064570406897     7.395714491831187e-13   0.3017766935003648, [3.6213203219962793 -4.437330048297319e-12 -4.437081288240348e-12 1.4999999969172813; -4.437330048297319e-12 0.7928932180680723 0.08578643921886356 4.438415866830229e-12; -4.437081288240348e-12 0.08578643921886356 0.7928932180680737 4.437395306732085e-12; 1.4999999969172813 4.438415866830229e-12 4.437395306732085e-12 3.621320322004377])</code></pre><p>We can visualize the quartic sublevel sets as follows.</p><pre><code class="language-julia hljs">plot(ratio=:equal)
+plot!(quartic_outer_value)
+plot!(p)
+plot!(quartic_inner_value)
+plot!(value(john))</code></pre><img src="0cb3478e.svg" alt="Example block output"/><h3 id="Inner-sublevel-sets-of-increasing-degree"><a class="docs-heading-anchor" href="#Inner-sublevel-sets-of-increasing-degree">Inner sublevel sets of increasing degree</a><a id="Inner-sublevel-sets-of-increasing-degree-1"></a><a class="docs-heading-anchor-permalink" href="#Inner-sublevel-sets-of-increasing-degree" title="Permalink"></a></h3><p>We can also explore how the inner sublevel set tightens as the degree grows, using the <code>L1_heuristic</code> as a tractable volume proxy.</p><pre><code class="language-julia hljs">function inner_L1(d)
+    model = Model(sdp_solver)
+    @variable(model, S, PolySet(symmetric=true, degree=d, convex=true))
+    @constraint(model, S ⊆ p)
+    @objective(model, Max, L1_heuristic(volume(S), [1.0, 1.0]))
+    optimize!(model)
+    @show solve_time(model)
+    @show termination_status(model)
+    @show objective_value(model)
+    return value(S)
+end
+
+S2 = inner_L1(2)
+S4 = inner_L1(4)
+S6 = inner_L1(6)
+S8 = inner_L1(8)
+S10 = inner_L1(10)
+
+plot(ratio=:equal)
+plot!(quartic_outer_value)
+plot!(p)
+plot!(S10)
+plot!(S8)
+plot!(S6)
+plot!(S4)
+plot!(S2)</code></pre><img src="21735325.svg" alt="Example block output"/><h2 id="Non-homogeneous-case"><a class="docs-heading-anchor" href="#Non-homogeneous-case">Non-homogeneous case</a><a id="Non-homogeneous-case-1"></a><a class="docs-heading-anchor-permalink" href="#Non-homogeneous-case" title="Permalink"></a></h2><p>For non-symmetric bodies, the John/Löwner ellipsoids are not centered at the origin. We need to provide a <code>point</code> as a hint of an interior point. We illustrate on a horizontally-shifted square.</p><pre><code class="language-julia hljs">shift = 1.1
+h_shift = HalfSpace([1, 0], 1.0 + shift) ∩ HalfSpace([-1, 0], 1.0 - shift) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1)
+p_shift = polyhedron(h_shift)
+
+model = Model(sdp_solver)
+@variable(model, john_shift, Ellipsoid(point=SetProg.InteriorPoint([shift, 0.0])))
+@constraint(model, john_shift ⊆ p_shift)
+@objective(model, Max, nth_root(volume(john_shift)))
+optimize!(model)
+@show solve_time(model)
+@show termination_status(model)
+@show objective_value(model)
+
+plot(ratio=:equal)
+plot!(p_shift)
+plot!(value(john_shift))</code></pre><img src="d5a7ece1.svg" alt="Example block output"/><p>Likewise for the quartic sublevel set.</p><pre><code class="language-julia hljs">model = Model(sdp_solver)
+@variable(model, quartic_shift, PolySet(convex=true, degree=2, point=SetProg.InteriorPoint([shift, 0.0])))
+@constraint(model, quartic_shift ⊆ p_shift)
+@objective(model, Max, L1_heuristic(volume(quartic_shift), [1.0, 1.0]))
+optimize!(model)
+@show solve_time(model)
+@show termination_status(model)
+@show objective_value(model)
+
+plot(ratio=:equal)
+plot!(p_shift)
+plot!(value(quartic_shift))</code></pre><img src="b961dfb5.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../plot_2d/">« 2D plotting</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 30 September 2026 14:56">Wednesday 30 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Discrete-time Switched Invariant Set · SetProg</title><meta name="title" content="Discrete-time Switched Invariant Set · SetProg"/><meta property="og:title" content="Discrete-time Switched Invariant Set · SetProg"/><meta property="twitter:title" content="Discrete-time Switched Invariant Set · SetProg"/><meta name="description" content="Documentation for SetProg."/><meta property="og:description" content="Documentation for SetProg."/><meta property="twitter:description" content="Documentation for SetProg."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SetProg</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Index</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../continuous_controlled/">Continuous-time Controlled Invariant Set</a></li><li><a class="tocitem" href="../controlled_invariant/">Controlled Invariant Set</a></li><li><a class="tocitem" href="../discrete_controlled/">Discrete-time Controlled Invariant Set</a></li><li class="is-active"><a class="tocitem" href>Discrete-time Switched Invariant Set</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Polyhedral-template"><span>Polyhedral template</span></a></li><li><a class="tocitem" href="#Ellipsoidal-template"><span>Ellipsoidal template</span></a></li><li><a class="tocitem" href="#Polyset-template"><span>Polyset template</span></a></li></ul></li><li><a class="tocitem" href="../hybrid_controlled/">Hybrid Controlled Invariant Set</a></li><li><a class="tocitem" href="../invariant/">Discrete-time Invariant Set</a></li><li><a class="tocitem" href="../plot_2d/">2D plotting</a></li><li><a class="tocitem" href="../volume_objective/">Volume Objective</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Discrete-time Switched Invariant Set</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Discrete-time Switched Invariant Set</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl/blob/master/docs/src/examples/discrete_switched.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Discrete-time-Switched-Invariant-Set"><a class="docs-heading-anchor" href="#Discrete-time-Switched-Invariant-Set">Discrete-time Switched Invariant Set</a><a id="Discrete-time-Switched-Invariant-Set-1"></a><a class="docs-heading-anchor-permalink" href="#Discrete-time-Switched-Invariant-Set" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/blegat/SetProg.jl/gh-pages?filepath=previews/PR73/generated/discrete_switched.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt="Binder"/></a> <a href="https://nbviewer.jupyter.org/github/blegat/SetProg.jl/blob/gh-pages/previews/PR73/generated/discrete_switched.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt="nbviewer"/></a></p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>In this notebook, we compute the maximal (resp. minimal) invariant set contained in the square with vertices <span>$(\pm 1, \pm 1)$</span> for the system</p><p class="math-container">\[\begin{aligned}
+x_{k+1} &amp; = -y_k\\
+y_{k+1} &amp; =  x_k.
+\end{aligned}\]</p><p>The system is <span>$x_{k+1} = Ax_k$</span> where</p><p class="math-container">\[A = \begin{bmatrix}
+0 &amp; -1\\
+1 &amp; 0
+\end{bmatrix}.\]</p><p>A set <span>$S$</span> is controlled invariant if <span>$AS \subseteq S.$</span></p><p>We need to pick an LP and an SDP solver, see <a href="https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers">here</a> for a list of available ones. Run one of the following two cells to choose choose the solver.</p><pre><code class="language-julia hljs">using SetProg
+import HiGHS
+lp_solver = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() =&gt; true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() =&gt; true)
+using Polyhedra
+lib = DefaultLibrary{Float64}(lp_solver)
+h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1)
+□ = polyhedron(h, lib)
+◇ = polar(□)
+A1 = [-1 -1
+      -4  0] / 4
+A2 = [ 3  3
+      -2  1] / 4
+A = [0.0 -1.0
+     1.0  0.0]
+
+function maximal_invariant(template, heuristic::Function)
+    solver = if template isa Polytope
+        lp_solver
+    else
+        sdp_solver
+    end
+    model = Model(solver)
+    @variable(model, S, template)
+    @constraint(model, S ⊆ □)
+    @constraint(model, A1 * S ⊆ S)
+    @constraint(model, A2 * S ⊆ S)
+    @objective(model, Max, heuristic(volume(S)))
+    optimize!(model)
+    @show solve_time(model)
+    @show termination_status(model)
+    @show objective_value(model)
+    return value(S)
+end
+function minimal_invariant(template, heuristic::Function)
+    solver = if template isa Polytope
+        lp_solver
+    else
+        sdp_solver
+    end
+    model = Model(solver)
+    @variable(model, S, template)
+    @constraint(model, □ ⊆ S)
+    @constraint(model, A1 * S ⊆ S)
+    @constraint(model, A2 * S ⊆ S)
+    @objective(model, Min, heuristic(volume(S)))
+    optimize!(model)
+    @show solve_time(model)
+    @show termination_status(model)
+    @show objective_value(model)
+    @show JuMP.objective_sense(model)
+    return value(S)
+end
+
+using Plots
+function hexcolor(rgb::UInt32)
+    r = ((0xff0000 &amp; rgb) &gt;&gt; 16) / 255
+    g = ((0x00ff00 &amp; rgb) &gt;&gt;  8) / 255
+    b = ((0x0000ff &amp; rgb)      ) / 255
+    Plots.RGBA(r, g, b)
+end # Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
+lichen = hexcolor(0x85c17e)
+canard = hexcolor(0x048b9a)
+aurore = hexcolor(0xffcb60)
+frambo = hexcolor(0xc72c48)
+
+function primal_plot(min_sol, max_sol; npoints=256, args...)
+    plot(ratio=:equal, tickfont=Plots.font(12); args...)
+    plot!(min_sol, color=canard, npoints=npoints)
+    plot!(□, color=lichen)
+    plot!(max_sol, color=aurore, npoints=npoints)
+end
+function polar_plot(min_sol, max_sol; npoints=256, args...)
+    plot(ratio=:equal, tickfont=Plots.font(12); args...)
+    plot!(polar(max_sol), color=aurore, npoints=npoints)
+    plot!(◇, color=lichen)
+    plot!(polar(min_sol), color=canard, npoints=npoints)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">polar_plot (generic function with 1 method)</code></pre><h2 id="Polyhedral-template"><a class="docs-heading-anchor" href="#Polyhedral-template">Polyhedral template</a><a id="Polyhedral-template-1"></a><a class="docs-heading-anchor-permalink" href="#Polyhedral-template" title="Permalink"></a></h2><h3 id="Fixed-point-approach"><a class="docs-heading-anchor" href="#Fixed-point-approach">Fixed point approach</a><a id="Fixed-point-approach-1"></a><a class="docs-heading-anchor-permalink" href="#Fixed-point-approach" title="Permalink"></a></h3><p>This section shows fixed point approach for computing a polyhedral maximal invariant set. We implement the fixed point iteration of the standard viability kernel algorithm with the following function. A more sophisticated approach specialized for discrete-time linear switched systems is available in <a href="https://github.com/blegat/SwitchOnSafety.jl">SwitchOnSafety</a>.</p><pre><code class="language-julia hljs">function backward_fixed_point_iteration(set::Polyhedron)
+    new_set = set ∩ (A1 \ set) ∩ (A2 \ set)
+    removehredundancy!(new_set)
+    return new_set
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">backward_fixed_point_iteration (generic function with 1 method)</code></pre><p>We start with <span>$[-1, 1]^2$</span> and obtain the maximal invariant set after one iteration.</p><pre><code class="language-julia hljs">max_polytope_1 = backward_fixed_point_iteration(□)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+6-element iterator of HalfSpace{Float64, Vector{Float64}}:
+ HalfSpace([0.0, 1.0], 1.0)
+ HalfSpace([0.0, -1.0], 1.0)
+ HalfSpace([-1.0, 0.0], 1.0)
+ HalfSpace([1.0, 0.0], 1.0)
+ HalfSpace([0.75, 0.75], 1.0)
+ HalfSpace([-0.75, -0.75], 1.0)</code></pre><p>We can see that it has already converged.</p><pre><code class="language-julia hljs">backward_fixed_point_iteration(max_polytope_1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+6-element iterator of HalfSpace{Float64, Vector{Float64}}:
+ HalfSpace([0.0, 1.0], 1.0)
+ HalfSpace([0.0, -1.0], 1.0)
+ HalfSpace([-1.0, 0.0], 1.0)
+ HalfSpace([1.0, 0.0], 1.0)
+ HalfSpace([-0.75, -0.75], 1.0)
+ HalfSpace([0.75, 0.75], 1.0)</code></pre><p>We now turn to the minimal invariant set with the following iteration:</p><pre><code class="language-julia hljs">function forward_fixed_point_iteration(set::Polyhedron)
+    new_set = convexhull(set, A1 * set, A2 * set)
+    removevredundancy!(new_set)
+    return new_set
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">forward_fixed_point_iteration (generic function with 1 method)</code></pre><p>We start with <span>$[-1, 1]^2$</span> and obtain the minimal invariant set after three iteration.</p><pre><code class="language-julia hljs">min_polytope_1 = forward_fixed_point_iteration(□)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+6-element iterator of Vector{Float64}:
+ [-1.0, -1.0]
+ [-1.5, 0.25]
+ [-1.0, 1.0]
+ [1.0, 1.0]
+ [1.5, -0.25]
+ [1.0, -1.0]</code></pre><p>We see below that the second iteration was indeed needed.</p><pre><code class="language-julia hljs">min_polytope_2 = forward_fixed_point_iteration(min_polytope_1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+8-element iterator of Vector{Float64}:
+ [-0.3125, -1.5]
+ [-1.0, -1.0]
+ [-1.5, 0.25]
+ [-1.0, 1.0]
+ [0.3125, 1.5]
+ [1.0, 1.0]
+ [1.5, -0.25]
+ [1.0, -1.0]</code></pre><p>And the third iteration as well.</p><pre><code class="language-julia hljs">min_polytope_3 = forward_fixed_point_iteration(min_polytope_2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+10-element iterator of Vector{Float64}:
+ [-0.3125, -1.5]
+ [-1.0, -1.0]
+ [-1.359375, -0.21875]
+ [-1.5, 0.25]
+ [-1.0, 1.0]
+ [0.3125, 1.5]
+ [1.0, 1.0]
+ [1.359375, 0.21875]
+ [1.5, -0.25]
+ [1.0, -1.0]</code></pre><p>We see below that it has converged</p><pre><code class="language-julia hljs">forward_fixed_point_iteration(min_polytope_3)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+10-element iterator of Vector{Float64}:
+ [-0.3125, -1.5]
+ [-1.0, -1.0]
+ [-1.359375, -0.21875]
+ [-1.5, 0.25]
+ [-1.0, 1.0]
+ [0.3125, 1.5]
+ [1.0, 1.0]
+ [1.359375, 0.21875]
+ [1.5, -0.25]
+ [1.0, -1.0]</code></pre><p>Let&#39;s see this visually</p><pre><code class="language-julia hljs">plot(ratio=:equal, tickfont=Plots.font(12))
+plot!(min_polytope_3, color=frambo)
+plot!(min_polytope_2, color=canard)
+plot!(min_polytope_1, color=aurore)
+plot!(□, color=lichen)
+plot!(max_polytope_1, color=frambo)</code></pre><img src="bc3f14f1.svg" alt="Example block output"/><h3 id="Linear-programming-approach"><a class="docs-heading-anchor" href="#Linear-programming-approach">Linear programming approach</a><a id="Linear-programming-approach-1"></a><a class="docs-heading-anchor-permalink" href="#Linear-programming-approach" title="Permalink"></a></h3><p>As introduced in [R21], we can search over all polyhedra with a given face fan. The partition can be defined by the face fan of a given polytope as described in [Eq. (4.6), R21]. For <code>maximal_invariant</code>, because the sets are represented with the support function, the fan will be used for the face fan of the polar set the face fan of the primal set will depend on the value of the support function on each piece. For <code>minimal_invariant</code>, the sets are represented with the gauge function, the fac will therefore be used for the face fan of the primal set.</p><p>[R21] Raković, S. V. <em>Control Minkowski–Lyapunov functions</em> Automatica, Elsevier BV, 2021, 128, 109598</p><p>We use the face fan of the polytope <code>pieces8</code> (which has the same face fan as the octogon <code>convexhull(□, √2 * ◇)</code>).</p><pre><code class="language-julia hljs">pieces8 = convexhull(□, 1.25 * ◇)
+max_polytope = maximal_invariant(Polytope(symmetric=true, piecewise=pieces8), L1_heuristic)
+min_polytope = minimal_invariant(Polytope(symmetric=true, piecewise=polar(pieces8)), L1_heuristic)
+primal_plot(min_polytope, max_polytope)</code></pre><img src="e8d3c3dc.svg" alt="Example block output"/><p>The polar plot is as follows:</p><pre><code class="language-julia hljs">polar_plot(min_polytope, max_polytope)</code></pre><img src="cf201830.svg" alt="Example block output"/><h2 id="Ellipsoidal-template"><a class="docs-heading-anchor" href="#Ellipsoidal-template">Ellipsoidal template</a><a id="Ellipsoidal-template-1"></a><a class="docs-heading-anchor-permalink" href="#Ellipsoidal-template" title="Permalink"></a></h2><p>We now consider the ellipsoidal template. The ellipsoids of maximal volume are given as follows:</p><pre><code class="language-julia hljs">max_ell_vol = maximal_invariant(Ellipsoid(symmetric=true), nth_root)
+min_ell_vol = minimal_invariant(Ellipsoid(symmetric=true), nth_root)
+primal_plot(min_ell_vol, max_ell_vol)</code></pre><img src="9535d439.svg" alt="Example block output"/><p>All ellipsoids are convex so we can also obtain the polar plot:</p><pre><code class="language-julia hljs">polar_plot(min_ell_vol, max_ell_vol)</code></pre><img src="f2669594.svg" alt="Example block output"/><p>The ellipsoids of maximal sum of squared length of its axis.</p><pre><code class="language-julia hljs">max_ell_L1 = maximal_invariant(Ellipsoid(symmetric=true), vol -&gt; L1_heuristic(vol, ones(2)))
+min_ell_L1 = minimal_invariant(Ellipsoid(symmetric=true), vol -&gt; L1_heuristic(vol, ones(2)))
+primal_plot(min_ell_L1, max_ell_L1)</code></pre><img src="df1f4a3a.svg" alt="Example block output"/><p>And the polar plot is:</p><pre><code class="language-julia hljs">polar_plot(min_ell_vol, max_ell_vol)</code></pre><img src="68183b90.svg" alt="Example block output"/><h2 id="Polyset-template"><a class="docs-heading-anchor" href="#Polyset-template">Polyset template</a><a id="Polyset-template-1"></a><a class="docs-heading-anchor-permalink" href="#Polyset-template" title="Permalink"></a></h2><p>We generalize the previous template to homogeneous polynomials of degree <span>$2d$</span>. As objective, we use the integral of the polynomial used to represent the set (either in the support function for <code>maximal_invariant</code> or in the gauge function for <code>minimal_invariant</code>) over the square <code>□</code>. We start with quartic polynomials.</p><pre><code class="language-julia hljs">max_4 = maximal_invariant(PolySet(symmetric=true, convex=true, degree=4), vol -&gt; L1_heuristic(vol, ones(2)))
+min_4 = minimal_invariant(PolySet(symmetric=true, degree=4), vol -&gt; L1_heuristic(vol, ones(2)))
+primal_plot(min_4, max_4)</code></pre><img src="1de67277.svg" alt="Example block output"/><p>We now obtain the results for sextic polynomials, note that we do not impose the sets to be convex for <code>minimal_invariant</code>. This is why we don&#39;t show the polar plot for polysets.</p><pre><code class="language-julia hljs">max_6 = maximal_invariant(PolySet(symmetric=true, convex=true, degree=6), vol -&gt; L1_heuristic(vol, ones(2)))
+min_6 = minimal_invariant(PolySet(symmetric=true, degree=6), vol -&gt; L1_heuristic(vol, ones(2)))
+primal_plot(min_6, max_6)</code></pre><img src="d08bfbbe.svg" alt="Example block output"/><p>The nonconvexity is even more apparent for octic polynomials.</p><pre><code class="language-julia hljs">max_8 = maximal_invariant(PolySet(symmetric=true, convex=true, degree=8), vol -&gt; L1_heuristic(vol, □))
+min_8 = minimal_invariant(PolySet(symmetric=true, degree=8), vol -&gt; L1_heuristic(vol, □))
+primal_plot(min_8, max_8, npoints=1024)</code></pre><img src="3fb0efa1.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../discrete_controlled/">« Discrete-time Controlled Invariant Set</a><a class="docs-footer-nextpage" href="../hybrid_controlled/">Hybrid Controlled Invariant Set »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 30 September 2026 14:56">Wednesday 30 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
