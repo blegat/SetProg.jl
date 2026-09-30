@@ -243,3 +243,19 @@ end
     @test _num_constraints(model, MOI.VectorAffineFunction{Float64}, MOI.LogDetConeTriangle) == 1
     @test _num_constraints(model, MOI.VectorOfVariables, MOI.RootDetConeTriangle) == 0
 end
+
+@testset "Determinant volume of polytope" begin
+    @testset "$metric" for metric in [nth_root, log]
+        model = _mock_model()
+        □ = _square(2)
+        @variable(model, S, Polytope(symmetric = true, piecewise = □))
+        @constraint(model, S ⊆ □)
+        @objective(model, Max, metric(volume(S)))
+        err = ErrorException(
+            "`nth_root` and `log` volume heuristics are not supported for" *
+            " polytopes as they are not determined by a matrix." *
+            " Use `L1_heuristic` instead.",
+        )
+        @test_throws err SetProg.optimize!(model)
+    end
+end
