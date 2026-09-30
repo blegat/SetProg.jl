@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Hybrid Controlled Invariant Set · SetProg</title><meta name="title" content="Hybrid Controlled Invariant Set · SetProg"/><meta property="og:title" content="Hybrid Controlled Invariant Set · SetProg"/><meta property="twitter:title" content="Hybrid Controlled Invariant Set · SetProg"/><meta name="description" content="Documentation for SetProg."/><meta property="og:description" content="Documentation for SetProg."/><meta property="twitter:description" content="Documentation for SetProg."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SetProg</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Index</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../continuous_controlled/">Continuous-time Controlled Invariant Set</a></li><li><a class="tocitem" href="../controlled_invariant/">Controlled Invariant Set</a></li><li><a class="tocitem" href="../discrete_controlled/">Discrete-time Controlled Invariant Set</a></li><li><a class="tocitem" href="../discrete_switched/">Discrete-time Switched Invariant Set</a></li><li class="is-active"><a class="tocitem" href>Hybrid Controlled Invariant Set</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Ellipsoidal-template"><span>Ellipsoidal template</span></a></li><li><a class="tocitem" href="#Polyset-template"><span>Polyset template</span></a></li></ul></li><li><a class="tocitem" href="../invariant/">Discrete-time Invariant Set</a></li><li><a class="tocitem" href="../plot_2d/">2D plotting</a></li><li><a class="tocitem" href="../volume_objective/">Volume Objective</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Hybrid Controlled Invariant Set</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Hybrid Controlled Invariant Set</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl/blob/master/docs/src/examples/hybrid_controlled.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Hybrid-Controlled-Invariant-Set"><a class="docs-heading-anchor" href="#Hybrid-Controlled-Invariant-Set">Hybrid Controlled Invariant Set</a><a id="Hybrid-Controlled-Invariant-Set-1"></a><a class="docs-heading-anchor-permalink" href="#Hybrid-Controlled-Invariant-Set" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/blegat/SetProg.jl/gh-pages?filepath=previews/PR72/generated/hybrid_controlled.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt="Binder"/></a> <a href="https://nbviewer.jupyter.org/github/blegat/SetProg.jl/blob/gh-pages/previews/PR72/generated/hybrid_controlled.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt="nbviewer"/></a></p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>This example considers the hybrid constrained linear control system:</p><p class="math-container">\[\begin{aligned}
+\dot{x}_1(t) &amp; = x_2(t)\\
+\dot{x}_2(t) &amp; = u(t)
+\end{aligned}\]</p><p>with state constraint <span>$x \in [-1, 1]^2$</span> and input constraint <span>$u \in [-1, 1]$</span> and the jump:</p><p class="math-container">\[\begin{aligned}
+x_1^+ &amp; = -x_1 + u/8\\
+x_2^+ &amp; = x_2 - u/8
+\end{aligned}\]</p><p>with state constraint <span>$x \in [-1, 1]^2$</span> and input constraint <span>$u \in [-1, 1]$</span> that can occur anytime.</p><p>In order to compute controlled invariant sets for this system, we consider the projection onto the first two dimensions of controlled invariant sets of the following lifted system:</p><p class="math-container">\[\begin{aligned}
+\dot{x}_1(t) &amp; = x_2(t)\\
+\dot{x}_2(t) &amp; = x_3(t)\\
+\dot{x}_3(t) &amp; = u(t)
+\end{aligned}\]</p><p>with state constraint <span>$x \in [-1, 1]^3$</span>; with a first jump to a temporary mode:</p><p class="math-container">\[\begin{aligned}
+x_1^+ &amp; = x_1\\
+x_2^+ &amp; = x_2\\
+x_3^+ &amp; = u
+\end{aligned}\]</p><p>with state constraint <span>$x \in [-1, 1]^3$</span> and unconstrained input; and a second jump back to the original mode:</p><p class="math-container">\[\begin{aligned}
+x_1^+ &amp; = -x_1 + x_3/8\\
+x_2^+ &amp; = x_2 - x_3/8\\
+x_3^+ &amp; = u.
+\end{aligned}\]</p><p>Note that the input <code>u</code> chosen in the first jump is the input that will be used for the reset map and the input <code>u</code> chosen for the second jump is the input that will be used for the state <code>x_3</code> of the continuous-time system.</p><p>The matricial form of this system is given by <span>$\dot{x}(t) = Ax(t) + Bu(t)$</span> where <code>A</code> and <code>B</code> are as defined below. As shown in Proposition 5 of [LJ21], a set is controlled invariant for this system if and only if it is weakly invariant for the algebraic system</p><p class="math-container">\[\begin{aligned}
+\dot{x}_1(t) &amp; = x_2(t)\\
+\dot{x}_2(t) &amp; = x_3(t)
+\end{aligned}\]</p><p>with state constraint <span>$x \in [-1, 1]^3$</span>; with a first jump to a temporary mode:</p><p class="math-container">\[\begin{aligned}
+x_1^+ &amp; = x_1\\
+x_2^+ &amp; = x_2
+\end{aligned}\]</p><p>with state constraint <span>$x \in [-1, 1]^3$</span> and a second jump back to the original mode:</p><p class="math-container">\[\begin{aligned}
+x_1^+ &amp; = -x_1 + x_3/8\\
+x_2^+ &amp; = x_2 - x_3/8.
+\end{aligned}\]</p><p>The matricial form of this system is given by <span>$E\dot{x}(t) = Cx(t)$</span> with a first jump <span>$Ex^+ = Ex$</span> and a second jump <span>$Ex^+ = Ux$</span> where:</p><p>[LJ21] B. Legat and R. M. Jungers. <em>Continuous-time controlled invariant sets, a geometric approach</em>. 7th IFAC Conference on Analysis and Design of Hybrid Systems ADHS 2021, <strong>2021</strong>.</p><pre><code class="language-julia hljs">A = [0.0 1.0 0.0
+     0.0 0.0 1.0
+     0.0 0.0 0.0]
+B = reshape([0.0, 0.0, 1.0], 3, 1)
+E = [1.0 0.0 0.0
+     0.0 1.0 0.0]
+C = A[1:2, :]
+U = [-1.0  0.0  1/4
+      0.0  1.0 -1/4]
+
+using SetProg
+function maximal_invariant(family, γ = nothing; dirs=dirs)
+    model = Model(sdp_solver)
+    @variable(model, S, family)
+    @constraint(model, S ⊆ □_3)
+    @variable(model, T, family)
+    @constraint(model, T ⊆ □_3)
+    x = boundary_point(S, :x)
+    @constraint(model, C * x in E * tangent_cone(S, x))
+    @constraint(model, E * S ⊆ E * T)
+    @constraint(model, U * T ⊆ E * S)
+    S_2 = project(S, 1:2)
+    if γ === nothing
+        @variable(model, γ)
+    end
+    @constraint(model, [point in dirs], γ * point in S_2)
+    @objective(model, Max, γ)
+    JuMP.optimize!(model)
+    @show solve_time(model)
+    @show JuMP.termination_status(model)
+    @show JuMP.objective_value(model)
+    if is_solved_and_feasible(model, allow_almost = true)
+        return JuMP.value(S), JuMP.objective_value(model)
+    else
+        return
+    end
+end
+
+import GLPK
+lp_solver = optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() =&gt; true, &quot;presolve&quot; =&gt; GLPK.GLP_ON)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() =&gt; true)
+using Polyhedra
+interval = HalfSpace([1.0], 1.0) ∩ HalfSpace([-1.0], 1.0)
+lib = Polyhedra.DefaultLibrary{Float64}(lp_solver)
+□_2 = polyhedron(interval * interval, lib)
+□_3 = □_2 * interval
+u_max = 1/8
+x2l0 = √(2u_max) - u_max
+dirs = [[-1 + √3, -1 + √3], [-1/2, 1.0], [-1.0, x2l0]]
+all_dirs = [dirs; (-).(dirs)]
+inner = polyhedron(vrep(all_dirs), lib)
+outer = polar(inner)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+6-element iterator of HalfSpace{Float64, Vector{Float64}}:
+ HalfSpace([0.7320508075688772, 0.7320508075688772], 1.0)
+ HalfSpace([-0.5, 1.0], 1.0)
+ HalfSpace([-1.0, 0.375], 1.0)
+ HalfSpace([-0.7320508075688772, -0.7320508075688772], 1.0)
+ HalfSpace([0.5, -1.0], 1.0)
+ HalfSpace([1.0, -0.375], 1.0)</code></pre><h2 id="Ellipsoidal-template"><a class="docs-heading-anchor" href="#Ellipsoidal-template">Ellipsoidal template</a><a id="Ellipsoidal-template-1"></a><a class="docs-heading-anchor-permalink" href="#Ellipsoidal-template" title="Permalink"></a></h2><p>We start with the ellipsoidal template. The objective consider is to maximize <code>γ</code> such that <code>γ * inner</code> is included in the set.</p><pre><code class="language-julia hljs">sol_ell, γ_ell = maximal_invariant(Ellipsoid(symmetric=true))
+
+using Plots
+function hexcolor(rgb::UInt32)
+    r = ((0xff0000 &amp; rgb) &gt;&gt; 16) / 255
+    g = ((0x00ff00 &amp; rgb) &gt;&gt;  8) / 255
+    b = ((0x0000ff &amp; rgb)      ) / 255
+    Plots.RGBA(r, g, b)
+end # Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
+lichen = hexcolor(0x85c17e)
+canard = hexcolor(0x048b9a)
+aurore = hexcolor(0xffcb60)
+frambo = hexcolor(0xc72c48)
+cols = [canard, frambo]
+
+x2 = range(0, stop=1, length=20)
+x1 = 1 .- x2.^2 / 2
+x2l = range(x2l0, stop=1.0 - u_max, length=20)
+x1l = -(1 .- (x2l .+ u_max).^2 / 2 .+ u_max)
+upper = [[[-1/2, 1.0]]; [[x1l[i], x2l[i]] for i in eachindex(x2l)]; [[x1[i], x2[i]] for i in eachindex(x2)]]
+mci = polyhedron(vrep([upper; (-).(upper)]), lib)
+polar_mci = polar(mci)
+
+SetProg.Sets.print_support_function(project(sol_ell, 1:2))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: cannot step in centering direction
+└ @ Hypatia.Solvers ~/.julia/packages/Hypatia/iRl7L/src/Solvers/steppers/combined.jl:111
+solve_time(model) = 0.09619903564453125
+JuMP.termination_status(model) = ALMOST_OPTIMAL
+JuMP.objective_value(model) = 0.894427183671862
+h(S, x) = x[2]^2 + x[1]^2</code></pre><p>We can plot the primal solution as follows:</p><pre><code class="language-julia hljs">function primal_plot(set, γ=nothing; npoints=256, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05), args...)
+    plot(ratio=:equal, tickfont=Plots.font(12); xlim=xlim, ylim=ylim, args...)
+    plot!(□_2, color=lichen)
+    plot!(mci, color=aurore)
+    plot!(set, color=canard, npoints=npoints)
+    γ === nothing || plot!(γ * inner, color=frambo)
+    plot!()
+end
+primal_plot(project(sol_ell, 1:2), γ_ell)</code></pre><img src="f9b07ef1.svg" alt="Example block output"/><p>and the dual plot as follows:</p><pre><code class="language-julia hljs">function polar_plot(set, γ; npoints=256, xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), args...)
+    plot(ratio=:equal, tickfont=Plots.font(12); xlim=xlim, ylim=ylim, args...)
+    γ === nothing || plot!(inv(γ) * outer, color=frambo)
+    plot!(polar(set), color=canard, npoints=npoints)
+    plot!(polar_mci, color=aurore)
+    plot!(polar(□_2), color=lichen)
+end
+polar_plot(project(sol_ell, 1:2), γ_ell)</code></pre><img src="801f8868.svg" alt="Example block output"/><h2 id="Polyset-template"><a class="docs-heading-anchor" href="#Polyset-template">Polyset template</a><a id="Polyset-template-1"></a><a class="docs-heading-anchor-permalink" href="#Polyset-template" title="Permalink"></a></h2><p>We start with quartic polynomials:</p><pre><code class="language-julia hljs">p4, γ4 = maximal_invariant(PolySet(symmetric=true, degree=4, convex=true), 0.896)
+γ4</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.896</code></pre><p>Below is the primal plot:</p><pre><code class="language-julia hljs">primal_plot(project(p4, 1:2), γ4)</code></pre><img src="94b3d2a3.svg" alt="Example block output"/><p>and here is the polar plot:</p><pre><code class="language-julia hljs">polar_plot(project(p4, 1:2), γ4)</code></pre><img src="4f3116bb.svg" alt="Example block output"/><p>We now try it with sextic polynomials:</p><pre><code class="language-julia hljs">p6, γ6 = maximal_invariant(PolySet(symmetric=true, degree=6, convex=true), 0.93)
+γ6</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.93</code></pre><p>Below is the primal plot:</p><pre><code class="language-julia hljs">primal_plot(project(p6, 1:2), γ6)</code></pre><img src="bf2fc16f.svg" alt="Example block output"/><p>and here is the polar plot:</p><pre><code class="language-julia hljs">polar_plot(project(p6, 1:2), γ6)</code></pre><img src="0affb0b4.svg" alt="Example block output"/><p>We now try it with octic polynomials:</p><pre><code class="language-julia hljs">p8, γ8 = maximal_invariant(PolySet(symmetric=true, degree=8, convex=true), 0.96)
+γ8</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.96</code></pre><p>Below is the primal plot:</p><pre><code class="language-julia hljs">primal_plot(project(p8, 1:2), γ8)</code></pre><img src="98a1090e.svg" alt="Example block output"/><p>and here is the polar plot:</p><pre><code class="language-julia hljs">polar_plot(project(p8, 1:2), γ8)</code></pre><img src="a1958321.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../discrete_switched/">« Discrete-time Switched Invariant Set</a><a class="docs-footer-nextpage" href="../invariant/">Discrete-time Invariant Set »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 30 September 2026 14:11">Wednesday 30 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
