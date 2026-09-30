@@ -67,8 +67,8 @@ simplex = HalfSpace([1, 1], 1) ∩ HalfSpace([-1, 0], 0) ∩ HalfSpace([0, -1], 
 ```
 Pick an SDP solver (see [here](https://www.juliaopt.org/JuMP.jl/stable/installation/#Getting-Solvers-1) for a list)
 ```julia
-using CSDP # Optimizer
-optimizer_constructor = CSDP.Optimizer
+using Hypatia # Optimizer
+optimizer_constructor = Hypatia.Optimizer
 ```
 
 To compute the maximal symmetric ellipsoid contained in the polytope `diamond` defined above (i.e. [Löwner-John ellipsoid](https://github.com/rdeits/LoewnerJohnEllipsoids.jl)):
