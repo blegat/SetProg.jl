@@ -86,12 +86,37 @@ function volume_matrix(set::Sets.PolarOrNot{<:Sets.ConvexPolySet})
     return Sets.convexity_proof(set)
 end
 
+function volume_matrix(::Sets.PolarOrNot{<:Sets.PolarPoint})
+    error("`nth_root` and `log` volume heuristics are not supported for",
+          " polytopes as they are not determined by a matrix.",
+          " Use `L1_heuristic` instead.")
+end
+
+# `cone_volume` is `ellipsoid_root_volume` or `ellipsoid_log_volume`.
+function det_volume(model::JuMP.Model, cone_volume::Function, set)
+    return cone_volume(model, volume_matrix(set))
+end
+
+# The volume of a piecewise set is the sum of the volumes of each piece
+# intersected with its cone. We use the sum of the heuristic of each piece,
+# ignoring the size of the cones, see the warning in the docstring of
+# `Sets.Piecewise`.
+function det_volume(model::JuMP.Model, cone_volume::Function,
+                    set::Sets.Piecewise)
+    return sum(det_volume(model, cone_volume, piece) for piece in set.sets)
+end
+function det_volume(model::JuMP.Model, cone_volume::Function,
+                    set::Sets.PolarOf{<:Sets.Piecewise})
+    return sum(det_volume(model, cone_volume, Sets.polar(piece))
+               for piece in Sets.polar(set).sets)
+end
+
 function root_volume(model::JuMP.Model, set)
-    return ellipsoid_root_volume(model, volume_matrix(set))
+    return det_volume(model, ellipsoid_root_volume, set)
 end
 
 function log_volume(model::JuMP.Model, set)
-    return ellipsoid_log_volume(model, volume_matrix(set))
+    return det_volume(model, ellipsoid_log_volume, set)
 end
 
 objective_sense(::JuMP.Model, ::DetVolume) = MOI.MAX_SENSE

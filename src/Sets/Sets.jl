@@ -148,6 +148,31 @@ convexity_proof(set::Union{Polar, PerspectiveDual}) = convexity_proof(set.set)
 struct UnknownSet{T} <: AbstractSet{T} end
 include("transformations.jl")
 
+"""
+    struct Piecewise{T, S<:AbstractSet{T}, U, Po<:Polyhedra.Polyhedron{U}, Pi} <: AbstractSet{T}
+        sets::Vector{S}
+        polytope::Po
+        pieces::Vector{Pi}
+        graph::Vector{Vector{Tuple{Int, Vector{U}}}}
+    end
+
+Set whose gauge function is given by `sets[i]` on the cone `pieces[i]`.
+The cones are the cones over the facets of `polytope`, which must contain
+the origin in its interior, and `graph` stores which pieces are adjacent.
+For instance, a piecewise semi-ellipsoid, created with
+`Ellipsoid(symmetric=true, piecewise=polytope)`, is a `Piecewise` of
+`Sets.Ellipsoid`s.
+
+!!! warning
+    The volume heuristics `nth_root(volume(S))` and `log(volume(S))` of a
+    piecewise set `S` are the sum of the heuristics of each of its `sets`,
+    i.e., ``\\sum_i \\det(Q_i)^{1/n}`` and ``\\sum_i \\log(\\det(Q_i))``.
+    Each term measures the volume of the *whole* ellipsoid `sets[i]`, not
+    of its intersection with the cone `pieces[i]`, and the size of the cones
+    is ignored. The heuristic therefore does not reward the flexibility of
+    the pieces the way the volume would. Consider using
+    `L1_heuristic(volume(S))` instead, which integrates over each piece.
+"""
 struct Piecewise{T, S<:AbstractSet{T}, U, Po <: Polyhedra.Polyhedron{U}, Pi} <: AbstractSet{T}
     sets::Vector{S}
     polytope::Po

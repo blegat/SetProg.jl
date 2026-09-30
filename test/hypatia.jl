@@ -5,6 +5,7 @@ using SetProg, SetProg.Sets
 using Polyhedra
 using JuMP
 import Hypatia
+import GLPK
 
 const _□ = polyhedron(
     HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩
@@ -14,7 +15,7 @@ const _□ = polyhedron(
 # Cones received by Hypatia, `nothing` for the `Zeros` of equality constraints
 _hypatia_cones(model) = typeof.(JuMP.unsafe_backend(model).moi_cones)
 
-function _test_volume(variable, inner::Bool, metric, cone, obj, set_test)
+function _test_volume(variable, inner::Bool, metric, cone, obj, set_test; num_cones = 1)
     model = Model(optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true))
     @variable(model, ◯, variable)
     if inner
@@ -34,7 +35,7 @@ function _test_volume(variable, inner::Bool, metric, cone, obj, set_test)
     # The cone is given as is to Hypatia instead of being bridged into a
     # `PositiveSemidefiniteConeTriangle` with either a `GeometricMeanCone` or
     # an `ExponentialCone`
-    @test count(isequal(MOI.Scaled{cone}), cones) == 1
+    @test count(isequal(MOI.Scaled{cone}), cones) == num_cones
     # The only PSD cones are the ones added explicitly by the model
     psd = MOI.PositiveSemidefiniteConeTriangle
     num_psd =
@@ -90,6 +91,59 @@ end
                     @test ◯ isa Sets.Ellipsoid{Float64}
                     @test ◯.Q ≈ I / 2 atol = 1e-5
                 end,
+            )
+        end
+    end
+end
+
+@testset "Hypatia volume of piecewise semi-ellipsoids" begin
+    # The pieces need an LP solver to detect their linearity
+    lp_solver = optimizer_with_attributes(
+        GLPK.Optimizer,
+        MOI.Silent() => true,
+        "presolve" => GLPK.GLP_ON,
+    )
+    lib = Polyhedra.DefaultLibrary{Float64}(lp_solver)
+    □ = polyhedron(hrep(_□), lib)
+    ◇ = polyhedron(convexhull([1.0, 0], [0, 1], [-1, 0], [0, -1]), lib)
+    # The volume heuristic is the sum of the heuristic of each of the 4 pieces.
+    # By symmetry of the square, each piece is the John (resp. Löwner) ellipsoid.
+    @testset "$name $pieces_name" for (name, metric, cone, john, löwner) in [
+            ("nth_root", nth_root, MOI.RootDetConeTriangle, 1.0, 0.5),
+            ("log", log, MOI.LogDetConeTriangle, 0.0, 2log(0.5)),
+        ],
+        (pieces_name, pieces) in [("□", □), ("◇", ◇)]
+
+        @testset "John" begin
+            _test_volume(
+                Ellipsoid(symmetric = true, piecewise = pieces),
+                true,
+                metric,
+                cone,
+                4john,
+                ◯ -> begin
+                    @test ◯ isa Sets.Polar{Float64,<:Sets.Piecewise}
+                    for piece in Sets.polar(◯).sets
+                        @test piece.Q ≈ I atol = 1e-3
+                    end
+                end;
+                num_cones = 4,
+            )
+        end
+        @testset "Löwner" begin
+            _test_volume(
+                Ellipsoid(symmetric = true, piecewise = pieces),
+                false,
+                metric,
+                cone,
+                4löwner,
+                ◯ -> begin
+                    @test ◯ isa Sets.Piecewise
+                    for piece in ◯.sets
+                        @test piece.Q ≈ I / 2 atol = 1e-3
+                    end
+                end;
+                num_cones = 4,
             )
         end
     end
