@@ -39,7 +39,9 @@ function variablify(c::MembershipConstraint)
 end
 
 JuMP.function_string(print_mode, c::MembershipConstraint) = string(c.member)
-JuMP.in_set_string(print_mode, c::MembershipConstraint) = string(JuMP.math_symbol(print_mode, :in), c.set)
+function JuMP.in_set_string(print_mode, c::MembershipConstraint)
+    string(print_mode == MIME("text/latex") ? "\\in" : "∈", " ", c.set)
+end
 function JuMP.build_constraint(_error::Function, member,
                                set::Union{Sets.AbstractSet, Sets.Projection, SetVariableRef})
     MembershipConstraint(member, set)

@@ -18,10 +18,17 @@ function Base.:(+)(f::F, a::AffineExpression{T, F}) where {T, F <: AbstractScala
     return a + f
 end
 
+function set_space(space::Space, f::AffineExpression, model::JuMP.Model)
+    for t in f.terms
+        space = set_space(space, t.func, model)
+    end
+    return space
+end
+
 function objective_sense(model::JuMP.Model, f::AffineExpression)
-    sense = objective_sense(model, f.terms[1])
+    sense = objective_sense(model, f.terms[1].func)
     for i in 2:length(f.terms)
-        @assert sense == objective_sense(model, f.terms[i])
+        @assert sense == objective_sense(model, f.terms[i].func)
     end
     return sense
 end
@@ -29,7 +36,7 @@ end
 function objective_function(model::JuMP.Model, aff::AffineExpression)
     obj = convert(JuMP.AffExpr, aff.constant)
     for t in aff.terms
-        obj = MA.add_mul!!(obj, t.coefficient, objective_function(t.func))
+        obj = MA.add_mul!!(obj, t.coefficient, objective_function(model, t.func))
     end
     return obj
 end

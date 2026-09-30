@@ -18,5 +18,5 @@ function JuMP.parse_constraint_call(_error::Function, vectorized::Bool,
 end
 function JuMP.parse_constraint_call(_error::Function, vectorized::Bool,
                                             ::Val{:⊇}, lhs, rhs)
-    parse_one_operator_constraint(_error, vectorized, Val(:⊆), rhs, lhs)
+    JuMP.parse_constraint_call(_error, vectorized, Val(:⊆), rhs, lhs)
 end

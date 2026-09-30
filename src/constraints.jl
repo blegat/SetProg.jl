@@ -44,6 +44,10 @@ const SetConstraintRef{M} = JuMP.ConstraintRef{M, ConstraintIndex, SetShape}
 function JuMP.name(cref::SetConstraintRef)
     return data(cref.model).names[cref.index]
 end
+function JuMP.is_valid(model::JuMP.Model, cref::SetConstraintRef)
+    return model === cref.model &&
+           haskey(data(model).constraints, cref.index)
+end
 function JuMP.constraint_object(cref::SetConstraintRef)
     return data(cref.model).constraints[cref.index]
 end
