@@ -132,7 +132,7 @@ struct Ellipsoid <: AbstractVariable
     point::Union{Nothing, HintPoint}
     symmetric::Bool
     dimension::Union{Nothing, Int}
-    guaranteed_psd::Bool # Is it already guaranteed that it is PSD ? e.g. by nth_root
+    guaranteed_psd::Bool # Is it already guaranteed that it is PSD ? e.g. by nth_root or log
     superset::Union{Sets.Ellipsoid, Nothing}
     piecewise::Union{Polyhedra.Rep, Nothing}
 end
