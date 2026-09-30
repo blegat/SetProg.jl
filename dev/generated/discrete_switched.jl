@@ -141,4 +141,3 @@ min_8 = minimal_invariant(PolySet(symmetric=true, degree=8), vol -> L1_heuristic
 primal_plot(min_8, max_8, npoints=1024)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

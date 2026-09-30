@@ -65,4 +65,3 @@ plot!(□)
 plot!(maximal_convex)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

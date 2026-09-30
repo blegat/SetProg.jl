@@ -154,4 +154,3 @@ primal_plot(sol6)
 polar_plot(sol6)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

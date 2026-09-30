@@ -12,4 +12,3 @@ plot!(SetProg.Sets.polar(set), npoints=128, alpha=0.6)
 plot!(set, npoints=128, alpha=0.95)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

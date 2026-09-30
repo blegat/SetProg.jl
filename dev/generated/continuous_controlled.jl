@@ -105,4 +105,3 @@ primal_plot(project(sol_piece_◇, 1:2), γ_piece_◇)
 polar_plot(project(sol_piece_◇, 1:2), γ_piece_◇)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

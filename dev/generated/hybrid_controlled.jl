@@ -118,4 +118,3 @@ primal_plot(project(p8, 1:2), γ8)
 polar_plot(project(p8, 1:2), γ8)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

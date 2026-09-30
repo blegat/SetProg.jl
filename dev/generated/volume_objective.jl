@@ -116,4 +116,3 @@ plot!(p_shift)
 plot!(value(quartic_shift))
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-
