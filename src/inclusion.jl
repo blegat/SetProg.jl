@@ -64,6 +64,17 @@ function set_space(space::Space,
     return space
 end
 
+# A constant superset which is not an ellipsoid cannot be transformed to the
+# dual space so we need to stay in the primal space where both sets are
+# represented by their gauge function
+function set_space(space::Space,
+                   ::InclusionConstraint{<:SetVariableRef,
+                                         <:Union{Sets.PolySet{T},
+                                                 Sets.ConvexPolySet{T},
+                                                 Sets.Piecewise{T}}}) where T<:Number
+    return set_space(space, PrimalSpace)
+end
+
 # S-procedure: Q ⊆ P <=> xQx ≤ 1 => xPx ≤ 1 <=> xPx ≤ xQx <=> Q - P is PSD
 function JuMP.build_constraint(_error::Function,
                                subset::Sets.Ellipsoid,
@@ -247,6 +258,16 @@ function JuMP.build_constraint(_error::Function,
     S = subset
     T = sup_powerset.set
     JuMP.build_constraint(_error, Sets.perspective_dual(T), PowerSet(Sets.perspective_dual(S)); kws...)
+end
+
+# A constant ellipsoid can be represented in the dual space, see `set_space`.
+function JuMP.build_constraint(_error::Function,
+                               subset::Sets.Polar,
+                               sup_powerset::PowerSet{<:Sets.Ellipsoid{<:Number}};
+                               kws...)
+    return JuMP.build_constraint(
+        _error, subset,
+        PowerSet(Sets.polar_representation(sup_powerset.set)); kws...)
 end
 
 # S ⊆ T <=> polar(T) ⊆ polar(S)

@@ -243,3 +243,79 @@ end
     @test _num_constraints(model, MOI.VectorAffineFunction{Float64}, MOI.LogDetConeTriangle) == 1
     @test _num_constraints(model, MOI.VectorOfVariables, MOI.RootDetConeTriangle) == 0
 end
+
+@testset "Constant superset" begin
+    □ = _square(2)
+    @polyvar x[1:2]
+    unit_ellipsoid = Sets.Ellipsoid(Symmetric(Matrix(1.0I, 2, 2)))
+    # (x₁² + x₂²)² = x₁⁴ + 2x₁²x₂² + x₂⁴
+    unit_quartic = Sets.PolySet(
+        4,
+        SetProg.GramMatrix(Matrix(Diagonal([1.0, 2.0, 1.0])), monomials(x, 2)),
+    )
+    unit_piecewise = Sets.Piecewise([unit_ellipsoid for _ in 1:4], □)
+    unit_convex_quartic = Sets.ConvexPolySet(4, unit_quartic.p, nothing)
+    # The gauge of the square, linear on the cone over each of its facets
+    unit_polytope = Sets.Piecewise([Sets.PolarPoint(h.a / h.β) for h in halfspaces(□)], □)
+    @testset "$name" for (name, family, unit, F, S) in [
+        (
+            "Ellipsoid",
+            Ellipsoid(symmetric = true, dimension = 2),
+            unit_ellipsoid,
+            MOI.VectorAffineFunction{Float64},
+            SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle,
+        ),
+        (
+            "PolySet",
+            PolySet(symmetric = true, degree = 4, variables = x),
+            unit_quartic,
+            MOI.VectorAffineFunction{Float64},
+            SetProg.SumOfSquares.SOSPolynomialSet,
+        ),
+        (
+            "Convex PolySet",
+            PolySet(symmetric = true, degree = 4, convex = true, variables = x),
+            unit_convex_quartic,
+            MOI.VectorAffineFunction{Float64},
+            SetProg.SumOfSquares.SOSPolynomialSet,
+        ),
+        (
+            "Piecewise",
+            Ellipsoid(symmetric = true, piecewise = □),
+            unit_piecewise,
+            MOI.VectorAffineFunction{Float64},
+            SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle,
+        ),
+        (
+            "Polytope",
+            Polytope(symmetric = true, piecewise = □),
+            unit_polytope,
+            MOI.VectorAffineFunction{Float64},
+            MOI.Zeros,
+        ),
+    ]
+        model = _mock_model()
+        @variable(model, V, family)
+        c = @constraint(model, V ⊆ unit)
+        @constraint(model, [1.0 0.5; 0.0 0.5] * V ⊆ V)
+        SetProg.optimize!(model)
+        # The gauge function of `V` is compared with the one of `unit`
+        @test SetProg.data(model).space == SetProg.PrimalSpace
+        types = MOI.get(backend(model), MOI.ListOfConstraintTypesPresent())
+        @test any(((f, s),) -> f == F && s <: S, types)
+    end
+    @testset "Ellipsoid in dual space" begin
+        model = _mock_model()
+        @variable(model, V, Ellipsoid(symmetric = true, dimension = 2))
+        # Forces the dual space
+        @constraint(model, V ⊆ □)
+        @constraint(model, V ⊆ Sets.Ellipsoid(Symmetric(2 * unit_ellipsoid.Q)))
+        SetProg.optimize!(model)
+        @test SetProg.data(model).space == SetProg.DualSpace
+        # The polar of `V`, of matrix `Q`, must contain the polar of the
+        # superset, of matrix `inv(2I) = I / 2`, so `I / 2 - Q` is PSD
+        F = MOI.VectorAffineFunction{Float64}
+        S = SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle
+        @test _num_constraints(model, F, S) == 1
+    end
+end

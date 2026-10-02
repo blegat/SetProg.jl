@@ -15,6 +15,7 @@ struct PolySet{T, B, U} <: AbstractSet{U}
     p::GramMatrix{T, B, U}
 end
 
+perspective_variable(::PolySet) = nothing
 function space_variables(set::PolySet)
     return MP.variables(set.p)
 end
@@ -50,6 +51,7 @@ function ConvexPolySet(
         degree, GramMatrix(_convert(p.Q), p.basis), _convert(convexity_proof))
 end
 
+perspective_variable(::ConvexPolySet) = nothing
 function space_variables(set::ConvexPolySet)
     return MP.variables(set.p)
 end
