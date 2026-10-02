@@ -254,6 +254,9 @@ end
         SetProg.GramMatrix(Matrix(Diagonal([1.0, 2.0, 1.0])), monomials(x, 2)),
     )
     unit_piecewise = Sets.Piecewise([unit_ellipsoid for _ in 1:4], □)
+    unit_convex_quartic = Sets.ConvexPolySet(4, unit_quartic.p, nothing)
+    # The gauge of the square, linear on the cone over each of its facets
+    unit_polytope = Sets.Piecewise([Sets.PolarPoint(h.a / h.β) for h in halfspaces(□)], □)
     @testset "$name" for (name, family, unit, F, S) in [
         (
             "Ellipsoid",
@@ -270,11 +273,25 @@ end
             SetProg.SumOfSquares.SOSPolynomialSet,
         ),
         (
+            "Convex PolySet",
+            PolySet(symmetric = true, degree = 4, convex = true, variables = x),
+            unit_convex_quartic,
+            MOI.VectorAffineFunction{Float64},
+            SetProg.SumOfSquares.SOSPolynomialSet,
+        ),
+        (
             "Piecewise",
             Ellipsoid(symmetric = true, piecewise = □),
             unit_piecewise,
             MOI.VectorAffineFunction{Float64},
             SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle,
+        ),
+        (
+            "Polytope",
+            Polytope(symmetric = true, piecewise = □),
+            unit_polytope,
+            MOI.VectorAffineFunction{Float64},
+            MOI.Zeros,
         ),
     ]
         model = _mock_model()
