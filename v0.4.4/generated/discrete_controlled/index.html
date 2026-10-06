@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Discrete-time Controlled Invariant Set · SetProg</title><meta name="title" content="Discrete-time Controlled Invariant Set · SetProg"/><meta property="og:title" content="Discrete-time Controlled Invariant Set · SetProg"/><meta property="twitter:title" content="Discrete-time Controlled Invariant Set · SetProg"/><meta name="description" content="Documentation for SetProg."/><meta property="og:description" content="Documentation for SetProg."/><meta property="twitter:description" content="Documentation for SetProg."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">SetProg</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Index</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../continuous_controlled/">Continuous-time Controlled Invariant Set</a></li><li><a class="tocitem" href="../controlled_invariant/">Controlled Invariant Set</a></li><li class="is-active"><a class="tocitem" href>Discrete-time Controlled Invariant Set</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Polyhedral-template"><span>Polyhedral template</span></a></li><li><a class="tocitem" href="#Ellipsoidal-template"><span>Ellipsoidal template</span></a></li><li><a class="tocitem" href="#Piecewise-semi-ellipsoidal-template"><span>Piecewise semi-ellipsoidal template</span></a></li><li><a class="tocitem" href="#Polyset-template"><span>Polyset template</span></a></li></ul></li><li><a class="tocitem" href="../discrete_switched/">Discrete-time Switched Invariant Set</a></li><li><a class="tocitem" href="../hybrid_controlled/">Hybrid Controlled Invariant Set</a></li><li><a class="tocitem" href="../invariant/">Discrete-time Invariant Set</a></li><li><a class="tocitem" href="../plot_2d/">2D plotting</a></li><li><a class="tocitem" href="../volume_objective/">Volume Objective</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Discrete-time Controlled Invariant Set</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Discrete-time Controlled Invariant Set</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/blegat/SetProg.jl/blob/master/docs/src/examples/discrete_controlled.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Discrete-time-Controlled-Invariant-Set"><a class="docs-heading-anchor" href="#Discrete-time-Controlled-Invariant-Set">Discrete-time Controlled Invariant Set</a><a id="Discrete-time-Controlled-Invariant-Set-1"></a><a class="docs-heading-anchor-permalink" href="#Discrete-time-Controlled-Invariant-Set" title="Permalink"></a></h1><p><a href="https://mybinder.org/v2/gh/blegat/SetProg.jl/gh-pages?filepath=v0.4.4/generated/discrete_controlled.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt="Binder"/></a> <a href="https://nbviewer.jupyter.org/github/blegat/SetProg.jl/blob/gh-pages/v0.4.4/generated/discrete_controlled.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt="nbviewer"/></a></p><p>An similar example is available in a <a href="https://doi.org/10.24433/CO.6396918.v1">codeocean capsule</a>.</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>This example considers the linear control system already introduced in the Example 2 of [LTJ20]; see also Example 2 of [LRJ20]:</p><p class="math-container">\[\begin{aligned}
+x_{k+1} &amp; = x_k + u_k / 2\\
+u_{k+1} &amp; = u_k&#39;
+\end{aligned}\]</p><p>with <span>$(x_k, u_k) \in [-1, 1]^2$</span>.</p><p>The system is <span>$x_{k+1} = Ax_k + Bu_k$</span> where <span>$B = (0, 1)$</span> and</p><p class="math-container">\[A = \begin{bmatrix}
+1 &amp; 1/2\\
+0 &amp; 0
+\end{bmatrix}.\]</p><p>As shown in Example 4 of [LTJ18], a set <span>$S \subseteq [-1, 1]^2$</span> is controlled invariant for this system if</p><p class="math-container">\[\begin{bmatrix}
+1 &amp; 1/2
+\end{bmatrix}
+S \subseteq
+\begin{bmatrix}
+1 &amp; 0
+\end{bmatrix}
+S\]</p><p>[LRJ20] Legat, Benoît, Saša V. Raković, and Raphaël M. Jungers. <em>Piecewise semi-ellipsoidal control invariant sets.</em> IEEE Control Systems Letters 5.3 (2020): 755-760.</p><p>[LTJ18] B. Legat, P. Tabuada and R. M. Jungers. <em>Computing controlled invariant sets for hybrid systems with applications to model-predictive control</em>. 6th IFAC Conference on Analysis and Design of Hybrid Systems ADHS (2018).</p><p>We need to pick an LP and an SDP solver, see <a href="https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers">here</a> for a list of available ones.</p><pre><code class="language-julia hljs">using SetProg
+import GLPK
+lp_solver = optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() =&gt; true)
+import Hypatia
+sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() =&gt; true)
+A = [1.0 0.5]
+E = [1.0 0.0]
+using Polyhedra
+lib = DefaultLibrary{Float64}(lp_solver)
+h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([0, -1], 1)
+□ = polyhedron(h, lib) # [0, 1]^2
+v = convexhull([1.0, 0], [0, 1], [-1, 0], [0, -1])
+◇ = polyhedron(v, lib); # polar of [0, 1]^2</code></pre><h2 id="Polyhedral-template"><a class="docs-heading-anchor" href="#Polyhedral-template">Polyhedral template</a><a id="Polyhedral-template-1"></a><a class="docs-heading-anchor-permalink" href="#Polyhedral-template" title="Permalink"></a></h2><h3 id="Fixed-point-approach"><a class="docs-heading-anchor" href="#Fixed-point-approach">Fixed point approach</a><a id="Fixed-point-approach-1"></a><a class="docs-heading-anchor-permalink" href="#Fixed-point-approach" title="Permalink"></a></h3><p>This section shows that the maximal control invariant set of this simple control system is polyhedral. Moreover, this polyhedron is obtained after only one fixed point iteration of the standard viability kernel algorithm. We implement the fixed point iteration with the following function:</p><pre><code class="language-julia hljs">function fixed_point_iteration(set::Polyhedron)
+    new_set = set ∩ (A \ (E * set))
+    removehredundancy!(new_set)
+    return new_set
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">fixed_point_iteration (generic function with 1 method)</code></pre><p>We start with <span>$[-1, 1]^2$</span> and obtain the polytope <code>mci</code> after one iteration.</p><pre><code class="language-julia hljs">mci = fixed_point_iteration(□)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+6-element iterator of HalfSpace{Float64, Vector{Float64}}:
+ HalfSpace([1.0, 0.0], 1.0)
+ HalfSpace([-1.0, 0.0], 1.0)
+ HalfSpace([0.0, 1.0], 1.0)
+ HalfSpace([0.0, -1.0], 1.0)
+ HalfSpace([1.0, 0.5], 1.0)
+ HalfSpace([-0.5, -0.25], 0.5)</code></pre><p>One additional iteration gives the same polytope, showing that this polytope is control invariant.</p><pre><code class="language-julia hljs">fixed_point_iteration(mci)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Polyhedron DefaultPolyhedron{Float64, Polyhedra.Intersection{Float64, Vector{Float64}, Int64}, Polyhedra.Hull{Float64, Vector{Float64}, Int64}}:
+6-element iterator of HalfSpace{Float64, Vector{Float64}}:
+ HalfSpace([1.0, 0.0], 1.0)
+ HalfSpace([-1.0, 0.0], 1.0)
+ HalfSpace([0.0, 1.0], 1.0)
+ HalfSpace([0.0, -1.0], 1.0)
+ HalfSpace([-1.0, -0.5], 1.0)
+ HalfSpace([0.5, 0.25], 0.5)</code></pre><p>We plot this polytope <code>mci</code> in yellow below along with the safe set <span>$[-1, 1]^2$</span> in green.</p><pre><code class="language-julia hljs">using Plots
+function hexcolor(rgb::UInt32)
+    r = ((0xff0000 &amp; rgb) &gt;&gt; 16) / 255
+    g = ((0x00ff00 &amp; rgb) &gt;&gt;  8) / 255
+    b = ((0x0000ff &amp; rgb)      ) / 255
+    Plots.RGBA(r, g, b)
+end # Values taken from http://www.toutes-les-couleurs.com/code-couleur-rvb.php
+lichen = hexcolor(0x85c17e)
+canard = hexcolor(0x048b9a)
+aurore = hexcolor(0xffcb60)
+
+plot(ratio=:equal, tickfont=Plots.font(12))
+plot!(□, color=lichen)
+plot!(mci, color=aurore)</code></pre><img src="d0da7dbe.svg" alt="Example block output"/><p>We also plot their respective polars. Note that the inclusion is reversed in the polar space.</p><pre><code class="language-julia hljs">polar_mci = polar(mci)
+plot(ratio=:equal, tickfont=Plots.font(12))
+plot!(polar_mci, color=aurore)
+plot!(◇, color=lichen)
+
+function maximal_invariant(template, heuristic::Function)
+    solver = if template isa Polytope
+        lp_solver
+    else
+        sdp_solver
+    end
+    model = Model(solver)
+    @variable(model, S, template)
+    @constraint(model, S ⊆ □)
+    @constraint(model, A * S ⊆ E * S)
+    @objective(model, Max, heuristic(volume(S)))
+    optimize!(model)
+    @show solve_time(model)
+    @show termination_status(model)
+    @show objective_value(model)
+    return value(S)
+end
+function primal_plot(set; npoints=256, args...)
+    plot(ratio=:equal, tickfont=Plots.font(12); args...)
+    plot!(□, color=lichen)
+    plot!(mci, color=aurore)
+    plot!(set, color=canard, npoints=npoints)
+end
+function polar_plot(set; npoints=256, args...)
+    plot(ratio=:equal, tickfont=Plots.font(12); args...)
+    plot!(SetProg.Sets.polar(set), color=canard, npoints=npoints)
+    plot!(polar_mci, color=aurore)
+    plot!(◇, color=lichen)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">polar_plot (generic function with 1 method)</code></pre><h3 id="Linear-programming-approach"><a class="docs-heading-anchor" href="#Linear-programming-approach">Linear programming approach</a><a id="Linear-programming-approach-1"></a><a class="docs-heading-anchor-permalink" href="#Linear-programming-approach" title="Permalink"></a></h3><p>As introduced in [R21], given a fixed polyhedral conic partition of the state-space, we can search over all polyhedra for which the gauge or support function is linear over each piece of the partition. The partition can be defined by a polytope as described in [Eq. (4.6), R21]. In this example, because the sets are represented with the support function, the pieces will be used for the support function/polar set and the pieces of the gauge function/primal will depend on the value of the support function on each piece.</p><p>[R21] Raković, S. V. <em>Control Minkowski–Lyapunov functions</em> Automatica, Elsevier BV, 2021, 128, 109598</p><p>Let&#39;s start with setting the partition using the cross polytope <code>◇</code>.</p><pre><code class="language-julia hljs">sol_polytope_◇ = maximal_invariant(Polytope(symmetric=true, piecewise=◇), L1_heuristic)
+SetProg.Sets.print_support_function(sol_polytope_◇)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 5.316734313964844e-5
+termination_status(model) = OPTIMAL
+objective_value(model) = 1.8856180831641272
+h(S, x) =
+          x[1]
+              if x[2] ≥ 0, x[1] ≥ 0
+          x[1]
+              if -x[2] ≥ 0, x[1] ≥ 0
+          -x[1]
+              if -x[1] ≥ 0, x[2] ≥ 0
+          -x[1]
+              if -x[1] ≥ 0, -x[2] ≥ 0</code></pre><p>We can see that the polar set is unbounded so the primal set has zero volume. More precisely, the polar is <span>$[-1, 1] \times [-\infty, \infty]$</span> and the primal set is <span>$[-1, 1] \times \{0\}$</span>.</p><p>Let&#39;s now try setting the partition using the square <code>□</code>.</p><pre><code class="language-julia hljs">sol_polytope_□ = maximal_invariant(Polytope(symmetric=true, piecewise=□), L1_heuristic)
+SetProg.Sets.print_support_function(sol_polytope_□)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 5.698204040527344e-5
+termination_status(model) = OPTIMAL
+objective_value(model) = 2.6666666666666665
+h(S, x) =
+          x[1]
+              if -x[2] + x[1] ≥ 0, x[2] + x[1] ≥ 0
+          -x[1]
+              if -x[2] - x[1] ≥ 0, x[2] - x[1] ≥ 0
+          x[2]
+              if x[2] - x[1] ≥ 0, x[2] + x[1] ≥ 0
+          -x[2]
+              if -x[2] - x[1] ≥ 0, -x[2] + x[1] ≥ 0</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol_polytope_□, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))</code></pre><img src="917c3f4e.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol_polytope_□, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))</code></pre><img src="09c3c239.svg" alt="Example block output"/><p>Let&#39;s now use a partition with 8 pieces.</p><pre><code class="language-julia hljs">pieces8 = convexhull(□, 1.25 * ◇)
+sol_polytope_8 = maximal_invariant(Polytope(symmetric=true, piecewise=pieces8), L1_heuristic)
+SetProg.Sets.print_support_function(sol_polytope_8)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.0001621246337890625
+termination_status(model) = OPTIMAL
+objective_value(model) = 2.4636787533634337
+h(S, x) =
+          x[1]
+              if 0.4*x[2] ≥ 0, -0.6*x[2] + 0.6*x[1] ≥ 0
+          -x[2] + x[1]
+              if -0.4*x[2] ≥ 0, 0.6*x[2] + 0.6*x[1] ≥ 0
+          x[2]
+              if 0.6*x[2] - 0.6*x[1] ≥ 0, 0.4*x[1] ≥ 0
+          x[2] - x[1]
+              if -0.4*x[1] ≥ 0, 0.6*x[2] + 0.6*x[1] ≥ 0
+          x[2] - x[1]
+              if -0.6*x[2] - 0.6*x[1] ≥ 0, x[2] ≥ 0
+          -x[1]
+              if -x[2] ≥ 0, 0.6*x[2] - 0.6*x[1] ≥ 0
+          -x[2] + x[1]
+              if -0.6*x[2] - 0.6*x[1] ≥ 0, 0.4*x[1] ≥ 0
+          -x[2]
+              if -0.6*x[2] + 0.6*x[1] ≥ 0, -0.4*x[1] ≥ 0</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol_polytope_8, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))</code></pre><img src="4b56bb69.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol_polytope_8, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))</code></pre><img src="76bc68cb.svg" alt="Example block output"/><p>We can use the polar of the polytope resulting from the first fixed point iteration to generate a refined conic partition. With this partition, the maximal piecewise semi-ellipsoidal control invariant set matches the maximal control invariant set.</p><pre><code class="language-julia hljs">sol_polytope_mci = maximal_invariant(Polytope(symmetric=true, piecewise=polar_mci), L1_heuristic)
+SetProg.Sets.print_support_function(sol_polytope_mci)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 8.606910705566406e-5
+termination_status(model) = OPTIMAL
+objective_value(model) = 3.1095432575413913
+h(S, x) =
+          x[1]
+              if x[2] ≥ 0, -x[2] + 0.5*x[1] ≥ 0
+          -x[2] + x[1]
+              if -x[2] ≥ 0, x[1] ≥ 0
+          x[2] + 0.5*x[1]
+              if x[2] - 0.5*x[1] ≥ 0, x[1] ≥ 0
+          x[2] - x[1]
+              if -x[1] ≥ 0, x[2] ≥ 0
+          -x[1]
+              if -x[2] ≥ 0, x[2] - 0.5*x[1] ≥ 0
+          -x[2] - 0.5*x[1]
+              if -x[1] ≥ 0, -x[2] + 0.5*x[1] ≥ 0</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol_polytope_mci)</code></pre><img src="7dd5c8d0.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol_polytope_mci)</code></pre><img src="6045b391.svg" alt="Example block output"/><h2 id="Ellipsoidal-template"><a class="docs-heading-anchor" href="#Ellipsoidal-template">Ellipsoidal template</a><a id="Ellipsoidal-template-1"></a><a class="docs-heading-anchor-permalink" href="#Ellipsoidal-template" title="Permalink"></a></h2><p>We now compute the maximal ellipsoidal control invariant set. Here we can either maximize its volume (which corresponds to <span>$\log(\det(Q))$</span> or <span>$\sqrt[n]{\det(Q)}$</span> in the objective function) or minimize the sum of the squares of the length of its semi-axes of the polar (which corresponds to the trace of <span>$Q$</span> in the objective function).</p><p>We can see below that the control invariant set of maximal volume has support function <span>$h^2(S, x) = x_1^2 - \frac{1}{2} x_1x_2 + x_2^2.$</span></p><pre><code class="language-julia hljs">sol_ell_vol = maximal_invariant(Ellipsoid(symmetric=true, dimension=2), nth_root)
+SetProg.Sets.print_support_function(sol_ell_vol)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.0022230148315429688
+termination_status(model) = ALMOST_OPTIMAL
+objective_value(model) = 0.9682457832596141
+h(S, x) = x[2]^2 - 0.5*x[1]*x[2] + x[1]^2</code></pre><p>We can see below the ellipsoid in blue along with the maximal control invariant set in yellow and the safe set in green.</p><pre><code class="language-julia hljs">primal_plot(sol_ell_vol)</code></pre><img src="25bd5417.svg" alt="Example block output"/><p>Below is are the corresponding sets in the polar space.</p><pre><code class="language-julia hljs">polar_plot(sol_ell_vol)</code></pre><img src="348279ec.svg" alt="Example block output"/><p>We can see below that the control invariant set of minimal sum of squares of the length of the semi-axes of the polar has support function <span>$h^2(S, x) = x_1^2 - \alpha x_1x_2 + x_2^2.$</span> with <span>$\alpha \approx 1.377456$</span>. Note that the sum of the squares of the length of the semi-axes of the polar is equal to the integral of <span>$h^2(S, x)$</span> over the hypercube <span>$[-1, 1]^2$</span> hence the use of the <code>L1_heuristic(vol, ones(2))</code> as objective which means taking the integral over the hyperrectangle with vertex <code>ones(2) = [1, 1]</code>.</p><pre><code class="language-julia hljs">sol_ell_L1 = maximal_invariant(Ellipsoid(symmetric=true, dimension=2), vol -&gt; L1_heuristic(vol, ones(2)))
+SetProg.Sets.print_support_function(sol_ell_L1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.0008130073547363281
+termination_status(model) = ALMOST_OPTIMAL
+objective_value(model) = 0.6666666368304689
+h(S, x) = x[2]^2 - 1.08143*x[1]*x[2] + x[1]^2</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol_ell_L1)</code></pre><img src="4a3c6dcd.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol_ell_L1)</code></pre><img src="094ed905.svg" alt="Example block output"/><h2 id="Piecewise-semi-ellipsoidal-template"><a class="docs-heading-anchor" href="#Piecewise-semi-ellipsoidal-template">Piecewise semi-ellipsoidal template</a><a id="Piecewise-semi-ellipsoidal-template-1"></a><a class="docs-heading-anchor-permalink" href="#Piecewise-semi-ellipsoidal-template" title="Permalink"></a></h2><p>We now study the maximal piecewise semi-ellipsoidal control invariant sets of a given conic partition. The volume is not directly maximized. Instead, for each cone, we compute the sum <span>$s$</span> of the normalized rays and consider the polytope obtained by intersecting the cone with the halfspace <span>$s^\top x \le \|s\|_2^2$</span>. We integrate the quadratic form corresponding to this cone, i.e. <span>$h^2(S, x)$</span> over the polytope. The sum of the integrals over each polytope is the objective function we use. This can be seen as the generalization of the sum of the squares of the semi-axes of the polar of the ellipsoid.</p><p>Note that the constraint (29) of Program 1 of [LRJ20] is implemented with Proposition 2 of [LRJ20] for all results of this example.</p><p>The conic partition are obtained by considering the conic hull of each facets of a given polytope. We first consider the conic partition corresponding to the polar of the safe set <span>$[-1, 1]^2$</span>. This gives the four quadrants as cones of the conic partition. The maximal piecewise semi-ellipsoidal control invariant set with this partition has the following support function:</p><p class="math-container">\[h^2(S, x) = \begin{cases}
+(x_1 - x_2)^2 &amp; \text{ if }x_1x_2 \le 0,\\
+x_1^2 - x_1x_2/2 + x_2^2 &amp; \text{ if }x_1x_2 \ge 0.
+\end{cases}\]</p><p>For the cones <span>$x_1x_2 \le 0$</span>, the semi-ellipsoid matches the safe set and the maximal control invariant set. For the cones <span>$x_1x_2 \ge 0$</span>, the semi-ellipsoid matches the maximal volume control invariant ellipsoid. This illustrates one key feature of piecewise semi-ellipsoidal sets, they can combines advantages of both polyhedra and ellipsoids. It can be polyhedral on the directions where the maximal control invariant set is polyhedral and be ellipsoidal on the directions where the maximal control invariant set is smooth or requires many halfspaces in its representation.</p><pre><code class="language-julia hljs">sol_piece_◇ = maximal_invariant(Ellipsoid(symmetric=true, piecewise=◇), L1_heuristic)
+SetProg.Sets.print_support_function(sol_piece_◇)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.001898050308227539
+termination_status(model) = ALMOST_OPTIMAL
+objective_value(model) = 3.1666665916929504
+h(S, x) =
+          x[2]^2 - 0.5*x[1]*x[2] + x[1]^2
+              if x[2] ≥ 0, x[1] ≥ 0
+          x[2]^2 - 2.0*x[1]*x[2] + x[1]^2
+              if -x[2] ≥ 0, x[1] ≥ 0
+          x[2]^2 - 2.0*x[1]*x[2] + x[1]^2
+              if -x[1] ≥ 0, x[2] ≥ 0
+          x[2]^2 - 0.5*x[1]*x[2] + x[1]^2
+              if -x[1] ≥ 0, -x[2] ≥ 0</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol_piece_◇, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))</code></pre><img src="6892a783.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol_piece_◇, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))</code></pre><img src="07cf3571.svg" alt="Example block output"/><p>Let&#39;s now try setting the partition with the square <code>□</code>.</p><pre><code class="language-julia hljs">sol_piece_□ = maximal_invariant(Ellipsoid(symmetric=true, piecewise=□), L1_heuristic)
+SetProg.Sets.print_support_function(sol_piece_□)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.0019190311431884766
+termination_status(model) = ALMOST_OPTIMAL
+objective_value(model) = 2.666666659744704
+h(S, x) =
+          x[2]^2 - 1.654044*x[1]*x[2] + x[1]^2
+              if -x[2] + x[1] ≥ 0, x[2] + x[1] ≥ 0
+          x[2]^2 - 1.654044*x[1]*x[2] + x[1]^2
+              if -x[2] - x[1] ≥ 0, x[2] - x[1] ≥ 0
+          x[2]^2 - 1.654044*x[1]*x[2] + x[1]^2
+              if x[2] - x[1] ≥ 0, x[2] + x[1] ≥ 0
+          x[2]^2 - 1.654044*x[1]*x[2] + x[1]^2
+              if -x[2] - x[1] ≥ 0, -x[2] + x[1] ≥ 0</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol_piece_□, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))</code></pre><img src="86ad0b68.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol_piece_□, xlim=(-1.6, 1.6), ylim=(-1.6, 1.6))</code></pre><img src="0da6497c.svg" alt="Example block output"/><p>Let&#39;s now try with the partition of 8 pieces.</p><pre><code class="language-julia hljs">sol_piece_8 = maximal_invariant(Ellipsoid(symmetric=true, piecewise=pieces8), L1_heuristic)
+SetProg.Sets.print_support_function(sol_piece_8)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.0028290748596191406
+termination_status(model) = ALMOST_OPTIMAL
+objective_value(model) = 2.283171394578609
+h(S, x) =
+          1.849901*x[2]^2 - 0.924952*x[1]*x[2] + x[1]^2
+              if 0.4*x[2] ≥ 0, -0.6*x[2] + 0.6*x[1] ≥ 0
+          x[2]^2 - 2.0*x[1]*x[2] + x[1]^2
+              if -0.4*x[2] ≥ 0, 0.6*x[2] + 0.6*x[1] ≥ 0
+          x[2]^2 + 0.77485*x[1]*x[2] + 0.150099*x[1]^2
+              if 0.6*x[2] - 0.6*x[1] ≥ 0, 0.4*x[1] ≥ 0
+          x[2]^2 - 2.0*x[1]*x[2] + x[1]^2
+              if -0.4*x[1] ≥ 0, 0.6*x[2] + 0.6*x[1] ≥ 0
+          x[2]^2 - 2.0*x[1]*x[2] + x[1]^2
+              if -0.6*x[2] - 0.6*x[1] ≥ 0, x[2] ≥ 0
+          1.849901*x[2]^2 - 0.924952*x[1]*x[2] + x[1]^2
+              if -x[2] ≥ 0, 0.6*x[2] - 0.6*x[1] ≥ 0
+          x[2]^2 - 2.0*x[1]*x[2] + x[1]^2
+              if -0.6*x[2] - 0.6*x[1] ≥ 0, 0.4*x[1] ≥ 0
+          x[2]^2 + 0.77485*x[1]*x[2] + 0.150099*x[1]^2
+              if -0.6*x[2] + 0.6*x[1] ≥ 0, -0.4*x[1] ≥ 0</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol_piece_8, xlim=(-1.05, 1.05), ylim=(-1.05, 1.05))</code></pre><img src="deb68b39.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol_piece_8, xlim=(-1.1, 1.1), ylim=(-1.05, 1.05))</code></pre><img src="30dca11f.svg" alt="Example block output"/><p>We can use the polar of the polytope resulting from the first fixed point iteration to generate a refined conic partition. With this partition, the maximal piecewise semi-ellipsoidal control invariant set matches the maximal control invariant set. The support function is</p><p class="math-container">\[h^2(S, x) = \begin{cases}
+(x_1 - x_2)^2 &amp; \text{ if }x_1x_2 \le 0,\\
+x_1^2 &amp; \text{ if }x_2(x_1-2x_2) \ge 0,\\
+(x_1/2 + x_2)^2 &amp; \text{ if }x_1(2x_2-x_1) \ge 0.\\
+\end{cases}\]</p><pre><code class="language-julia hljs">sol_piece_mci = maximal_invariant(Ellipsoid(symmetric=true, piecewise=polar_mci), L1_heuristic)
+SetProg.Sets.print_support_function(sol_piece_mci)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.001199960708618164
+termination_status(model) = OPTIMAL
+objective_value(model) = 2.9909434360712557
+h(S, x) =
+          x[1]^2
+              if x[2] ≥ 0, -x[2] + 0.5*x[1] ≥ 0
+          x[2]^2 - 2.0*x[1]*x[2] + x[1]^2
+              if -x[2] ≥ 0, x[1] ≥ 0
+          x[2]^2 + x[1]*x[2] + 0.25*x[1]^2
+              if x[2] - 0.5*x[1] ≥ 0, x[1] ≥ 0
+          x[2]^2 - 2.0*x[1]*x[2] + x[1]^2
+              if -x[1] ≥ 0, x[2] ≥ 0
+          x[1]^2
+              if -x[2] ≥ 0, x[2] - 0.5*x[1] ≥ 0
+          x[2]^2 + x[1]*x[2] + 0.25*x[1]^2
+              if -x[1] ≥ 0, -x[2] + 0.5*x[1] ≥ 0</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol_piece_mci)</code></pre><img src="884d0afe.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol_piece_mci)</code></pre><img src="a008b96d.svg" alt="Example block output"/><h2 id="Polyset-template"><a class="docs-heading-anchor" href="#Polyset-template">Polyset template</a><a id="Polyset-template-1"></a><a class="docs-heading-anchor-permalink" href="#Polyset-template" title="Permalink"></a></h2><p>We now use the polyset templates. As details in [LRJ20], for inclusion constraints of the form <code>A * S ⊆ E * S</code>, the polar representation is used so we need the set to be convex. For this, we set the argument <code>convex=true</code>. We directly try <code>degree=4</code> because <code>degree=2</code> would simply give the same as <code>sol_ell_L1</code>.</p><pre><code class="language-julia hljs">sol4 = maximal_invariant(PolySet(symmetric=true, degree=4, convex=true), vol -&gt; L1_heuristic(vol, ones(2)))
+SetProg.Sets.print_support_function(sol4)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.001711130142211914
+termination_status(model) = OPTIMAL
+objective_value(model) = 0.39999988217621213
+h(S, x) = x[2]^4 - 2.979267*x[1]*x[2]^3 + 5.999997*x[1]^2*x[2]^2 - 2.979267*x[1]^3*x[2] + x[1]^4</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol4)</code></pre><img src="97d326bc.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol4)</code></pre><img src="e23da8b2.svg" alt="Example block output"/><p>Let&#39;s now try degree 6.</p><pre><code class="language-julia hljs">sol6 = maximal_invariant(PolySet(symmetric=true, degree=6, convex=true), vol -&gt; L1_heuristic(vol, ones(2)))
+SetProg.Sets.print_support_function(sol6)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">solve_time(model) = 0.0033249855041503906
+termination_status(model) = OPTIMAL
+objective_value(model) = 0.28571421571661515
+h(S, x) = x[2]^6 - 5.245*x[1]*x[2]^5 + 14.999995*x[1]^2*x[2]^4 - 17.48333*x[1]^3*x[2]^3 + 14.999995*x[1]^4*x[2]^2 - 5.244998*x[1]^5*x[2] + x[1]^6</code></pre><p>The primal plot is below:</p><pre><code class="language-julia hljs">primal_plot(sol6)</code></pre><img src="87a267e5.svg" alt="Example block output"/><p>And the polar plot is below:</p><pre><code class="language-julia hljs">polar_plot(sol6)</code></pre><img src="da2f4629.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../controlled_invariant/">« Controlled Invariant Set</a><a class="docs-footer-nextpage" href="../discrete_switched/">Discrete-time Switched Invariant Set »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Tuesday 6 October 2026 16:01">Tuesday 6 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
