@@ -2,7 +2,8 @@ using LinearAlgebra
 using DynamicPolynomials
 @polyvar x y
 using SetProg
-gram = SetProg.SumOfSquares.GramMatrix(Matrix{Float64}(2I, 2, 2), [x^2, y^2])
+using SumOfSquares
+gram = SumOfSquares.GramMatrix(Matrix{Float64}(2I, 2, 2), [x^2, y^2])
 
 set = SetProg.Sets.ConvexPolySet(4, gram, nothing)
 

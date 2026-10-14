@@ -47,6 +47,7 @@ using Test     #src
 # We need to pick an LP and an SDP solver, see [here](https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers) for a list of available ones.
 
 using SetProg
+using SumOfSquares
 import GLPK
 lp_solver = optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() => true)
 import Hypatia

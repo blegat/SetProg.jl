@@ -9,6 +9,7 @@ U = [-1.0  0.0  1/4
       0.0  1.0 -1/4]
 
 using SetProg
+using SumOfSquares
 function maximal_invariant(family, γ = nothing; dirs=dirs)
     model = Model(sdp_solver)
     @variable(model, S, family)

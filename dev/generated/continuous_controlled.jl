@@ -7,6 +7,7 @@ E = [1.0 0.0 0.0
 C = A[1:2, :]
 
 using SetProg
+using SumOfSquares
 function maximal_invariant(family, γ = nothing; dirs=dirs)
     model = Model(sdp_solver)
     @variable(model, S, family)

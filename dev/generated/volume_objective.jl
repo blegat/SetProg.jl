@@ -3,6 +3,7 @@ h = HalfSpace([1, 0], 1.0) ∩ HalfSpace([-1, 0], 1) ∩ HalfSpace([0, 1], 1) �
 p = polyhedron(h)
 
 using SetProg
+using SumOfSquares
 import Hypatia
 sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true)
 

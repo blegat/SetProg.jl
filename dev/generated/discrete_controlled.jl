@@ -1,4 +1,5 @@
 using SetProg
+using SumOfSquares
 import GLPK
 lp_solver = optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() => true)
 import Hypatia
