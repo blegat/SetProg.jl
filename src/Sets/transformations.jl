@@ -60,28 +60,22 @@ function householder(x)
 end
 _householder(h) = householder(_perspective_cat(h, 1)) # We add 1, for perspective variable z
 
-struct Householder{T, S <: AbstractSet{T}, U} <: AbstractSet{T}
+struct Householder{T, S <: AbstractSet{T}, U, P, V} <: AbstractSet{T}
     set::S
-    p::DynamicPolynomials.Polynomial{VariableOrder,MonomialOrder,U}
+    p::P
     h::Vector{Float64}
-    z::SpaceVariable
-    x::Vector{SpaceVariable}
+    z::V
+    x::Vector{V}
 end
 perspective_gauge0(set::Householder) = set.p
 perspective_variable(set::Householder) = set.z
 space_variables(set::Householder) = set.x
 convexity_proof(set::Householder) = convexity_proof(set.set)
 
-const HouseDualOf{S, T, U} = PerspectiveDualOf{Householder{T, S, U}}
+const HouseDualOf{S, T, U} = PerspectiveDualOf{<:Householder{T, S, U}}
 
 function Polyhedra.project(set::Polar{T}, I) where T
     return Polyhedra.polar(zero_eliminate(Polyhedra.polar(set), setdiff(1:dimension(set), I)))
-end
-
-function zero_eliminate(set::Householder{T}, I) where T
-    J = setdiff(1:dimension(set), I)
-    p = MP.subs(set.p, set.x[I] => zeros(T, length(I)))
-    return Householder(UnknownSet{T}(), p, set.h[J], set.z, set.x[J])
 end
 function Polyhedra.project(set::PerspectiveDual, I)
     return perspective_dual(zero_eliminate(perspective_dual(set),

@@ -59,25 +59,14 @@ function apply_map(li::Sets.LinearPreImage{<:Sets.ConvexPolySet}, new_vars)
     return Sets.ConvexPolySet(deg, q, nothing)
 end
 
-"""
-    apply_map(li::Sets.LinearImage{<:Sets.PerspectiveDualOf{<:Union{Sets.PerspectiveEllipsoid,
-                                                                    Sets.PerspectiveConvexPolynomialSet}}}, new_vars)
-
-The set ``(AS)^\\circ``, the polar of the set ``AS``, is ``A^{-\\top}S^\\circ``
-and given ..., we have
-...
-"""
-function apply_map(li::Sets.LinearImage{<:Sets.PerspectiveDualOf{<:Sets.Householder{T}}}, new_vars) where T
-    old_vars = Sets.space_variables(li.set)
-    p = MP.subs(Sets.perspective_gauge0(li.set.set), old_vars => li.A' * new_vars)
-    dual = Sets.Householder(Sets.UnknownSet{T}(), p, li.A * li.set.set.h,
-                            Sets.perspective_variable(li.set), new_vars)
-    return Sets.perspective_dual(dual)
-end
-
 abstract type SymbolicVariable end
 
 # FIXME, for Sets.AbstractSet, we should apply it directly
 function Base.:(*)(A::AbstractMatrix, set::Union{SetVariableRef, Sets.AbstractSet, SymbolicVariable})
     return Sets.LinearImage(set, A)
 end
+
+needs_polyvars(::Sets.AbstractSet) = true
+needs_polyvars(::Union{Sets.Ellipsoid,Sets.PolarPoint}) = false
+needs_polyvars(set::Union{Sets.Polar,Sets.PerspectiveDual}) = needs_polyvars(set.set)
+needs_polyvars(set::Sets.Piecewise) = any(needs_polyvars, set.sets)

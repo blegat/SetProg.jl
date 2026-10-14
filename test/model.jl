@@ -1,3 +1,4 @@
+using SumOfSquares
 using LinearAlgebra
 using Test
 
@@ -161,7 +162,7 @@ end
         @objective(model, Max, L1_heuristic(volume(S)))
         SetProg.optimize!(model)
         # One PSD variable per piece
-        @test _num_constraints(model, MOI.VectorOfVariables, SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle) == 4
+        @test _num_constraints(model, MOI.VectorOfVariables, SumOfSquares.PositiveSemidefinite2x2ConeTriangle) == 4
     end
 end
 
@@ -251,7 +252,7 @@ end
     # (x₁² + x₂²)² = x₁⁴ + 2x₁²x₂² + x₂⁴
     unit_quartic = Sets.PolySet(
         4,
-        SetProg.GramMatrix(Matrix(Diagonal([1.0, 2.0, 1.0])), monomials(x, 2)),
+        SumOfSquares.GramMatrix(Matrix(Diagonal([1.0, 2.0, 1.0])), monomials(x, 2)),
     )
     unit_piecewise = Sets.Piecewise([unit_ellipsoid for _ in 1:4], □)
     unit_convex_quartic = Sets.ConvexPolySet(4, unit_quartic.p, nothing)
@@ -263,28 +264,28 @@ end
             Ellipsoid(symmetric = true, dimension = 2),
             unit_ellipsoid,
             MOI.VectorAffineFunction{Float64},
-            SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle,
+            SumOfSquares.PositiveSemidefinite2x2ConeTriangle,
         ),
         (
             "PolySet",
             PolySet(symmetric = true, degree = 4, variables = x),
             unit_quartic,
             MOI.VectorAffineFunction{Float64},
-            SetProg.SumOfSquares.SOSPolynomialSet,
+            SumOfSquares.SOSPolynomialSet,
         ),
         (
             "Convex PolySet",
             PolySet(symmetric = true, degree = 4, convex = true, variables = x),
             unit_convex_quartic,
             MOI.VectorAffineFunction{Float64},
-            SetProg.SumOfSquares.SOSPolynomialSet,
+            SumOfSquares.SOSPolynomialSet,
         ),
         (
             "Piecewise",
             Ellipsoid(symmetric = true, piecewise = □),
             unit_piecewise,
             MOI.VectorAffineFunction{Float64},
-            SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle,
+            SumOfSquares.PositiveSemidefinite2x2ConeTriangle,
         ),
         (
             "Polytope",
@@ -315,7 +316,7 @@ end
         # The polar of `V`, of matrix `Q`, must contain the polar of the
         # superset, of matrix `inv(2I) = I / 2`, so `I / 2 - Q` is PSD
         F = MOI.VectorAffineFunction{Float64}
-        S = SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle
+        S = SumOfSquares.PositiveSemidefinite2x2ConeTriangle
         @test _num_constraints(model, F, S) == 1
     end
 end

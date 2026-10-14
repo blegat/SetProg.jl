@@ -1,3 +1,5 @@
+include("extensions.jl")
+
 import GLPK
 const lp_solver = GLPK.Optimizer
 import Polyhedra

@@ -1,3 +1,4 @@
+using SumOfSquares
 using LinearAlgebra
 using Test
 

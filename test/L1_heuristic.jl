@@ -1,3 +1,5 @@
+import MultivariatePolynomials
+using SumOfSquares
 using Test, LinearAlgebra
 using DynamicPolynomials
 using SetProg
@@ -11,7 +13,7 @@ using Polyhedra
     Q = [6 5 4
          5 3 2
          4 2 1]
-    q = SetProg.GramMatrix(Q, SetProg.MP.monomials([x, y], 2))
+    q = SumOfSquares.GramMatrix(Q, MultivariatePolynomials.monomials([x, y], 2))
     @test SetProg.rectangle_integrate(polynomial(q), [2, 3]) ≈ 3465.6
 
     @test SetProg.rectangle_integrate(polynomial(q), [1, 1]) ≈ 472/45

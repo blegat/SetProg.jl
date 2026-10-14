@@ -1,8 +1,12 @@
+using SumOfSquares
 using LinearAlgebra
 using Test
 using RecipesBase
 using DynamicPolynomials
 using SetProg, SetProg.Sets
+import GLPK
+
+const _recipe_lib = Polyhedra.DefaultLibrary{Float64}(GLPK.Optimizer)
 
 RecipesBase.is_key_supported(k::Symbol) = true # Plots normally defines this
 function recipe(set, npoints)
@@ -45,14 +49,14 @@ end
     @testset "Polynomial" begin
         @polyvar x y z
         @testset "Circle" begin
-            p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
+            p = SumOfSquares.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
                                                monomial_vector([x, y]))
             circle = Sets.PolySet(2, p)
             recipe_test(circle,
                         [1.0, 0.0, -1.0, 0.0], [0.0, 1.0, 0.0, -1.0])
         end
         @testset "Convex Circle" begin
-            p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
+            p = SumOfSquares.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
                                                monomial_vector([x, y]))
             circle = Sets.ConvexPolySet(2, p, nothing)
             recipe_test(circle,
@@ -62,7 +66,7 @@ end
                         [-1.0,  1.0, 1.0, -1.0, -1.0])
         end
         @testset "Scaled circle" begin
-            p = SetProg.GramMatrix{Float64}((i, j) -> 2convert(Float64, i == j),
+            p = SumOfSquares.GramMatrix{Float64}((i, j) -> 2convert(Float64, i == j),
                                                monomial_vector([x, y]))
             circle = Sets.ConvexPolySet(2, p, nothing)
             recipe_test(circle,
@@ -73,7 +77,7 @@ end
         end
         @testset "Non-homogeneous Circle" begin
             @testset "Basic" begin
-                q = SetProg.GramMatrix(Float64[0 0 0
+                q = SumOfSquares.GramMatrix(Float64[0 0 0
                                                0 1 0
                                                0 0 1], monomial_vector([z, y, x]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
@@ -82,7 +86,7 @@ end
                             [-1.0,  1.0, 1.0, -1.0, -1.0])
             end
             @testset "Scaled" begin
-                q = SetProg.GramMatrix(Float64[0 0 0
+                q = SumOfSquares.GramMatrix(Float64[0 0 0
                                                0 2 0
                                                0 0 2], monomial_vector([z, y, x]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
@@ -92,7 +96,7 @@ end
             end
             @testset "z-Scaled" begin
                 # z: -1/2 + 1 = 1/2
-                q = SetProg.GramMatrix([1/2 0 0
+                q = SumOfSquares.GramMatrix([1/2 0 0
                                         0   1 0
                                         0   0 1], monomial_vector([z, y, x]))
                 shifted_circle = SetProg.perspective_dual_polyset(2, q, SetProg.InteriorPoint(zeros(2)), z, [x, y])
@@ -103,7 +107,7 @@ end
         end
     end
     @testset "Piecewise" begin
-        polytope = polyhedron(HalfSpace([1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([-1, 1], 1) ∩ HalfSpace([-1, -1], 1) ∩ HalfSpace([1, -1], 1), lib)
+        polytope = polyhedron(HalfSpace([1, 0], 1) ∩ HalfSpace([0, 1], 1) ∩ HalfSpace([-1, 1], 1) ∩ HalfSpace([-1, -1], 1) ∩ HalfSpace([1, -1], 1), _recipe_lib)
         Q_1 = [1.0 0.0
                0.0 0.0]
         Q_2 = [0.0 0.0

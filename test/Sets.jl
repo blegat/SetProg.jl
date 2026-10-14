@@ -1,3 +1,4 @@
+using SumOfSquares
 using Test
 using LinearAlgebra
 using DynamicPolynomials
@@ -15,15 +16,15 @@ end
 @testset "Sets" begin
     @testset "ConvexPolySet" begin
         @polyvar x y
-        P = SetProg.SumOfSquares.SymMatrix(Float64[1, 2, 3], 2)
-        Q = SetProg.SumOfSquares.SymMatrix(BigInt[2, 3, 4], 2)
-        basis = SetProg.Sets.MonoBasis(monomial_vector([x, y]))
-        q = SetProg.Sets.ConvexPolySet(2, SetProg.SumOfSquares.GramMatrix(P, basis), Q)
+        P = SumOfSquares.SymMatrix(Float64[1, 2, 3], 2)
+        Q = SumOfSquares.SymMatrix(BigInt[2, 3, 4], 2)
+        basis = SubBasis{Monomial}(monomial_vector([x, y]))
+        q = SetProg.Sets.ConvexPolySet(2, SumOfSquares.GramMatrix(P, basis), Q)
         @test q isa SetProg.Sets.ConvexPolySet{BigFloat}
     end
     @testset "zero_eliminate" begin
         @polyvar x y z
-        p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, 8 - (i + j)),
+        p = SumOfSquares.GramMatrix{Float64}((i, j) -> convert(Float64, 8 - (i + j)),
                                            monomial_vector([x, y, z]))
         set = Sets.ConvexPolySet(2, p, nothing)
         el = Sets.zero_eliminate(set, 1:2)
@@ -34,7 +35,7 @@ end
         @test el.p.Q == [6 4; 4 2]
 
         @testset "Householder" begin
-            p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, 6 - (i + j)),
+            p = SumOfSquares.GramMatrix{Float64}((i, j) -> convert(Float64, 6 - (i + j)),
                                             monomial_vector([x, y]))
             set = SetProg.perspective_dual_polyset(2, p, SetProg.InteriorPoint(zeros(2)), z, [x, y])
             @test set.set.p == 2x^2 + 6x*y + 4y^2 - z^2
@@ -94,7 +95,7 @@ end
     end
     @testset "Projection" begin
         @polyvar x y z
-        p = SetProg.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
+        p = SumOfSquares.GramMatrix{Float64}((i, j) -> convert(Float64, i == j),
                                         monomial_vector([x, y, z]))
         set = Sets.ConvexPolySet(2, p, nothing)
         @test Sets.gauge1(set) === set.p

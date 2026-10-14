@@ -13,24 +13,6 @@ function power_integrate(exponent, bound)
     @assert isodd(exp)
     return (2/exp) * bound^exp
 end
-function rectangle_integrate(m::MP.AbstractMonomialLike,
-                             vertex)
-    exp = MP.exponents(m)
-    if any(isodd, exp)
-        return zero(power_integrate(2, vertex[1]))
-    else
-        @assert length(exp) == length(vertex)
-        return prod(power_integrate.(exp, vertex))
-    end
-end
-function rectangle_integrate(t::MP.AbstractTermLike,
-                             vertex)
-    return MP.coefficient(t) * rectangle_integrate(MP.monomial(t), vertex)
-end
-function rectangle_integrate(p::MP.AbstractPolynomialLike,
-                            vertex)
-    return sum(rectangle_integrate(t, vertex) for t in MP.terms(p))
-end
 
 struct PowerOfLinearForm
     coefficients::Vector{Int}
@@ -81,12 +63,6 @@ function integrate_decompositions(decs::Vector{Decomposition}, polytope::Polyhed
         integrate_simplex!(integrals, decs, Δ, cache)
     end
     return integrals
-end
-function integrate_monomials(monos::AbstractVector{<:MP.AbstractMonomial}, polytope::Polyhedron)
-    return integrate_decompositions(decompose.(monos), polytope)
-end
-function integrate(p::MP.AbstractPolynomial, polytope::Polyhedron)
-    return MP.coefficients(p)'integrate_monomials(MP.monomials(p), polytope)
 end
 
 function integrate_gauge_like(set, polytope, decs, val, cache)
@@ -156,11 +132,6 @@ function decompose(exps::Vector{Int})
     end
     return Decomposition(coefficients, forms)
 end
-decompose(mono::MP.AbstractMonomial) = decompose(MP.exponents(mono))
-
-function all_exponents(set::Union{Sets.PolySet, Sets.ConvexPolySet})
-    return MP.exponents.(MP.monomials(Sets.space_variables(set), set.degree))
-end
 function ell_exponents(i, j, n)
     exps = zeros(Int, n)
     exps[i] += 1
@@ -181,15 +152,6 @@ function lin_exponents(i, n)
 end
 function all_exponents(set::Union{Sets.PolarPoint,Sets.Piecewise{<:Any,<:Sets.PolarPoint}})
     return [lin_exponents(i, Sets.dimension(set)) for i in 1:Sets.dimension(set)]
-end
-function evaluate_monomials(monomial_value::Function,
-                            set::Union{Sets.PolySet{T}, Sets.ConvexPolySet{T}}) where T
-    U = MA.promote_operation(*, Float64, T)
-    total = zero(MA.promote_operation(+, U, U))
-    for t in MP.terms(set.p)
-        total = MA.add_mul!!(total, monomial_value(MP.exponents(MP.monomial(t))), MP.coefficient(t))
-    end
-    return total
 end
 function evaluate_monomials(monomial_value::Function, set::Sets.Ellipsoid{T}) where T
     U = MA.promote_operation(*, Float64, T)
@@ -259,11 +221,6 @@ function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
                      vertex)
     return l1_integral(Polyhedra.polar(Sets.Ellipsoid(set.set.set.Q)),
                        vertex)
-end
-function l1_integral(set::Sets.HouseDualOf{<:Sets.ConvexPolynomialSet},
-                     vertex)
-    return rectangle_integrate(MP.subs(set.set.set.q, set.set.set.z => 0),
-                               1 ./ vertex)
 end
 
 function invert_objective_sense(::Union{Sets.Polar,

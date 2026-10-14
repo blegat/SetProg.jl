@@ -1,3 +1,4 @@
+using SumOfSquares
 using LinearAlgebra
 using Test
 
@@ -85,7 +86,7 @@ end
 function superset(x, d)
     monos = x.^d
     Q = Matrix{Float64}(LinearAlgebra.I, length(monos), length(monos))
-    q = SetProg.SumOfSquares.GramMatrix(Q, monos)
+    q = SumOfSquares.GramMatrix(Q, monos)
     return SetProg.Sets.PolySet(2d, q)
 end
 
@@ -96,7 +97,7 @@ function feasible_switched_system_quad_test(optimizer, config, ε=1e-3)
         PolySet(symmetric=true, degree=2, superset=superset(x, 1)),
         √2 + ε, true, 8/3,
         ◯ -> begin
-            @test ◯ isa Sets.PolySet{Float64, <:SetProg.Sets.MonoBasis}
+            @test ◯ isa Sets.PolySet{Float64, <:SubBasis{Monomial}}
             @test polynomial(◯.p) ≈ x[1]^2 + x[2]^2 atol=config.atol rtol=config.rtol
         end,
         (cref1, cref2) -> begin end)
@@ -112,8 +113,8 @@ function infeasible_switched_system_quad_test(optimizer, config, ε=1e-3)
             function ispsd(M)
                 return all(eigvals(Matrix(M.Q)) .≥ -config.atol)
             end
-            @test ispsd(SetProg.SumOfSquares.moment_matrix(cref1))
-            @test ispsd(SetProg.SumOfSquares.moment_matrix(cref2))
+            @test ispsd(SumOfSquares.moment_matrix(cref1))
+            @test ispsd(SumOfSquares.moment_matrix(cref2))
         end)
 end
 
@@ -124,7 +125,7 @@ function feasible_switched_system_quartic_test(optimizer, config, ε=1e-2)
         PolySet(symmetric=true, degree=4, superset=superset(x, 2)),
         1.0 + ε, true, 10.001105454190741,
         ◯ -> begin
-            @test ◯ isa Sets.PolySet{Float64, <:SetProg.Sets.MonoBasis}
+            @test ◯ isa Sets.PolySet{Float64, <:SubBasis{Monomial}}
 			α = 11.814054544955727
             @test polynomial(◯.p) ≈ (α+1) * x[1]^4 - 2α * x[1]^2*x[2]^2 + (α+1) * x[2]^4 atol=config.atol rtol=config.rtol
         end,
@@ -141,8 +142,8 @@ function infeasible_switched_system_quartic_test(optimizer, config, ε=2e-1)
             function ispsd(M)
                 return all(eigvals(Matrix(M.Q)) .≥ -config.atol)
             end
-            @test ispsd(SetProg.SumOfSquares.moment_matrix(cref1))
-            @test ispsd(SetProg.SumOfSquares.moment_matrix(cref2))
+            @test ispsd(SumOfSquares.moment_matrix(cref1))
+            @test ispsd(SumOfSquares.moment_matrix(cref2))
         end)
 end
 

@@ -27,6 +27,7 @@ using Test     #src
 # We need to pick an LP and an SDP solver, see [here](https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers) for a list of available ones. Run one of the following two cells to choose choose the solver.
 
 using SetProg
+using SumOfSquares
 import HiGHS
 lp_solver = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
 import Hypatia
