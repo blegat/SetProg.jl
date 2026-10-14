@@ -1,4 +1,5 @@
 include("extensions.jl")
+include("gauges.jl")
 include("sos_extension.jl")
 
 import GLPK

@@ -27,6 +27,7 @@ new_polyvars(n::Int) = sos_extension().new_polyvars(n)
 new_perspective_variable() = sos_extension().new_perspective_variable()
 
 export Polytope, Ellipsoid, PolySet
+export PositiveSimplex, PositiveBox, Parallelotope, ConicPolytope
 export nth_root, L1_heuristic
 
 @enum Space Undecided PrimalSpace DualSpace
@@ -40,6 +41,7 @@ include("constraints.jl")
 include("objective.jl")
 include("data.jl")
 include("optimize.jl")
+include("gauges.jl")
 
 function _moment_matrix end
 function apply_matrix end
