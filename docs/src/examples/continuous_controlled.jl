@@ -61,6 +61,7 @@ C = A[1:2, :]
 # [L20] Legat, B. (2020). *Set programming : theory and computation*. Ph.D. thesis, UCLouvain.
 
 using SetProg
+using SumOfSquares
 function maximal_invariant(family, γ = nothing; dirs=dirs)
     model = Model(sdp_solver)
     @variable(model, S, family)

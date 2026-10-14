@@ -8,16 +8,23 @@ import MutableArithmetics
 const MA = MutableArithmetics
 
 import Reexport
-Reexport.@reexport using MultivariateBases
 Reexport.@reexport using JuMP
 const MOI = JuMP.MOI
 Reexport.@reexport using Polyhedra
 
-using SumOfSquares
-using MultivariateMoments
-import DynamicPolynomials
-import MultivariatePolynomials as MP
-const SpaceVariable = Sets.SpaceVariable
+function sos_extension()
+    ext = Base.get_extension(@__MODULE__, :SetProgSumOfSquaresExt)
+    if ext === nothing
+        throw(ArgumentError(
+            "Polynomial sets and operations require SumOfSquares. " *
+            "Load it with `using SumOfSquares`.",
+        ))
+    end
+    return ext
+end
+
+new_polyvars(n::Int) = sos_extension().new_polyvars(n)
+new_perspective_variable() = sos_extension().new_perspective_variable()
 
 export Polytope, Ellipsoid, PolySet
 export nth_root, L1_heuristic
@@ -33,5 +40,16 @@ include("constraints.jl")
 include("objective.jl")
 include("data.jl")
 include("optimize.jl")
+
+function _moment_matrix end
+function apply_matrix end
+function apply_transformation end
+function constrain_convex end
+function integrate_monomials end
+function perspective_dual_polyset end
+function poly_eval end
+function rectangle_integrate end
+function s_procedure end
+function transformation end
 
 end # module

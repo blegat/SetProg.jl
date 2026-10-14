@@ -12,14 +12,6 @@ struct InteriorPoint{T} <: HintPoint
 end
 _β(model, ::InteriorPoint) = @variable(model)
 _b(model, h::InteriorPoint) = @variable(model, [1:length(h.h)])
-
-function polar_perspective_ellipsoid(ell, point::HintPoint, z::SpaceVariable,
-                                     x::Vector{SpaceVariable})
-    y = [z; x]
-    H = Sets._householder(point.h)
-    p = y' * H * Sets._perspective_cat(ell) * H * y
-    return Sets.perspective_dual(Sets.Householder(ell, p, point.h, z, x))
-end
 function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
                                      point::CenterPoint, z, x)
     psd_constraint(model, Q)
@@ -35,19 +27,6 @@ function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
     psd_constraint(model, Symmetric([β+1 b'; b Q]))
     ell = Sets.ShiftedEllipsoid(Q, b, β)
         return polar_perspective_ellipsoid(ell, point, z, x)
-end
-
-function perspective_dual_polyset(set, point::HintPoint, z::SpaceVariable,
-                                  x::Vector{SpaceVariable})
-    y = [z; x]
-    H = Sets._householder(point.h)
-    p = Sets.perspective_gauge0(set)(y => H * y)
-    return Sets.perspective_dual(Sets.Householder(set, p, point.h, z, x))
-end
-# For `CenterPoint`, `q` should be non-perspective, need refactoring
-function perspective_dual_polyset(degree, q, point::InteriorPoint, z, x)
-    set = Sets.ConvexPolynomialSet(degree, q, z, x)
-    perspective_dual_polyset(set, point, z, x)
 end
 
 ### Polytope ###
@@ -190,12 +169,10 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
             hashyperplanes(ell.piecewise) && error("hyperplanes not supported for piecewise")
             sets = [new_piece() for i in 1:nhalfspaces(ell.piecewise)]
             set = Sets.Piecewise(sets, ell.piecewise)
-            DynamicPolynomials.@polyvar x[1:n]
-            q = [quad_form(set.Q, x) for set in sets]
+            sos_extension().piecewise_ellipsoid_continuity(model, set, n)
             for i in eachindex(set.graph)
                 for (j, v) in set.graph[i]
                     if i < j # The constraints are the same for (i, j) and (j, i)
-                        @constraint(model, q[i] == q[j], domain = @set x'v == 0)
                         # v corresponds to `-n_ij` in LCSS paper
                         Δ = sets[i].Q * v - sets[j].Q * v
                         inter = set.pieces[i] ∩ set.pieces[j]
@@ -237,129 +214,14 @@ struct PolySet <: AbstractVariable
     degree::Int
     dimension::Union{Nothing, Int}
     convex::Bool
-    variables::Union{Nothing, Vector{SpaceVariable}}
+    variables::Union{Nothing, AbstractVector}
     superset::Union{Sets.PolySet, Nothing}
     basis::Type
 end
-function PolySet(; point::Union{Nothing, HintPoint}=nothing,
-                 symmetric::Bool=false,
-                 degree::Union{Int, Nothing}=nothing,
-                 dimension::Union{Int, Nothing}=nothing,
-                 convex::Bool=false,
-                 variables::Union{Vector{SpaceVariable}, Nothing}=nothing,
-                 superset::Union{Sets.PolySet, Nothing}=nothing,
-                 basis::Type=MultivariateBases.Monomial)
-    if degree === nothing
-        error("Degree of PolySet not specified, use PolySet(degree=..., ...)")
-    end
-    if isodd(degree)
-        throw(ArgumentError("Degree of PolySet not even"))
-    end
-    if dimension === nothing
-        if point !== nothing
-            dimension = length(point.h)
-        end
-    end
-    if superset !== nothing
-        if dimension === nothing
-            dimension = Sets.dimension(superset)
-        elseif dimension != Sets.dimension(superset)
-            throw(DimensionMismatch())
-        end
-        if variables === nothing
-            variables = Sets.space_variables(superset)
-        elseif variables != Sets.space_variables(superset)
-            error("Space variables set does not correspond to superset space variables.")
-        end
-    end
-    return PolySet(point, symmetric, degree, dimension, convex, variables, superset, basis)
-end
+PolySet(; kws...) = sos_extension().polyset(; kws...)
+
 Sets.space_variables(p::PolySet) = p.variables
-
-function constrain_convex(model, p, vars)
-    hessian = MP.differentiate(p, vars, 2)
-    # We do not just do `@constraint(model, p in SOSConvex())` as we would
-    # like to have access to the PSD matrix of variables for the det volume heuristic
-    y = [MP.similar_variable(eltype(hessian), gensym()) for i in 1:LinearAlgebra.checksquare(hessian)]
-    q = dot(y, hessian * y)
-    multipartite = SumOfSquares.Certificate.NewtonDegreeBounds(tuple(y,))
-    X = SumOfSquares.Certificate.monomials_half_newton_polytope(MP.monomials(q), multipartite)
-    # If `X` is empty, we will need the following bridge
-    JuMP.add_bridge(model, SumOfSquares.Bridges.Constraint.EmptyBridge)
-    # If `length(X)` is 2, we will need the following bridge
-    JuMP.add_bridge(model, SumOfSquares.Bridges.Constraint.PositiveSemidefinite2x2Bridge)
-    set = SumOfSquares.matrix_cone(MOI.PositiveSemidefiniteConeTriangle,
-                                   length(X))
-    Q = @variable(model, [1:MOI.dimension(set)])
-    @constraint(model, Q in set)
-    s = SumOfSquares.build_gram_matrix(
-        Q, MultivariateBases.SubBasis{MultivariateBases.Monomial}(X), MOI.PositiveSemidefiniteConeTriangle, Float64)
-    @constraint(model, q == s)
-    return MultivariateMoments.value_matrix(s)
-end
-
-function variable_set(model::JuMP.AbstractModel, set::PolySet, space::Space,
-                      space_dimension, space_polyvars)
-    n = space_dimension
-    d = data(model)
-    # General all monomials of degree `degree`, we don't want monomials of
-    # lower degree as the polynomial is homogeneous
-    @assert iseven(set.degree)
-    if set.symmetric
-        monos = MP.monomials(space_polyvars, div(set.degree, 2))
-    else
-        monos = MP.monomials(lift_space_variables(d, space_polyvars),
-                             div(set.degree, 2))
-    end
-    basis = MultivariateBases.explicit_basis_covering(
-        MultivariateBases.FullBasis{set.basis}(MP.variables(monos)),
-        MultivariateBases.SubBasis{MultivariateBases.Monomial}(monos),
-    )
-    # TODO If `set.convex` and `set.symmetric`, no need for the poly to be SOS, see Lemma 6.33 of [BPT12]
-    p = @variable(model, variable_type=SOSPoly(basis))
-    if set.convex
-        set.superset === nothing || error("superset not supported for convex PolySet")
-        if set.symmetric
-            convexity_proof = constrain_convex(model, p, space_polyvars)
-            if space == PrimalSpace
-                return Sets.ConvexPolySet(set.degree, p, convexity_proof)
-            else
-                @assert space == DualSpace
-                return Polyhedra.polar(Sets.ConvexPolySet(set.degree, p, convexity_proof))
-            end
-        else
-            constrain_convex(model, MP.subs(p, d.perspective_polyvar => 1),
-                             space_polyvars)
-            if space == PrimalSpace
-                error("Non-symmetric PolySet in PrimalSpace not implemented yet")
-            else
-                @assert space == DualSpace
-                if set.point === nothing
-                    throw(ArgumentError("Specify a point for nonsymmetric polyset, e.g. `PolySet(point=InteriorPoint([1.0, 0.0]))"))
-                end
-                return perspective_dual_polyset(set.degree, p, set.point, d.perspective_polyvar, space_polyvars)
-            end
-        end
-    else
-        if set.symmetric
-            if space == PrimalSpace
-                if set.superset !== nothing
-                    p = SetProg.SumOfSquares.gram_operate(+, set.superset.p, p)
-                end
-                return Sets.PolySet(set.degree, p)
-            else
-                error("Non-convex PolySet not supported in $space")
-            end
-        else
-            error("Non-convex nonsymmetric PolySet not implemented yet.")
-        end
-    end
-end
 _value(convexity_proof::Nothing) = nothing
-function _value(convexity_proof::MultivariateMoments.SymMatrix)
-    return MultivariateMoments.SymMatrix(JuMP.value.(convexity_proof.Q),
-                                         convexity_proof.n)
-end
 function JuMP.value(set::Sets.PolySet)
     return Sets.PolySet(set.degree, JuMP.value(set.p))
 end
@@ -438,7 +300,13 @@ function load(model::JuMP.AbstractModel, vref::SetVariableRef)
     d = data(model)
     vref.variable = variable_set(model, vref.set, d.space,
                                  space_dimension(d.spaces, vref.space_index),
-                                 space_polyvars(d.spaces, vref.space_index))
+                                 variable_polyvars(vref.set, d.spaces, vref.space_index))
 end
 
 variablify(p::Sets.Projection) = Polyhedra.project(variablify(p.set), p.indices)
+
+variable_polyvars(::Polytope, ::Spaces, ::SpaceIndex) = nothing
+function variable_polyvars(ell::Ellipsoid, spaces::Spaces, index::SpaceIndex)
+    return ell.symmetric ? nothing : space_polyvars(spaces, index)
+end
+variable_polyvars(::PolySet, spaces::Spaces, index::SpaceIndex) = space_polyvars(spaces, index)

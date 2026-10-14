@@ -1,3 +1,8 @@
+using SumOfSquares
+if !isdefined(@__MODULE__, :Tests)
+    include("Tests/Tests.jl")
+end
+include("utilities.jl")
 using LinearAlgebra
 using Test
 
@@ -12,22 +17,22 @@ using JuMP
     config = MOI.Test.Config()
     @testset "Ellipsoid" begin
         @testset "Feasible" begin
-            optimize!(mock) = MOIU.mock_optimize!(
+            optimize!(mock) = MOI.Utilities.mock_optimize!(
                 mock, MOI.OPTIMAL, (MOI.FEASIBLE_POINT, zeros(3)))
             Tests.feasible_switched_system_ell_test(bridged_mock(optimize!), config)
         end
         @testset "Infeasible" begin
-            optimize!(mock) = MOIU.mock_optimize!(
+            optimize!(mock) = MOI.Utilities.mock_optimize!(
                 mock, MOI.INFEASIBLE, MOI.NO_SOLUTION, MOI.INFEASIBILITY_CERTIFICATE,
-                (MOI.VectorOfVariables, SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle) => [[0.00282108, 0.0, 0.00282108]],
-                (MOI.VectorAffineFunction{Float64}, SetProg.SumOfSquares.PositiveSemidefinite2x2ConeTriangle) => [[0.00117187, 0.0, 2.82044], [2.82044, 0.0, 0.00117187]]
+                (MOI.VectorOfVariables, SumOfSquares.PositiveSemidefinite2x2ConeTriangle) => [[0.00282108, 0.0, 0.00282108]],
+                (MOI.VectorAffineFunction{Float64}, SumOfSquares.PositiveSemidefinite2x2ConeTriangle) => [[0.00117187, 0.0, 2.82044], [2.82044, 0.0, 0.00117187]]
             )
             Tests.infeasible_switched_system_ell_test(bridged_mock(optimize!), config)
         end
     end
     @testset "Quadratic" begin
         @testset "Feasible" begin
-            optimize!(mock) = MOIU.mock_optimize!(
+            optimize!(mock) = MOI.Utilities.mock_optimize!(
                 mock, MOI.OPTIMAL, (MOI.FEASIBLE_POINT, zeros(3)))
             Tests.feasible_switched_system_quad_test(bridged_mock(optimize!), config)
         end
@@ -42,11 +47,11 @@ using JuMP
 #                    if F == MOI.VectorAffineFunction{Float64}
 #                        cis = MOI.get(mock, MOI.ListOfConstraintIndices{F, S}())
 #                        function _moment_matrix(q)
-#                            SetProg.SumOfSquares.build_moment_matrix(q, monomial_vector(x))
+#                            SumOfSquares.build_moment_matrix(q, monomial_vector(x))
 #                        end
-#                        MOI.set(mock, SetProg.SumOfSquares.MomentMatrixAttribute(),
+#                        MOI.set(mock, SumOfSquares.MomentMatrixAttribute(),
 #                                cis[1], _moment_matrix([0.00336272, 0.0, 5.64559]))
-#                        MOI.set(mock, SetProg.SumOfSquares.MomentMatrixAttribute(),
+#                        MOI.set(mock, SumOfSquares.MomentMatrixAttribute(),
 #                                cis[2], _moment_matrix([5.64559, 0.0, 0.00336272]))
 #                    end
 #                end
@@ -57,7 +62,7 @@ using JuMP
     @testset "Quartic" begin
         @testset "Feasible" begin
 			α = 11.814054544955727
-            optimize!(mock) = MOIU.mock_optimize!(
+            optimize!(mock) = MOI.Utilities.mock_optimize!(
                 mock, MOI.OPTIMAL, (MOI.FEASIBLE_POINT, [α, 0.0, 0.0, -α, -0.0, α]))
             Tests.feasible_switched_system_quartic_test(bridged_mock(optimize!), config)
         end

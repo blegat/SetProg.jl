@@ -51,16 +51,6 @@ function linear_algebraic_surface(set::Sets.PolarOf{<:Sets.Ellipsoid}, A, E)
     Q = set.set.Q
     return psd_constraint(Symmetric(-A * Q * E' - E * Q * A'))
 end
-function linear_algebraic_surface(set::Sets.PolarOf{<:Sets.ConvexPolySet}, A, E)
-    v = MP.variables(set.set.p)
-    DynamicPolynomials.@polyvar z[1:size(E, 1)]
-    Ez = E' * z
-    return JuMP.build_constraint(
-        error,
-        -dot(A' * z, [d(v => Ez) for d in MP.differentiate(set.set.p, v)]),
-        SOSCone(),
-    )
-end
 function JuMP.build_constraint(
     _error::Function,
     member::Sets.LinearImage{BoundaryPoint{S}},

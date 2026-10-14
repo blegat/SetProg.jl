@@ -10,7 +10,7 @@ mutable struct Data
     objective_sense::MOI.OptimizationSense
     objective::Union{Nothing, AbstractScalarFunction}
     objective_variable::Union{Nothing, JuMP.VariableRef}
-    perspective_polyvar::Union{Nothing, SpaceVariable}
+    perspective_polyvar
     space::Space
     state::State
     spaces::Union{Nothing, Spaces}
@@ -20,9 +20,9 @@ function JuMP.copy_extension_data(::SetProg.Data, ::JuMP.Model, ::JuMP.Model)
 end
 
 function lift_space_variables(data::Data,
-                              x::Vector{SpaceVariable})
+                              x::AbstractVector)
     @assert data.perspective_polyvar > x[1]
-    SpaceVariable[data.perspective_polyvar; x]
+    return [data.perspective_polyvar; x]
 end
 
 function set_space(cur::Space, space::Space)
@@ -62,9 +62,9 @@ function clear_spaces(::Union{Polyhedra.Rep, Sets.AbstractSet}) end
 function Sets.perspective_variable(::Polyhedra.Rep) end
 
 synchronize_perspective(::Nothing, ::Nothing) = nothing
-synchronize_perspective(::Nothing, z::SpaceVariable) = z
-synchronize_perspective(z::SpaceVariable, ::Nothing) = z
-function synchronize_perspective(z1::SpaceVariable, z2::SpaceVariable)
+synchronize_perspective(::Nothing, z) = z
+synchronize_perspective(z, ::Nothing) = z
+function synchronize_perspective(z1, z2)
     if z1 !== z2
         throw(ArgumentError("Perspective variables do not match"))
     end
@@ -76,7 +76,10 @@ function synchronize_perspective(d::Data)
         z = synchronize_perspective(z, Sets.perspective_variable(constraint))
     end
     if z === nothing
-        DynamicPolynomials.@polyvar z
+        ext = Base.get_extension(@__MODULE__, :SetProgSumOfSquaresExt)
+        if ext !== nothing
+            z = new_perspective_variable()
+        end
     end
     d.perspective_polyvar = z
 end

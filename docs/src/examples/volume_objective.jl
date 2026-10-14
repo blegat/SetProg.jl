@@ -18,6 +18,7 @@ p = polyhedron(h)
 # for a list of available ones.
 
 using SetProg
+using SumOfSquares
 import Hypatia
 sdp_solver = optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true)
 

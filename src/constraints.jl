@@ -57,9 +57,6 @@ end
 function JuMP.dual(cref::SetConstraintRef)
     return JuMP.dual(transformed_constraint(cref))
 end
-function SumOfSquares.moment_matrix(cref::SetConstraintRef)
-    return SumOfSquares.moment_matrix(transformed_constraint(cref))
-end
 
 include("membership.jl")
 include("inclusion.jl")

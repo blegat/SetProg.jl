@@ -1,14 +1,6 @@
 module Sets
 using LinearAlgebra
 using RecipesBase
-import MultivariatePolynomials as MP
-import DynamicPolynomials
-import MultivariateBases as MB
-const VariableOrder =
-    DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}
-const MonomialOrder = MP.Graded{MP.LexOrder}
-const SpaceVariable = DynamicPolynomials.Variable{VariableOrder,MonomialOrder}
-const MonoBasis = MB.SubBasis{MB.Monomial}
 using Polyhedra
 
 abstract type AbstractSet{T} end
@@ -210,7 +202,7 @@ function zero_eliminate(set::Piecewise, I)
 end
 
 function _print_gauge_function(set::Piecewise; digits=6)
-    DynamicPolynomials.@polyvar x[1:2]
+    x = parentmodule(@__MODULE__).new_polyvars(2)
     println()
     for (set, piece) in zip(set.sets, set.pieces)
         print("         ")

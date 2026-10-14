@@ -49,7 +49,7 @@ function zero_eliminate(ell::Ellipsoid, I)
 end
 
 function _print_gauge_function(ell::Ellipsoid; digits=6)
-    DynamicPolynomials.@polyvar x[1:2]
+    x = parentmodule(@__MODULE__).new_polyvars(2)
     print(" ")
     Q = ell.Q
     if digits !== nothing

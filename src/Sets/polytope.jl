@@ -13,7 +13,7 @@ function scaling_function(h::PolarPoint)
 end
 
 function _print_gauge_function(h::PolarPoint; digits=6)
-    DynamicPolynomials.@polyvar x[1:2]
+    x = parentmodule(@__MODULE__).new_polyvars(2)
     print(" ")
     a = h.a
     if digits !== nothing

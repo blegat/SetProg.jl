@@ -12,10 +12,10 @@ end
 struct Spaces
     indices::IntDisjointSet # Union-Find datastructure
     dimensions::Dict{Int, Int}
-    polyvars::Dict{Int, Vector{SpaceVariable}}
+    polyvars::Dict{Int, AbstractVector}
 end
 Spaces() = Spaces(IntDisjointSet(0), Dict{Int, Int}(),
-                  Dict{Int, Vector{SpaceVariable}}())
+                  Dict{Int, AbstractVector}())
 function new_space(spaces::Spaces)
     return SpaceIndex(push!(spaces.indices))
 end
@@ -26,7 +26,7 @@ function new_space(spaces::Spaces,
     return space_index
 end
 function new_space(spaces::Spaces,
-                   polyvars::Vector{SpaceVariable})
+                   polyvars::AbstractVector)
     space_index = new_space(spaces)
     spaces.dimensions[space_index.value] = length(polyvars)
     spaces.polyvars[space_index.value] = polyvars
@@ -68,8 +68,7 @@ function space_polyvars(spaces::Spaces, si::SpaceIndex)
     idx = find_root!(spaces.indices, si.value)
     if !haskey(spaces.polyvars, idx)
         dim = space_dimension(spaces, si)
-        DynamicPolynomials.@polyvar x[1:dim]
-        spaces.polyvars[idx] = x
+        spaces.polyvars[idx] = new_polyvars(dim)
     end
     return spaces.polyvars[idx]
 end

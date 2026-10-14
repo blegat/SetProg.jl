@@ -29,6 +29,19 @@ The variables can either be
 @variable model S PolySet(d, symmetric=true, point=SetProg.CenterPoint([1, 0])) # 1-sublevel set of a polynomial of degree 2d symmetric around the [1, 0]
 ```
 
+Polynomial sets require an explicit `using SumOfSquares`. SumOfSquares and the
+polynomial packages are optional dependencies, loaded through SetProg's package
+extension. Calling `PolySet` before loading SumOfSquares raises an error with
+this instruction. Non-symmetric and piecewise ellipsoids, and polynomial gauge
+printing, also require the extension. Symmetric ellipsoids and polytopes can be
+modeled without it.
+
+```julia
+using SetProg, SumOfSquares
+model = Model()
+@variable(model, S, PolySet(degree = 4, symmetric = true, dimension = 2))
+```
+
 ## Expressions
 
 The following operations are allowed:
@@ -99,7 +112,7 @@ center of the simplex (which can be found by solving an LP). This the center of
 the sphere of maximal volume in the simplex so one might rightly guess that is is
 in the interior of the maximal ellispoid contained in the simplex.
 ```julia
-using SetProg
+using SetProg, SumOfSquares
 cheby_center, cheby_radius = chebyshevcenter(simplex, optimizer_constructor)
 interior_point = SetProg.InteriorPoint(cheby_center)
 

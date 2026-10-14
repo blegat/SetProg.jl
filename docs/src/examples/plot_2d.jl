@@ -12,7 +12,8 @@ using LinearAlgebra
 using DynamicPolynomials
 @polyvar x y
 using SetProg
-gram = SetProg.SumOfSquares.GramMatrix(Matrix{Float64}(2I, 2, 2), [x^2, y^2])
+using SumOfSquares
+gram = SumOfSquares.GramMatrix(Matrix{Float64}(2I, 2, 2), [x^2, y^2])
 
 # Now we create the set from this Gram matrix representation of the polynomial.
 # We claim that it is convex (as we want to plot the polar) by creating a
