@@ -353,3 +353,36 @@ end
         @test _num_constraints(model, F, S) == 1
     end
 end
+
+@testset "Constant ellipsoid subsets" begin
+    @testset "$T coefficients" for T in (Float64, Int)
+        model = _mock_model()
+        @variable(model, S, Ellipsoid(symmetric = true, dimension = 2))
+        subsets = [Sets.Ellipsoid(Symmetric(T[k 0; 0 k])) for k in (2, 3)]
+        constraints = [@constraint(model, subset ⊆ S) for subset in subsets]
+        optimize!(model)
+        @test SetProg.data(model).space == SetProg.PrimalSpace
+        F = MOI.VectorAffineFunction{Float64}
+        cone = SumOfSquares.PositiveSemidefinite2x2ConeTriangle
+        @test _num_constraints(model, F, cone) == 2
+        for (subset, constraint) in zip(subsets, constraints)
+            # E ⊆ S requires Q_E - Q_S to be positive semidefinite.
+            Q = S.variable.Q
+            expected = [subset.Q[i, j] - Q[i, j] for j = 1:2 for i = 1:j]
+            actual = constraint_object(SetProg.transformed_constraint(constraint)).func
+            @test JuMP.isequal_canonical(actual, expected)
+        end
+    end
+    @testset "Incompatible dual constraints" for subset_first in (true, false)
+        model = _mock_model()
+        @variable(model, S, Ellipsoid(symmetric = true, dimension = 2))
+        subset = Sets.Ellipsoid(Symmetric(Matrix(1.0I, 2, 2)))
+        subset_first && @constraint(model, subset ⊆ S)
+        @constraint(model, S ⊆ _square(2)) # Requires dual space.
+        subset_first || @constraint(model, subset ⊆ S)
+        err = ErrorException(
+            "Incompatible constraints/objective, some require to do the modeling in the primal space and some in the dual space.",
+        )
+        @test_throws err optimize!(model)
+    end
+end
