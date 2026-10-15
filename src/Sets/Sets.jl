@@ -140,34 +140,38 @@ convexity_proof(set::Union{Polar, PerspectiveDual}) = convexity_proof(set.set)
 struct UnknownSet{T} <: AbstractSet{T} end
 include("transformations.jl")
 
-struct Piecewise{T, S<:AbstractSet{T}, U, Po <: Union{Nothing, Polyhedra.Polyhedron{U}}, Pi} <: AbstractSet{T}
+struct Piecewise{T,S<:AbstractSet{T},U,Po<:Union{Nothing,Polyhedra.Polyhedron{U}},Pi} <:
+       AbstractSet{T}
     sets::Vector{S}
     polytope::Po
     pieces::Vector{Pi}
     # TODO add adjacency graph in Polyhedra
-    graph::Vector{Vector{Tuple{Int, Vector{U}}}}
-end
-"""
-    Piecewise(sets, polytope, pieces)
+    graph::Vector{Vector{Tuple{Int,Vector{U}}}}
 
-Combine set pieces with their conic domains and construct the adjacency graph.
-With no parent `polytope`, the adjacency lists are empty. If `pieces` is
-`nothing`, derive the conic domains from the parent polytope's facets.
+    Piecewise(
+        sets::Vector{S},
+        polytope::Po,
+        pieces::Vector{Pi},
+    ) where {T,S<:AbstractSet{T},U,Po,Pi<:Polyhedra.Polyhedron{U}} =
+        new{T,S,U,Po,Pi}(sets, polytope, pieces, [Tuple{Int,Vector{U}}[] for _ in sets])
+    Piecewise(
+        sets::Vector{S},
+        polytope::Po,
+        pieces::Vector{Pi},
+        graph::Vector{Vector{Tuple{Int,Vector{U}}}},
+    ) where {T,S<:AbstractSet{T},U,Po,Pi} = new{T,S,U,Po,Pi}(sets, polytope, pieces, graph)
+end
+
 """
-function Piecewise(
+    piecewise_from_polytope(sets, polytope)
+
+Combine `sets` on the cones over the facets of `polytope`, which must contain
+the origin in its interior. Construct the adjacency graph from its facets.
+"""
+function piecewise_from_polytope(
     sets::Vector{<:AbstractSet},
-    polytope::Union{Nothing,Polyhedra.Polyhedron},
-    pieces,
-)
-    if polytope === nothing
-        pieces === nothing && throw(ArgumentError("a conic partition is required"))
-        isempty(pieces) && throw(ArgumentError("at least one cone is required"))
-        length(sets) == length(pieces) || throw(DimensionMismatch())
-        U = Polyhedra.coefficient_type(first(pieces))
-        graph = [Tuple{Int,Vector{U}}[] for _ in sets]
-        return Piecewise(sets, nothing, pieces, graph)
-    end
-    U = Polyhedra.coefficient_type(polytope)
+    polytope::Polyhedra.Polyhedron{U},
+) where {U}
     @assert length(sets) == nhalfspaces(polytope)
     points = [
         Set(incidentpointindices(polytope, hidx)) for
@@ -193,27 +197,16 @@ function Piecewise(
             end
         end
     end
-    if pieces === nothing
-        function piece(i, h)
-            # Polyhedra needs a polyhedron with an LP solver for linearity detection.
-            return Polyhedra.polyhedron(
-                hrep([HalfSpace(edge[2], zero(U)) for edge in graph[i]]),
-                Polyhedra.DefaultLibrary{U}(Polyhedra.default_solver(polytope)),
-            )
-        end
-        pieces = [piece(i, h) for (i, h) in enumerate(halfspaces(polytope))]
+    function piece(i, h)
+        # Polyhedra needs a polyhedron with an LP solver for linearity detection.
+        return Polyhedra.polyhedron(
+            hrep([HalfSpace(edge[2], zero(U)) for edge in graph[i]]),
+            Polyhedra.DefaultLibrary{U}(Polyhedra.default_solver(polytope)),
+        )
     end
+    pieces = [piece(i, h) for (i, h) in enumerate(halfspaces(polytope))]
     return Piecewise(sets, polytope, pieces, graph)
 end
-
-"""
-    piecewise_from_polytope(sets, polytope)
-
-Combine `sets` on the cones over the facets of `polytope`, which must contain
-the origin in its interior. Construct the adjacency graph from its facets.
-"""
-piecewise_from_polytope(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron) =
-    Piecewise(sets, polytope, nothing)
 
 """
     piecewise_from_cones(sets, cones)
@@ -230,6 +223,7 @@ piecewise_from_cones(
     cones::AbstractVector{<:Polyhedra.Representation},
 ) = Piecewise(sets, nothing, Polyhedra.polyhedron.(cones))
 
+# Backward compatibility for the original two-argument constructor.
 Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron) =
     piecewise_from_polytope(sets, polytope)
 

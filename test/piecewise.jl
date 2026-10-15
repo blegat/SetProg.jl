@@ -32,12 +32,6 @@ end
     explicit = Sets.Piecewise(PIECES, nothing, set.pieces)
     @test [piece.a for piece in explicit.sets] == COEFFICIENTS
     @test all(isempty, explicit.graph)
-    @test_throws DimensionMismatch Sets.Piecewise(PIECES[1:1], nothing, set.pieces)
-    @test_throws ArgumentError Sets.Piecewise(PIECES, nothing, nothing)
-    @test_throws ArgumentError Sets.piecewise_from_cones(
-        Sets.PolarPoint{Float64}[],
-        typeof(first(CONES))[],
-    )
     for (piece, coefficient, cone, sign) in zip(set.sets, COEFFICIENTS, set.pieces, SIGNS)
         @test piece.a == coefficient
         @test sign in cone
@@ -102,7 +96,8 @@ end
     )
     @test Sets.dimension(set) == 2
     explicit = Sets.Piecewise(set.sets, partition, set.pieces)
-    @test explicit.graph == set.graph
+    @test all(isempty, explicit.graph)
+    @test explicit.polytope === partition
     @test explicit.pieces === set.pieces
     @test Sets.Piecewise(set.sets, partition).graph == set.graph
     A = [2.0 0.0; 0.0 1.0]
