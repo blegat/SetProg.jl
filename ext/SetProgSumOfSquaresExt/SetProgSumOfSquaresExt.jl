@@ -135,5 +135,6 @@ include("membership.jl")
 include("tangent.jl")
 include("utilities.jl")
 include("variables.jl")
+include("gauges.jl")
 
 end

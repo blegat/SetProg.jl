@@ -40,6 +40,7 @@ include("constraints.jl")
 include("objective.jl")
 include("data.jl")
 include("optimize.jl")
+include("gauges.jl")
 
 function _moment_matrix end
 function apply_matrix end
