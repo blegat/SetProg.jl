@@ -140,7 +140,7 @@ convexity_proof(set::Union{Polar, PerspectiveDual}) = convexity_proof(set.set)
 struct UnknownSet{T} <: AbstractSet{T} end
 include("transformations.jl")
 
-struct Piecewise{T, S<:AbstractSet{T}, U, Po <: Polyhedra.Polyhedron{U}, Pi} <: AbstractSet{T}
+struct Piecewise{T, S<:AbstractSet{T}, U, Po <: Union{Nothing, Polyhedra.Polyhedron{U}}, Pi} <: AbstractSet{T}
     sets::Vector{S}
     polytope::Po
     pieces::Vector{Pi}
@@ -175,7 +175,7 @@ function Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron{U
     pieces = [piece(i, h) for (i, h) in enumerate(halfspaces(polytope))]
     return Piecewise(sets, polytope, pieces, graph)
 end
-dimension(set::Piecewise) = Polyhedra.fulldim(set.polytope)
+dimension(set::Piecewise) = Polyhedra.fulldim(first(set.pieces))
 space_variables(set::Piecewise) = space_variables(set.sets[1])
 perspective_variable(set::Piecewise) = perspective_variable(set.sets[1])
 function scaling_function(set::Piecewise)

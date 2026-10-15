@@ -8,9 +8,23 @@ This package allows the formulation of a mathematical programming involving both
 
 SetProg supports homogeneous set families for stability certificates:
 `Ellipsoid(symmetric = true)`, `PolySet(symmetric = true, degree = 4)`,
-`PositiveSimplex`, `PositiveBox`, `Parallelotope`, and `ConicPolytope`.
-Ellipsoids and polytopes also support a prescribed piecewise partition.
-Polynomial sets require `using SumOfSquares` to load the optional extension.
+and `Polytope`. Polynomial sets require `using SumOfSquares` to load the
+optional extension.
+
+Polyhedral configurations share linear pieces and polar operations:
+
+```julia
+simplex = Polytope(piecewise = :orthant)
+box = Polytope(piecewise = :orthant, polar = true)
+weighted_l1 = Polytope(symmetric = true, piecewise = :orthants)
+parallelotope = Polytope(symmetric = true, piecewise = :orthants, polar = true)
+conic = Polytope(symmetric = true, piecewise = cones)
+```
+
+A matrix in `cones` has generating rays as columns. Symbolic partitions infer
+the dimension from the model. `polar` describes the requested set family;
+it does not impose a modeling space. Constraints select that space as usual.
+On `:orthant`, the polar is restricted to the nonnegative orthant.
 
 A fitted set is callable as its homogeneous sublevel function, `V(x)`.
 Ellipsoids use `x'Qx`; polynomial sets use their defining polynomial;
@@ -18,11 +32,7 @@ the other families use degree-one gauges. The homogeneous degree is returned
 by `SetProg.homogeneity_degree`.
 
 ```@docs
-PositiveSimplex
-PositiveBox
-Parallelotope
-ConicPolytope
-SetProg.planar_conic_partition
+Polytope
 SetProg.with_dimension
 SetProg.add_function_variables!
 SetProg.add_normalization!

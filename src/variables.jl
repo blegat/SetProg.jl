@@ -30,33 +30,88 @@ function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
 end
 
 ### Polytope ###
-struct Polytope <: AbstractVariable
+"""
+    Polytope(; symmetric = false, dimension = nothing, piecewise = nothing,
+             transform = nothing, polar = false, min_scale = nothing)
+
+A polyhedral set variable. `piecewise` can be a partition polytope, a vector
+of matrices whose columns generate partition cones, `:orthant`, or
+`:orthants`. The symbolic partitions have one positive-orthant linear piece
+or a weighted absolute-value sum, respectively. `transform` maps their rays
+into state coordinates. For symbolic and explicit-cone partitions, `polar`
+requests the polar family. On `:orthant`, polarity is restricted to the
+nonnegative orthant (blocking duality).
+These options describe the family and do not prescribe a modeling space.
+For symbolic and explicit-cone partitions, `min_scale` bounds the piece
+coefficients away from zero and defaults to one when omitted.
+"""
+struct Polytope{P,M,T} <: AbstractVariable
     symmetric::Bool
-    dimension::Union{Nothing, Int}
-    piecewise::Union{Polyhedra.Rep, Nothing}
+    dimension::Union{Nothing,Int}
+    piecewise::P
+    transform::M
+    polar::Bool
+    min_scale::T
 end
 function Polytope(;
-    symmetric::Bool=false,
-    dimension::Union{Int, Nothing}=nothing,
-    piecewise::Union{Polyhedra.Rep, Nothing}=nothing,
+    symmetric::Bool = false,
+    dimension::Union{Int,Nothing} = nothing,
+    piecewise = nothing,
+    transform = nothing,
+    polar::Bool = false,
+    min_scale::Union{Real,Nothing} = nothing,
 )
-    function update_dim(object, dim_fun)
-        if object !== nothing
-            d = dim_fun(object)
-            if dimension === nothing
-                dimension = d
-            elseif dimension != d
-                throw(DimensionMismatch())
-            end
+    min_scale === nothing ||
+        min_scale > 0 ||
+        throw(ArgumentError("min_scale must be positive"))
+    function update_dim(n)
+        if dimension === nothing
+            dimension = n
+        elseif dimension != n
+            throw(DimensionMismatch())
         end
     end
-    update_dim(piecewise, Polyhedra.fulldim)
-    return Polytope(symmetric, dimension, piecewise)
+    if piecewise isa Polyhedra.Rep
+        update_dim(Polyhedra.fulldim(piecewise))
+    elseif piecewise isa AbstractVector{<:AbstractMatrix}
+        isempty(piecewise) && throw(ArgumentError("at least one cone is required"))
+        update_dim(size(first(piecewise), 1))
+        all(C -> size(C, 1) == dimension && size(C, 2) > 0, piecewise) ||
+            throw(ArgumentError("every cone must have rays in the same space"))
+    elseif piecewise !== nothing && piecewise ∉ (:orthant, :orthants)
+        throw(ArgumentError("unsupported polyhedral partition"))
+    end
+    piecewise === :orthant &&
+        transform !== nothing &&
+        transform != I &&
+        throw(ArgumentError("the single-orthant partition uses Cartesian coordinates"))
+    if transform !== nothing
+        n = LinearAlgebra.checksquare(transform)
+        rank(transform) == n || throw(ArgumentError("transform must be invertible"))
+        update_dim(n)
+    end
+    dimension === nothing ||
+        dimension > 0 ||
+        throw(ArgumentError("the dimension must be positive"))
+    if !(piecewise isa Union{Symbol,AbstractVector}) &&
+       (polar || transform !== nothing || min_scale !== nothing)
+        throw(
+            ArgumentError(
+                "polar, transform and min_scale require a symbolic or explicit-cone partition",
+            ),
+        )
+    end
+    return Polytope(symmetric, dimension, piecewise, transform, polar, min_scale)
 end
+
+
 Sets.space_variables(::Polytope) = nothing
 
 function variable_set(model::JuMP.AbstractModel, ell::Polytope, space::Space,
                       space_dimension, space_polyvars)
+    if ell.piecewise isa Union{Symbol, AbstractVector}
+        return _polytope_variable_set(model, ell, space_dimension)
+    end
     n = space_dimension
         if ell.symmetric
         if ell.piecewise === nothing

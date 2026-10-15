@@ -56,6 +56,9 @@ function set_space(space::Space, ::InclusionConstraint{<:Sets.LinearImage,
                                                        <:SetVariableRef})
     return space
 end
+# Direct inclusion imposes no preference between primal and dual modeling.
+set_space(space::Space, ::InclusionConstraint{<:SetVariableRef,<:SetVariableRef}) = space
+
 # We can always transform  an ellipsoid to primal or dual space so we can handle
 # any space
 function set_space(space::Space,
@@ -208,8 +211,9 @@ function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Sets.Piecewise,
                                                              <:Sets.Piecewise},
                              name::String = "")
-    subset = constraint.subset
-    supset = constraint.supset
+    return _add_piecewise_inclusion(model, constraint.subset, constraint.supset)
+end
+function _add_piecewise_inclusion(model, subset, supset)
     for (i, si) in enumerate(subset.sets)
         for (j, sj) in enumerate(supset.sets)
             add_constraint_inclusion_domain(model, si, sj, subset.pieces[i] ∩ supset.pieces[j])
