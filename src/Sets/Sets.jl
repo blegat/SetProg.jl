@@ -140,18 +140,44 @@ convexity_proof(set::Union{Polar, PerspectiveDual}) = convexity_proof(set.set)
 struct UnknownSet{T} <: AbstractSet{T} end
 include("transformations.jl")
 
-struct Piecewise{T, S<:AbstractSet{T}, U, Po <: Polyhedra.Polyhedron{U}, Pi} <: AbstractSet{T}
+struct Piecewise{T, S<:AbstractSet{T}, U, Po <: Union{Nothing, Polyhedra.Polyhedron{U}}, Pi} <: AbstractSet{T}
     sets::Vector{S}
     polytope::Po
     pieces::Vector{Pi}
     # TODO add adjacency graph in Polyhedra
     graph::Vector{Vector{Tuple{Int, Vector{U}}}}
 end
-function Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron{U}) where U
+"""
+    Piecewise(sets, polytope, pieces)
+
+Combine set pieces with their conic domains and construct the adjacency graph.
+With no parent `polytope`, the adjacency lists are empty. If `pieces` is
+`nothing`, derive the conic domains from the parent polytope's facets.
+"""
+function Piecewise(
+    sets::Vector{<:AbstractSet},
+    polytope::Union{Nothing,Polyhedra.Polyhedron},
+    pieces,
+)
+    if polytope === nothing
+        pieces === nothing && throw(ArgumentError("a conic partition is required"))
+        isempty(pieces) && throw(ArgumentError("at least one cone is required"))
+        length(sets) == length(pieces) || throw(DimensionMismatch())
+        U = Polyhedra.coefficient_type(first(pieces))
+        graph = [Tuple{Int,Vector{U}}[] for _ in sets]
+        return Piecewise(sets, nothing, pieces, graph)
+    end
+    U = Polyhedra.coefficient_type(polytope)
     @assert length(sets) == nhalfspaces(polytope)
-    points = [Set(incidentpointindices(polytope, hidx)) for hidx in eachindex(halfspaces(polytope))]
-    graph = [Tuple{Int, Vector{U}}[] for i in eachindex(halfspaces(polytope))]
-    if !(Polyhedra.origin(Polyhedra.pointtype(polytope), Polyhedra.fulldim(polytope)) in polytope)
+    points = [
+        Set(incidentpointindices(polytope, hidx)) for
+        hidx in eachindex(halfspaces(polytope))
+    ]
+    graph = [Tuple{Int,Vector{U}}[] for i in eachindex(halfspaces(polytope))]
+    if !(
+        Polyhedra.origin(Polyhedra.pointtype(polytope), Polyhedra.fulldim(polytope)) in
+        polytope
+    )
         error("The origin is not in the polytope")
     end
     for (i, hi) in enumerate(halfspaces(polytope))
@@ -167,15 +193,47 @@ function Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron{U
             end
         end
     end
-    function piece(i, h)
-        # Need to be a polyhedron as `detecthlinearity` needs a solver in `add_constraint_inclusion_domain`
-        return Polyhedra.polyhedron(hrep([HalfSpace(edge[2], zero(U)) for edge in graph[i]]),
-                                    Polyhedra.DefaultLibrary{U}(Polyhedra.default_solver(polytope)))
+    if pieces === nothing
+        function piece(i, h)
+            # Polyhedra needs a polyhedron with an LP solver for linearity detection.
+            return Polyhedra.polyhedron(
+                hrep([HalfSpace(edge[2], zero(U)) for edge in graph[i]]),
+                Polyhedra.DefaultLibrary{U}(Polyhedra.default_solver(polytope)),
+            )
+        end
+        pieces = [piece(i, h) for (i, h) in enumerate(halfspaces(polytope))]
     end
-    pieces = [piece(i, h) for (i, h) in enumerate(halfspaces(polytope))]
     return Piecewise(sets, polytope, pieces, graph)
 end
-dimension(set::Piecewise) = Polyhedra.fulldim(set.polytope)
+
+"""
+    piecewise_from_polytope(sets, polytope)
+
+Combine `sets` on the cones over the facets of `polytope`, which must contain
+the origin in its interior. Construct the adjacency graph from its facets.
+"""
+piecewise_from_polytope(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron) =
+    Piecewise(sets, polytope, nothing)
+
+"""
+    piecewise_from_cones(sets, cones)
+
+Combine `sets` on a conic partition supplied as Polyhedra representations.
+The pieces must already satisfy continuity and convexity. No parent polytope
+or adjacency graph is inferred from the cones.
+
+For matrices storing cone generators as columns, convert them with
+`vrep.(Ref(zeros(1, n)), permutedims.(matrices))`.
+"""
+piecewise_from_cones(
+    sets::Vector{<:AbstractSet},
+    cones::AbstractVector{<:Polyhedra.Representation},
+) = Piecewise(sets, nothing, Polyhedra.polyhedron.(cones))
+
+Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron) =
+    piecewise_from_polytope(sets, polytope)
+
+dimension(set::Piecewise) = Polyhedra.fulldim(first(set.pieces))
 space_variables(set::Piecewise) = space_variables(set.sets[1])
 perspective_variable(set::Piecewise) = perspective_variable(set.sets[1])
 function scaling_function(set::Piecewise)
