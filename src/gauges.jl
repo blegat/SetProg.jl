@@ -78,9 +78,6 @@ function _polytope_variable_set(model, family::Polytope, n)
     return result
 end
 
-JuMP.value(set::Sets.Intersection) = Sets.Intersection(JuMP.value(set.set), set.domain)
-needs_polyvars(set::Sets.Intersection) = needs_polyvars(set.set)
-
 function _domain_invariant(A, source, destination)
     return all(r -> A * Polyhedra.coord(r) in destination, rays(source)) && all(
         l ->
@@ -179,19 +176,6 @@ function JuMP.add_constraint(
 
         @constraint(model, h.β * dot(s.a, ray) - dot(h.a, ray) >= 0)
     end
-    return nothing
-end
-
-function JuMP.add_constraint(
-    model::JuMP.Model,
-    constraint::MembershipConstraint{<:Point,<:Sets.Intersection},
-    ::String = "",
-)
-    point, set = constraint.member, constraint.set
-    for h in halfspaces(set.domain)
-        @constraint(model, dot(h.a, Polyhedra.coord(point)) <= h.β * scaling(point))
-    end
-    JuMP.add_constraint(model, JuMP.build_constraint(error, point, set.set))
     return nothing
 end
 
