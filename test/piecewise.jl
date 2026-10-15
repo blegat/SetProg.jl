@@ -132,6 +132,10 @@ end
         [Sets.PolarPoint(collect(h.a)) for h in halfspaces(partition)],
         partition,
     )
+    small_square = Sets.piecewise_from_polytope(
+        [Sets.PolarPoint(2 * collect(h.a)) for h in halfspaces(partition)],
+        partition,
+    )
     for (subset, superset, feasible) in (
         (source, source, true),
         (source, target, true),
@@ -143,6 +147,9 @@ end
         (one_sided, strip, true),
         (source, square, true),
         (square, source, false),
+        (square, square, true),
+        (small_square, square, true),
+        (square, small_square, false),
     )
         model = Model(GLPK.Optimizer)
         set_silent(model)

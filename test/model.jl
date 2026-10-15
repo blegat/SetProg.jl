@@ -324,8 +324,8 @@ end
             "Polytope",
             Polytope(symmetric = true, piecewise = □),
             unit_polytope,
-            MOI.VectorAffineFunction{Float64},
-            MOI.Zeros,
+            MOI.ScalarAffineFunction{Float64},
+            MOI.GreaterThan,
         ),
     ]
         model = _mock_model()

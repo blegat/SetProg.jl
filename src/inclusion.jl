@@ -217,13 +217,33 @@ function add_constraint_inclusion_domain(
 end
 const _LinearPiecewise = Sets.Piecewise{<:Any,<:Sets.PolarPoint}
 
-function _add_linear_piecewise_inclusion(
-    model,
-    subset::_LinearPiecewise,
-    supset::_LinearPiecewise,
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    constraint::InclusionConstraint{<:Sets.Piecewise,<:Sets.Piecewise},
+    name::String = "",
 )
-    # The target gauge is the maximum of its linear pieces. The source gauge
-    # is linear on each cone, so checking its generators suffices.
+    return _add_piecewise_inclusion(model, constraint.subset, constraint.supset)
+end
+
+# Domain certificates are supplied by add_constraint_inclusion_domain for
+# each pair of piece types, including quadratic/quadratic pieces.
+function _add_piecewise_inclusion(model, subset::Sets.Piecewise, supset::Sets.Piecewise)
+    for (i, si) in enumerate(subset.sets)
+        for (j, sj) in enumerate(supset.sets)
+            add_constraint_inclusion_domain(
+                model,
+                si,
+                sj,
+                subset.pieces[i] ∩ supset.pieces[j],
+            )
+        end
+    end
+    return nothing
+end
+
+function _add_piecewise_inclusion(model, subset::_LinearPiecewise, supset::_LinearPiecewise)
+    # A convex piecewise-linear target is the maximum of its linear pieces.
+    # The source gauge is linear on each cone, so checking generators suffices.
     for (piece, cone) in zip(subset.sets, subset.pieces), target in supset.sets
         difference = piece.a - target.a
         for ray in rays(cone)
@@ -234,23 +254,6 @@ function _add_linear_piecewise_inclusion(
         end
     end
     return nothing
-end
-
-function JuMP.add_constraint(model::JuMP.Model,
-                             constraint::InclusionConstraint{<:Sets.Piecewise,
-                                                             <:Sets.Piecewise},
-                             name::String = "")
-    subset = constraint.subset
-    supset = constraint.supset
-    if subset isa _LinearPiecewise && supset isa _LinearPiecewise &&
-       (subset.polytope === nothing || supset.polytope === nothing)
-        return _add_linear_piecewise_inclusion(model, subset, supset)
-    end
-    for (i, si) in enumerate(subset.sets)
-        for (j, sj) in enumerate(supset.sets)
-            add_constraint_inclusion_domain(model, si, sj, subset.pieces[i] ∩ supset.pieces[j])
-        end
-    end
 end
 
 # S ⊆ T <=> T* ⊇ S*
