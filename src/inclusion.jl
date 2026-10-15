@@ -67,6 +67,14 @@ function set_space(space::Space,
     return space
 end
 
+# A fixed ellipsoid subset is compared with the variable's primal gauge.
+function set_space(
+    space::Space,
+    ::InclusionConstraint{<:Sets.Ellipsoid{<:Number},<:SetVariableRef},
+)
+    return set_space(space, PrimalSpace)
+end
+
 # A constant superset which is not an ellipsoid cannot be transformed to the
 # dual space so we need to stay in the primal space where both sets are
 # represented by their gauge function
