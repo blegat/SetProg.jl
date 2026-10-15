@@ -112,15 +112,19 @@ _add_constraint_or_not(model, ::Nothing) = nothing
 _add_constraint_or_not(model, con) = JuMP.add_constraint(model, con)
 
 function _preprocess_domain(domain)
+    # V-to-H conversion can introduce tautologies such as 0 ≤ 1.
+    # Remove these before checking that the domain inequalities are homogeneous.
+    rep = hrep(domain)
+    hs = [h for h in halfspaces(rep) if !(iszero(h.a) && h.β >= 0)]
+    rep = hrep(hyperplanes(rep), hs; d = Polyhedra.FullDim(rep))
     # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from
     #      `zero_eliminate` of `[1e-17, 0, 1]` so we remove duplicates to drop it
-    domain = polyhedron(
-        removeduplicates(hrep(domain), Polyhedra.default_solver(domain)),
-        library(domain)
-    )
+    domain =
+        polyhedron(removeduplicates(rep, Polyhedra.default_solver(domain)), library(domain))
     detecthlinearity!(domain)
     return domain
 end
+
 function _linear_part(model, domain)
     Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain)]
     for (i, h) in enumerate(halfspaces(domain))
@@ -215,45 +219,17 @@ function add_constraint_inclusion_domain(
     domain::Polyhedra.Polyhedron)
     return _add_constraint_or_not(model, psd_in_domain(model, Symmetric(subset.Q - supset.Q), domain))
 end
-const _LinearPiecewise = Sets.Piecewise{<:Any,<:Sets.PolarPoint}
-
-function JuMP.add_constraint(
-    model::JuMP.Model,
-    constraint::InclusionConstraint{<:Sets.Piecewise,<:Sets.Piecewise},
-    name::String = "",
-)
-    return _add_piecewise_inclusion(model, constraint.subset, constraint.supset)
-end
-
-# Domain certificates are supplied by add_constraint_inclusion_domain for
-# each pair of piece types, including quadratic/quadratic pieces.
-function _add_piecewise_inclusion(model, subset::Sets.Piecewise, supset::Sets.Piecewise)
+function JuMP.add_constraint(model::JuMP.Model,
+                             constraint::InclusionConstraint{<:Sets.Piecewise,
+                                                             <:Sets.Piecewise},
+                             name::String = "")
+    subset = constraint.subset
+    supset = constraint.supset
     for (i, si) in enumerate(subset.sets)
         for (j, sj) in enumerate(supset.sets)
-            add_constraint_inclusion_domain(
-                model,
-                si,
-                sj,
-                subset.pieces[i] ∩ supset.pieces[j],
-            )
+            add_constraint_inclusion_domain(model, si, sj, subset.pieces[i] ∩ supset.pieces[j])
         end
     end
-    return nothing
-end
-
-function _add_piecewise_inclusion(model, subset::_LinearPiecewise, supset::_LinearPiecewise)
-    # A convex piecewise-linear target is the maximum of its linear pieces.
-    # The source gauge is linear on each cone, so checking generators suffices.
-    for (piece, cone) in zip(subset.sets, subset.pieces), target in supset.sets
-        difference = piece.a - target.a
-        for ray in rays(cone)
-            @constraint(model, dot(difference, Polyhedra.coord(ray)) >= 0)
-        end
-        for line in lines(cone)
-            @constraint(model, dot(difference, Polyhedra.coord(line)) == 0)
-        end
-    end
-    return nothing
 end
 
 # S ⊆ T <=> T* ⊇ S*

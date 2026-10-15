@@ -109,6 +109,26 @@ end
     check_membership(preimage, [0.6, 0.0], false)
 end
 
+@testset "Tautological cone inequalities" begin
+    cone = polyhedron(vrep(zeros(1, 2), [-1.0 0.0; 0.0 -1.0]))
+    domain = cone ∩ cone
+    @test any(h -> iszero(h.a) && h.β > 0, halfspaces(domain))
+    processed = SetProg._preprocess_domain(domain)
+    @test all(h -> iszero(h.β), halfspaces(processed))
+    @test [-1.0, -1.0] in processed
+    @test [1.0, -1.0] ∉ processed
+    @test SetProg.lin_in_domain(Model(), [0.0, 0.0], domain) !== nothing
+    @test SetProg.psd_in_domain(Model(), Symmetric(Matrix{Float64}(I, 2, 2)), domain) !==
+          nothing
+    # A genuine nonhomogeneous inequality must still be rejected.
+    shifted = polyhedron(hrep([1.0 0.0; 0.0 1.0], ones(2)))
+    @test_throws ErrorException("only cones are supported") SetProg.lin_in_domain(
+        Model(),
+        [0.0, 0.0],
+        shifted,
+    )
+end
+
 @testset "Inclusion between linear pieces on explicit cones" begin
     source = Sets.piecewise_from_cones(PIECES, CONES)
     target = Sets.piecewise_from_cones(
@@ -126,7 +146,9 @@ end
     )
     partition = polyhedron(
         hrep([1.0 0.0; 0.0 1.0; -1.0 0.0; 0.0 -1.0], ones(4)),
-        Polyhedra.DefaultLibrary{Float64}(GLPK.Optimizer),
+        Polyhedra.DefaultLibrary{Float64}(
+            optimizer_with_attributes(GLPK.Optimizer, "presolve" => GLPK.GLP_ON),
+        ),
     )
     square = Sets.piecewise_from_polytope(
         [Sets.PolarPoint(collect(h.a)) for h in halfspaces(partition)],
