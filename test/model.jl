@@ -221,6 +221,39 @@ end
     @test_throws err SetProg.optimize!(model)
 end
 
+@testset "Direct inclusion preserves the selected modeling space" begin
+    for space in (SetProg.Undecided, SetProg.PrimalSpace, SetProg.DualSpace),
+        direct_first in (false, true)
+
+        model = _mock_model()
+        @variable(model, S, Ellipsoid(symmetric = true, dimension = 2))
+        @variable(model, T, Ellipsoid(symmetric = true, dimension = 2))
+        function force_space()
+            if space == SetProg.PrimalSpace
+                @constraint(model, vrep([[0.1, 0.0], [0.0, 0.1]]) ⊆ S)
+            elseif space == SetProg.DualSpace
+                @constraint(
+                    model,
+                    T ⊆ hrep([1.0 0.0; 0.0 1.0; -1.0 0.0; 0.0 -1.0], ones(4))
+                )
+            end
+        end
+        direct_first || force_space()
+        inclusion = @constraint(model, S ⊆ T)
+        @constraint(model, S ⊆ S)
+        direct_first && force_space()
+        unit = SetProg.Sets.Ellipsoid(Symmetric(Matrix{Float64}(I, 2, 2)))
+        @constraint(model, T ⊆ unit)
+
+        # A bare inclusion must also leave an undecided model undecided.
+        @test SetProg.set_space(space, constraint_object(inclusion)) == space
+        optimize!(model)
+        expected = space == SetProg.Undecided ? SetProg.PrimalSpace : space
+        @test SetProg.data(model).space == expected
+        @test is_valid(model, SetProg.transformed_constraint(inclusion))
+    end
+end
+
 @testset "Macros" begin
     model = _mock_model()
     @variable(model, S, Ellipsoid(symmetric = true, dimension = 2))

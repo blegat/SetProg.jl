@@ -56,6 +56,9 @@ function set_space(space::Space, ::InclusionConstraint{<:Sets.LinearImage,
                                                        <:SetVariableRef})
     return space
 end
+# Direct inclusion imposes no preference between primal and dual modeling.
+set_space(space::Space, ::InclusionConstraint{<:SetVariableRef,<:SetVariableRef}) = space
+
 # We can always transform  an ellipsoid to primal or dual space so we can handle
 # any space
 function set_space(space::Space,
