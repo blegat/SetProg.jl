@@ -65,7 +65,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Polytope, space::Space,
             hashyperplanes(ell.piecewise) && error("hyperplanes not supported for piecewise")
             a = @variable(model, [1:nhalfspaces(ell.piecewise), 1:n], base_name="a")
             sets = [Sets.PolarPoint(a[i, :]) for i in 1:nhalfspaces(ell.piecewise)]
-            set = Sets.Piecewise(sets, ell.piecewise)
+            set = Sets.piecewise_from_polytope(sets, ell.piecewise)
             for i in eachindex(set.graph)
                 for (j, v) in set.graph[i]
                     if i < j # The constraints are the same for (i, j) and (j, i)
@@ -168,7 +168,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
         else
             hashyperplanes(ell.piecewise) && error("hyperplanes not supported for piecewise")
             sets = [new_piece() for i in 1:nhalfspaces(ell.piecewise)]
-            set = Sets.Piecewise(sets, ell.piecewise)
+            set = Sets.piecewise_from_polytope(sets, ell.piecewise)
             sos_extension().piecewise_ellipsoid_continuity(model, set, n)
             for i in eachindex(set.graph)
                 for (j, v) in set.graph[i]
