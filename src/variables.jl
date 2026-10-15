@@ -310,3 +310,5 @@ function variable_polyvars(ell::Ellipsoid, spaces::Spaces, index::SpaceIndex)
     return ell.symmetric ? nothing : space_polyvars(spaces, index)
 end
 variable_polyvars(::PolySet, spaces::Spaces, index::SpaceIndex) = space_polyvars(spaces, index)
+
+JuMP.value(set::Sets.Intersection) = Sets.Intersection(JuMP.value(set.set), set.domain)

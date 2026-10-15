@@ -70,3 +70,5 @@ needs_polyvars(::Sets.AbstractSet) = true
 needs_polyvars(::Union{Sets.Ellipsoid,Sets.PolarPoint}) = false
 needs_polyvars(set::Union{Sets.Polar,Sets.PerspectiveDual}) = needs_polyvars(set.set)
 needs_polyvars(set::Sets.Piecewise) = any(needs_polyvars, set.sets)
+
+needs_polyvars(set::Sets.Intersection) = needs_polyvars(set.set)

@@ -196,3 +196,19 @@ function JuMP.build_constraint(_error::Function,
     r = Polyhedra.coord(member)
     JuMP.build_constraint(_error, r'h.a, MOI.LessThan(0.0))
 end
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    constraint::MembershipConstraint{<:Point,<:Sets.Intersection},
+    ::String = "",
+)
+    point, set = constraint.member, constraint.set
+    for h in hyperplanes(set.domain)
+        @constraint(model, dot(h.a, Polyhedra.coord(point)) == h.β * scaling(point))
+    end
+    for h in halfspaces(set.domain)
+        @constraint(model, dot(h.a, Polyhedra.coord(point)) <= h.β * scaling(point))
+    end
+    JuMP.add_constraint(model, JuMP.build_constraint(error, point, set.set))
+    return nothing
+end

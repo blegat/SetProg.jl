@@ -229,6 +229,7 @@ end
 include("polytope.jl")
 include("ellipsoids.jl")
 include("polynomials.jl")
+include("intersection.jl")
 include("recipe.jl")
 
 end
