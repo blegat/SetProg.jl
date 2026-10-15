@@ -30,15 +30,24 @@ function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
 end
 
 ### Polytope ###
-struct Polytope <: AbstractVariable
+"""
+    Polytope(; symmetric = false, dimension = nothing, piecewise = nothing)
+
+A polyhedral set variable. `piecewise` can be a partition polytope or a vector
+of Polyhedra representations describing a conic partition. With explicit cones,
+SetProg creates nonnegative linear pieces and enforces convexity and continuity.
+The cones must cover the space; with `symmetric = true`, supply one cone from
+each opposite pair, and SetProg adds the opposite pieces automatically.
+"""
+struct Polytope{P} <: AbstractVariable
     symmetric::Bool
-    dimension::Union{Nothing, Int}
-    piecewise::Union{Polyhedra.Rep, Nothing}
+    dimension::Union{Nothing,Int}
+    piecewise::P
 end
 function Polytope(;
-    symmetric::Bool=false,
-    dimension::Union{Int, Nothing}=nothing,
-    piecewise::Union{Polyhedra.Rep, Nothing}=nothing,
+    symmetric::Bool = false,
+    dimension::Union{Int,Nothing} = nothing,
+    piecewise::Union{Polyhedra.Rep,Nothing,AbstractVector{<:Polyhedra.Representation}} = nothing,
 )
     function update_dim(object, dim_fun)
         if object !== nothing
@@ -50,10 +59,55 @@ function Polytope(;
             end
         end
     end
-    update_dim(piecewise, Polyhedra.fulldim)
+    if piecewise isa AbstractVector
+        isempty(piecewise) && throw(ArgumentError("at least one cone is required"))
+        for cone in piecewise
+            update_dim(cone, Polyhedra.fulldim)
+        end
+    else
+        update_dim(piecewise, Polyhedra.fulldim)
+    end
     return Polytope(symmetric, dimension, piecewise)
 end
 Sets.space_variables(::Polytope) = nothing
+
+function variable_set(
+    model::JuMP.AbstractModel,
+    family::Polytope{<:AbstractVector},
+    space::Space,
+    n,
+    space_polyvars,
+)
+    cones = Polyhedra.polyhedron.(family.piecewise)
+    a = @variable(model, [1:length(cones), 1:n], base_name = "a")
+    coefficients = [convert.(JuMP.AffExpr, a[i, :]) for i in eachindex(cones)]
+    if family.symmetric
+        cones = vcat(cones, [(-1) * cone for cone in cones])
+        coefficients = vcat(coefficients, [-c for c in coefficients])
+    end
+    sets = Sets.PolarPoint.(coefficients)
+    # Each piece dominates all others on its cone. On shared boundaries,
+    # both dominance conditions hold, which also ensures continuity.
+    # Keep exact cone coordinates from promoting JuMP coefficients to BigFloat.
+    for (piece, cone) in zip(sets, cones)
+        for ray in rays(cone)
+            r = Float64.(Polyhedra.coord(ray))
+            @constraint(model, dot(piece.a, r) >= 0)
+            for other in sets
+                @constraint(model, dot(piece.a - other.a, r) >= 0)
+            end
+        end
+        for line in lines(cone)
+            l = Float64.(Polyhedra.coord(line))
+            @constraint(model, dot(piece.a, l) == 0)
+            for other in sets
+                @constraint(model, dot(piece.a - other.a, l) == 0)
+            end
+        end
+    end
+    set = Sets.Piecewise(sets, nothing, cones)
+    return space == PrimalSpace ? set : Polyhedra.polar(set)
+end
 
 function variable_set(model::JuMP.AbstractModel, ell::Polytope, space::Space,
                       space_dimension, space_polyvars)
