@@ -109,4 +109,81 @@ end
     check_membership(preimage, [0.6, 0.0], false)
 end
 
+@testset "Inclusion between linear pieces on explicit cones" begin
+    source = Sets.piecewise_from_cones(PIECES, CONES)
+    target = Sets.piecewise_from_cones(
+        Sets.PolarPoint.([sign .* [1.0, 2.0] for sign in SIGNS]),
+        CONES,
+    )
+    # A negative line generator must still constrain both directions along y.
+    strip = Sets.piecewise_from_cones(
+        Sets.PolarPoint.([[-1.0, 0.0], [1.0, 0.0]]),
+        [vrep([Line([0.0, -1.0])], [Ray([sign, 0.0])]) for sign in (-1.0, 1.0)],
+    )
+    one_sided = Sets.piecewise_from_cones(
+        Sets.PolarPoint.([[sign[1], max(sign[2], 0)] for sign in SIGNS]),
+        CONES,
+    )
+    partition = polyhedron(
+        hrep([1.0 0.0; 0.0 1.0; -1.0 0.0; 0.0 -1.0], ones(4)),
+        Polyhedra.DefaultLibrary{Float64}(GLPK.Optimizer),
+    )
+    square = Sets.piecewise_from_polytope(
+        [Sets.PolarPoint(collect(h.a)) for h in halfspaces(partition)],
+        partition,
+    )
+    for (subset, superset, feasible) in (
+        (source, source, true),
+        (source, target, true),
+        (target, source, false),
+        (source, strip, true),
+        (strip, source, false),
+        (strip, strip, true),
+        (strip, one_sided, false),
+        (one_sided, strip, true),
+        (source, square, true),
+        (square, source, false),
+    )
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @constraint(model, subset ⊆ superset)
+        optimize!(model)
+        @test termination_status(model) == (feasible ? MOI.OPTIMAL : MOI.INFEASIBLE)
+    end
+end
+
+@testset "Variable coefficients in explicit-cone inclusions" begin
+    target = Sets.piecewise_from_cones(
+        Sets.PolarPoint.([sign .* [1.0, 2.0] for sign in SIGNS]),
+        CONES,
+    )
+    for variable_side in (:source, :target, :both)
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @variable(model, weights[1:2] >= 1)
+        variable_set = Sets.piecewise_from_cones(
+            Sets.PolarPoint.([sign .* weights for sign in SIGNS]),
+            CONES,
+        )
+        if variable_side == :both
+            @variable(model, reference[i=1:2] == i)
+            variable_target = Sets.piecewise_from_cones(
+                Sets.PolarPoint.([sign .* reference for sign in SIGNS]),
+                CONES,
+            )
+            @constraint(model, variable_set ⊆ variable_target)
+            @objective(model, Min, sum(weights))
+        elseif variable_side == :source
+            @constraint(model, variable_set ⊆ target)
+            @objective(model, Min, sum(weights))
+        else
+            @constraint(model, target ⊆ variable_set)
+            @objective(model, Max, sum(weights))
+        end
+        optimize!(model)
+        @test termination_status(model) == MOI.OPTIMAL
+        @test value.(weights) ≈ [1.0, 2.0]
+    end
+end
+
 end

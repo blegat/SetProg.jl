@@ -215,12 +215,37 @@ function add_constraint_inclusion_domain(
     domain::Polyhedra.Polyhedron)
     return _add_constraint_or_not(model, psd_in_domain(model, Symmetric(subset.Q - supset.Q), domain))
 end
+const _LinearPiecewise = Sets.Piecewise{<:Any,<:Sets.PolarPoint}
+
+function _add_linear_piecewise_inclusion(
+    model,
+    subset::_LinearPiecewise,
+    supset::_LinearPiecewise,
+)
+    # The target gauge is the maximum of its linear pieces. The source gauge
+    # is linear on each cone, so checking its generators suffices.
+    for (piece, cone) in zip(subset.sets, subset.pieces), target in supset.sets
+        difference = piece.a - target.a
+        for ray in rays(cone)
+            @constraint(model, dot(difference, Polyhedra.coord(ray)) >= 0)
+        end
+        for line in lines(cone)
+            @constraint(model, dot(difference, Polyhedra.coord(line)) == 0)
+        end
+    end
+    return nothing
+end
+
 function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Sets.Piecewise,
                                                              <:Sets.Piecewise},
                              name::String = "")
     subset = constraint.subset
     supset = constraint.supset
+    if subset isa _LinearPiecewise && supset isa _LinearPiecewise &&
+       (subset.polytope === nothing || supset.polytope === nothing)
+        return _add_linear_piecewise_inclusion(model, subset, supset)
+    end
     for (i, si) in enumerate(subset.sets)
         for (j, sj) in enumerate(supset.sets)
             add_constraint_inclusion_domain(model, si, sj, subset.pieces[i] ∩ supset.pieces[j])
