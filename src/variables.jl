@@ -298,6 +298,26 @@ function variable_set(model::JuMP.AbstractModel, set::Domain, space::Space, n, x
     )
 end
 
+"""
+    polar(set::AbstractVariable)
+
+A variable family representing the polar of `set`. Construction and space
+metadata are forwarded to the wrapped family. Applying `polar` twice returns
+that family. Supported constraints depend on the resulting set representation.
+"""
+struct PolarVariable{S<:AbstractVariable} <: AbstractVariable
+    set::S
+    dimension::Union{Int,Nothing}
+end
+Polyhedra.polar(set::AbstractVariable) = PolarVariable(set, set.dimension)
+Polyhedra.polar(set::PolarVariable) = set.set
+Sets.space_variables(set::PolarVariable) = Sets.space_variables(set.set)
+variable_polyvars(set::PolarVariable, spaces::Spaces, index::SpaceIndex) =
+    variable_polyvars(set.set, spaces, index)
+function variable_set(model::JuMP.AbstractModel, set::PolarVariable, space::Space, n, x)
+    return Polyhedra.polar(variable_set(model, set.set, space, n, x))
+end
+
 ### SetVariableRef ###
 mutable struct SetVariableRef{M <: JuMP.AbstractModel,
                               S <: AbstractVariable} <: JuMP.AbstractVariableRef

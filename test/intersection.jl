@@ -326,4 +326,80 @@ end
     @test_throws DimensionMismatch Domain(family, MOI.Nonnegatives(3))
 end
 
+@testset "Polar variable families" begin
+    inner = Domain(Polytope(symmetric = true), MOI.Nonnegatives)
+    family = polar(inner)
+    @test polar(family) === inner
+    @test family.dimension === nothing
+    @test polar(Ellipsoid(dimension = 3)).dimension == 3
+    @test Sets.space_variables(family) === nothing
+    @test SetProg.variable_polyvars(family, SetProg.Spaces(), SetProg.SpaceIndex(1)) ===
+          nothing
+    orthant = polyhedron(hrep(-Matrix{Float64}(I, 2, 2), zeros(2)))
+    unit = polar(Sets.Intersection(Sets.PolarPoint(ones(2)), orthant))
+    for rate in (0.6, 0.4)
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @variable(model, S, family)
+        @constraint(model, unit ⊆ S)
+        @constraint(model, ([0.5 0.1; 0.0 0.25] / rate) * S ⊆ S)
+        optimize!(model)
+        @test termination_status(model) == (rate == 0.6 ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        if rate == 0.6
+            fitted = value(S)
+            @test fitted isa Sets.Polar{<:Any,<:Sets.Intersection}
+            @test all(>=(1 - 1e-7), polar(fitted).set.a)
+            @test Sets.dimension(fitted) == 2
+        end
+    end
+    for space in (SetProg.PrimalSpace, SetProg.DualSpace)
+        model = Model()
+        set = SetProg.variable_set(
+            model,
+            polar(Ellipsoid(symmetric = true)),
+            space,
+            2,
+            nothing,
+        )
+        @test (space == SetProg.PrimalSpace ? set : polar(set)) isa
+              Sets.Polar{<:Any,<:Sets.Ellipsoid}
+        @test num_variables(model) == 3
+    end
+    # A cross-polytope partition supplies the orthant fan of a weighted 1-norm.
+    lib = Polyhedra.DefaultLibrary{Float64}(
+        optimizer_with_attributes(
+            GLPK.Optimizer,
+            "presolve" => GLPK.GLP_ON,
+            MOI.Silent() => true,
+        ),
+    )
+    partition =
+        polyhedron(convexhull([1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]), lib)
+    inner = Polytope(symmetric = true, piecewise = partition)
+    unit = polar(
+        Sets.Piecewise(
+            [Sets.PolarPoint(h.a / h.β) for h in halfspaces(partition)],
+            partition,
+        ),
+    )
+    for rate in (0.6, 0.4)
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @variable(model, S, polar(inner))
+        @constraint(model, unit ⊆ S)
+        @constraint(model, (-Matrix{Float64}(I, 2, 2)) * S ⊆ S)
+        @constraint(model, ([0.5 -0.1; 0.0 0.25] / rate) * S ⊆ S)
+        optimize!(model)
+        @test termination_status(model) == (rate == 0.6 ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        if rate == 0.6
+            fitted = value(S)
+            @test fitted isa Sets.Polar{<:Any,<:Sets.Piecewise}
+            pieces = polar(fitted).sets
+            @test all(s -> any(t -> isapprox(s.a, -t.a; atol = 1e-7), pieces), pieces)
+        end
+    end
+
+end
+
+
 end

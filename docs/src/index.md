@@ -27,3 +27,17 @@ The wrapper also accepts other families, such as
 `Domain(Ellipsoid(symmetric = true), MOI.Nonnegatives)`, and constructs a
 `Sets.Intersection`. Available constraints depend on the underlying set type.
 Domain-restricted variables currently support primal modeling only.
+
+## Polar variable families
+
+Wrap a family in `polar` to construct the polar of its instantiated set:
+
+```julia
+@variable(model, B, polar(Domain(Polytope(symmetric = true), MOI.Nonnegatives)))
+```
+
+For positive coefficients `c`, the inner set is the positive simplex
+`{x ≥ 0 : c'x ≤ 1}`; its polar has coordinate bounds `xᵢ ≤ cᵢ`.
+Intersecting that polar with the nonnegative orthant gives a positive box.
+The wrapper forwards dimension and polynomial coordinates, and
+`polar(polar(family))` returns `family`.
