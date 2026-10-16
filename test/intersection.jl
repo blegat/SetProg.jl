@@ -142,4 +142,101 @@ end
     end
 end
 
+@testset "Inclusions of copositive linear gauges" begin
+    lib = Polyhedra.DefaultLibrary{Float64}(
+        optimizer_with_attributes(
+            GLPK.Optimizer,
+            "presolve" => GLPK.GLP_ON,
+            MOI.Silent() => true,
+        ),
+    )
+    orthant = polyhedron(hrep(-Matrix{Float64}(I, 2, 2), zeros(2)), lib)
+    halfplane = polyhedron(hrep(reshape([-1.0, 0.0], 1, 2), [0.0]), lib)
+    diagonal =
+        polyhedron(hrep([HyperPlane([1.0, -1.0], 0.0)], [HalfSpace([-1.0, 0.0], 0.0)]), lib)
+    source = Sets.Intersection(Sets.PolarPoint([2.0, 3.0]), orthant)
+    target = Sets.Intersection(Sets.PolarPoint([1.0, 2.0]), orthant)
+    strip = Sets.Intersection(Sets.PolarPoint([1.0, 0.0]), halfplane)
+    ray = Sets.Intersection(Sets.PolarPoint([2.0, 0.0]), diagonal)
+    origin = Sets.Intersection(
+        Sets.PolarPoint([1.0, 1.0]),
+        polyhedron(
+            hrep(
+                [HyperPlane([1.0, 0.0], 0.0), HyperPlane([0.0, 1.0], 0.0)],
+                HalfSpace{Float64,Vector{Float64}}[],
+            ),
+            lib,
+        ),
+    )
+    for (subset, supset, feasible) in (
+        (source, target, true),
+        (target, source, false),
+        (source, source, true),
+        ([0.5 0.1; 0.0 0.5] * source, target, true),
+        ([3.0 0.0; 0.0 1.0] * source, target, false),
+        ([0.5 0.0; 0.0 0.0] * source, target, true),
+        (zeros(2, 2) * source, target, true),
+        # Gauge dominance holds here, but the image leaves the orthant.
+        ([-0.5 0.0; 0.0 0.5] * source, target, false),
+        (source, strip, true),
+        (strip, strip, true),
+        (origin, target, true),
+        # A line must belong to the target domain in both directions.
+        (strip, Sets.Intersection(strip.set, orthant), false),
+        (ray, Sets.Intersection(Sets.PolarPoint([1.0, 1.0]), orthant), true),
+        (source, ray, false),
+    )
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @constraint(model, subset ⊆ supset)
+        optimize!(model)
+        @test termination_status(model) == (feasible ? MOI.OPTIMAL : MOI.INFEASIBLE)
+    end
+
+    for rate in (0.6, 0.4)
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @variable(model, c[1:2] >= 1)
+        S = Sets.Intersection(Sets.PolarPoint(c), orthant)
+        @constraint(model, ([0.5 0.0; 0.0 0.25] / rate) * S ⊆ S)
+        optimize!(model)
+        @test termination_status(model) == (rate == 0.6 ? MOI.OPTIMAL : MOI.INFEASIBLE)
+    end
+
+    for side in (:source, :target, :both)
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @variable(model, c[1:2] >= 1)
+        variable = Sets.Intersection(Sets.PolarPoint(c), orthant)
+        if side == :source
+            @constraint(model, variable ⊆ target)
+            @objective(model, Min, sum(c))
+        elseif side == :target
+            @constraint(model, source ⊆ variable)
+            @objective(model, Max, sum(c))
+        else
+            @variable(model, d[i=1:2] == i)
+            other = Sets.Intersection(Sets.PolarPoint(d), orthant)
+            @constraint(model, variable ⊆ other)
+            @objective(model, Min, sum(c))
+        end
+        optimize!(model)
+        @test termination_status(model) == MOI.OPTIMAL
+        @test value.(c) ≈ (side == :target ? [2.0, 3.0] : [1.0, 2.0])
+    end
+
+    shifted = polyhedron(hrep([1.0 0.0; 0.0 1.0], ones(2)), lib)
+    plane = polyhedron(
+        hrep([HyperPlane([1.0, 0.0], 1.0)], HalfSpace{Float64,Vector{Float64}}[]),
+        lib,
+    )
+    for domain in (shifted, plane)
+        affine = Sets.Intersection(source.set, domain)
+        for (subset, supset) in ((source, affine), (affine, source))
+            model = Model()
+            @test_throws ArgumentError @constraint(model, subset ⊆ supset)
+        end
+    end
+end
+
 end
