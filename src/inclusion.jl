@@ -150,6 +150,34 @@ function add_constraint_inclusion_domain(
     return _add_constraint_or_not(model, lin_in_domain(model, (subset.a - supset.a), domain))
 end
 
+const _LinearIntersection = Sets.Intersection{<:Any,<:Sets.PolarPoint}
+
+# Compare nonnegative homogeneous linear gauges on fixed cones. This
+# represents copositive gauges without introducing a piecewise partition.
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    constraint::InclusionConstraint{<:_LinearIntersection,<:_LinearIntersection},
+    name::String = "",
+)
+    subset, supset = constraint.subset, constraint.supset
+    for domain in (subset.domain, supset.domain)
+        all(h -> iszero(h.β), halfspaces(domain)) &&
+        all(h -> iszero(h.β), hyperplanes(domain)) ||
+            throw(ArgumentError("only homogeneous conic domains are supported"))
+    end
+    # The sublevel set contains a small positive multiple of every source
+    # cone direction, so its cone must also lie in the target cone.
+    directions = Iterators.flatten((
+        (Polyhedra.coord(r) for r in rays(subset.domain)),
+        (Polyhedra.coord(l) for l in lines(subset.domain)),
+        (-Polyhedra.coord(l) for l in lines(subset.domain)),
+    ))
+    if !all(v -> v in supset.domain, directions)
+        return @constraint(model, 0 <= -1)
+    end
+    return add_constraint_inclusion_domain(model, subset.set, supset.set, subset.domain)
+end
+
 function _quadratic_part(model, domain)
     Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain), j in 1:fulldim(domain)]
     for (i, hi) in enumerate(halfspaces(domain))
