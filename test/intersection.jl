@@ -294,11 +294,14 @@ end
     end
 
     model = Model(GLPK.Optimizer)
+    set_silent(model)
     @variable(model, S, Domain(Polytope(symmetric = true, dimension = 2), MOI.Nonnegatives))
     @constraint(model, S ⊆ hrep(Matrix{Float64}(I, 2, 2), ones(2)))
-    @test_throws ArgumentError("domain-restricted variables require primal modeling") optimize!(
-        model,
-    )
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+    @test SetProg.data(model).space == SetProg.DualSpace
+    @test value(S) isa Sets.Polar{<:Any,<:Sets.Intersection}
+    @test all(<=(1 + 1e-7), polar(value(S)).set.a)
 end
 
 @testset "Domain forwards ellipsoid construction" begin
@@ -324,6 +327,92 @@ end
           num_constraints(plain_model; count_variable_in_set_constraints = true) ==
           1
     @test_throws DimensionMismatch Domain(family, MOI.Nonnegatives(3))
+
+    dual_model = Model()
+    dual_set = SetProg.variable_set(dual_model, wrapper, SetProg.DualSpace, 2, nothing)
+    @test dual_set isa Sets.Polar{<:Any,<:Sets.Intersection{<:Any,<:Sets.Ellipsoid}}
+    @test polar(dual_set).domain === domain
+    @test num_variables(dual_model) == 3
+    @test list_of_constraint_types(dual_model) == list_of_constraint_types(model)
+end
+
+@testset "Automatic dual modeling of domain-restricted polytopes" begin
+    orthant = polyhedron(hrep(-Matrix{Float64}(I, 2, 2), zeros(2)))
+    # This normalization is a positive box extended by the negative orthant.
+    # Its polar form selects dual modeling without changing the variable family.
+    family = Domain(Polytope(symmetric = true), MOI.Nonnegatives)
+    for min_weight in (1.0, 3.0), rate in (0.6, 0.4)
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        unit = polar(Sets.Intersection(Sets.PolarPoint(fill(min_weight, 2)), orthant))
+        @variable(model, S, family)
+        @constraint(model, unit ⊆ S)
+        @constraint(model, ([0.5 0.1; 0.0 0.25] / rate) * S ⊆ S)
+        optimize!(model)
+        @test termination_status(model) == (rate == 0.6 ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        @test SetProg.data(model).space == SetProg.DualSpace
+        if rate == 0.6
+            fitted = value(S)
+            @test fitted isa Sets.Polar{<:Any,<:Sets.Intersection}
+            @test all(>=(min_weight - 1e-7), polar(fitted).set.a)
+            @test Sets.dimension(fitted) == 2
+        end
+    end
+
+    # The same variable family selects primal modeling for a fixed simplex superset.
+    for dual in (false, true)
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        simplex = Sets.Intersection(Sets.PolarPoint(ones(2)), orthant)
+        @variable(model, S, family)
+        if dual
+            @constraint(model, polar(simplex) ⊆ S)
+        else
+            @constraint(model, S ⊆ simplex)
+        end
+        A = [0.6 0.6; 0.0 0.0]
+        B = [0.0 0.0; 0.6 0.6]
+        @constraint(model, (A / 0.9) * S ⊆ S)
+        @constraint(model, (B / 0.9) * S ⊆ S)
+        optimize!(model)
+        @test termination_status(model) == (dual ? MOI.INFEASIBLE : MOI.OPTIMAL)
+        @test SetProg.data(model).space == (dual ? SetProg.DualSpace : SetProg.PrimalSpace)
+    end
+end
+
+@testset "Automatic dual modeling of symmetric parallelotopes" begin
+    lib = Polyhedra.DefaultLibrary{Float64}(
+        optimizer_with_attributes(
+            GLPK.Optimizer,
+            "presolve" => GLPK.GLP_ON,
+            MOI.Silent() => true,
+        ),
+    )
+    partition =
+        polyhedron(convexhull([1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]), lib)
+    unit = polar(
+        Sets.Piecewise(
+            [Sets.PolarPoint(h.a / h.β) for h in halfspaces(partition)],
+            partition,
+        ),
+    )
+    for rate in (0.6, 0.4)
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @variable(model, S, Polytope(symmetric = true, piecewise = partition))
+        @constraint(model, unit ⊆ S)
+        @constraint(model, (-Matrix{Float64}(I, 2, 2)) * S ⊆ S)
+        @constraint(model, ([0.5 -0.1; 0.0 0.25] / rate) * S ⊆ S)
+        optimize!(model)
+        @test termination_status(model) == (rate == 0.6 ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        @test SetProg.data(model).space == SetProg.DualSpace
+        if rate == 0.6
+            fitted = value(S)
+            @test fitted isa Sets.Polar{<:Any,<:Sets.Piecewise}
+            pieces = polar(fitted).sets
+            @test all(s -> any(t -> isapprox(s.a, -t.a; atol = 1e-7), pieces), pieces)
+        end
+    end
 end
 
 end

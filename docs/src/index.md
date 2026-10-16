@@ -26,4 +26,8 @@ the second argument, with its dimension checked against the wrapped family.
 The wrapper also accepts other families, such as
 `Domain(Ellipsoid(symmetric = true), MOI.Nonnegatives)`, and constructs a
 `Sets.Intersection`. Available constraints depend on the underlying set type.
-Domain-restricted variables currently support primal modeling only.
+The constraints select the modeling space. `S ⊆ unit` uses the restricted
+primal gauge. A normalization written as `polar(unit) ⊆ S` selects dual
+modeling, returning the polar of the restricted gauge. For a positive simplex
+`unit`, this is the set of points with coordinate bounds `xᵢ ≤ cᵢ`, whose
+intersection with the nonnegative orthant is a positive box.
