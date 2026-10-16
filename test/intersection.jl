@@ -239,4 +239,91 @@ end
     end
 end
 
+@testset "Domain variable wrapper" begin
+    lib = Polyhedra.DefaultLibrary{Float64}(
+        optimizer_with_attributes(
+            GLPK.Optimizer,
+            "presolve" => GLPK.GLP_ON,
+            MOI.Silent() => true,
+        ),
+    )
+    orthant = polyhedron(hrep(-Matrix{Float64}(I, 2, 2), zeros(2)), lib)
+    @test Domain(Polytope(symmetric = true), orthant).dimension == 2
+    @test Domain(Polytope(symmetric = true), hrep(orthant)).dimension == 2
+    @test Domain(Polytope(symmetric = true), MOI.Nonnegatives(3)).dimension == 3
+    @test Domain(Polytope(symmetric = true), MOI.Nonnegatives).dimension === nothing
+    @test Domain(Polytope(true, 2, nothing), MOI.Nonnegatives).dimension == 2
+    @test_throws DimensionMismatch Domain(Polytope(dimension = 3), orthant)
+    @test_throws DimensionMismatch Domain(Polytope(dimension = 2), MOI.Nonnegatives(3))
+
+    unit = Sets.Intersection(Sets.PolarPoint(ones(2)), orthant)
+    for domain in (orthant, hrep(orthant), MOI.Nonnegatives(2), MOI.Nonnegatives),
+        rate in (0.6, 0.4)
+
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        # The unit simplex supplies the dimension for the deferred orthant.
+        @variable(model, S, Domain(Polytope(symmetric = true), domain))
+        @constraint(model, S ⊆ unit)
+        @constraint(model, ([0.5 0.1; 0.0 0.25] / rate) * S ⊆ S)
+        optimize!(model)
+        @test termination_status(model) == (rate == 0.6 ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        if rate == 0.6
+            fitted = value(S)
+            @test fitted isa Sets.Intersection
+            @test all(>=(1 - 1e-7), fitted.set.a)
+            @test Sets.dimension(fitted) == 2
+            @test [-1.0, 1.0] ∉ fitted.domain
+            @test SetProg.data(model).space == SetProg.PrimalSpace
+        end
+    end
+
+    # The domain may also be bounded and affine; membership needs no conic certificate.
+    bounded = polyhedron(hrep([-1.0 0.0; 0.0 -1.0; 1.0 0.0], [0.0, 0.0, 0.5]), lib)
+    for (point, feasible) in
+        (([0.25, 0.25], true), ([-0.25, 0.25], false), ([0.75, 0.0], false))
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @variable(model, S, Domain(Polytope(symmetric = true), bounded))
+        @constraint(model, point in S)
+        optimize!(model)
+        @test termination_status(model) == (feasible ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        if feasible
+            @test value(S).domain === bounded
+        end
+    end
+
+    model = Model(GLPK.Optimizer)
+    @variable(model, S, Domain(Polytope(symmetric = true, dimension = 2), MOI.Nonnegatives))
+    @constraint(model, S ⊆ hrep(Matrix{Float64}(I, 2, 2), ones(2)))
+    @test_throws ArgumentError("domain-restricted variables require primal modeling") optimize!(
+        model,
+    )
+end
+
+@testset "Domain forwards ellipsoid construction" begin
+    model = Model()
+    family = Ellipsoid(symmetric = true, dimension = 2)
+    domain = polyhedron(hrep(-Matrix{Float64}(I, 2, 2), zeros(2)))
+    wrapper = Domain(family, domain)
+    @test wrapper.set === family
+    @test wrapper.dimension == 2
+    @test Sets.space_variables(wrapper) === nothing
+    @test SetProg.variable_polyvars(wrapper, SetProg.Spaces(), SetProg.SpaceIndex(1)) ===
+          nothing
+    restricted = SetProg.variable_set(model, wrapper, SetProg.PrimalSpace, 2, nothing)
+    @test restricted isa Sets.Intersection{<:Any,<:Sets.Ellipsoid}
+    @test restricted.domain === domain
+    @test size(restricted.set.Q) == (2, 2)
+    @test num_variables(model) == 3
+    # SumOfSquares specializes the 2×2 PSD cone when its extension is loaded.
+    plain_model = Model()
+    SetProg.variable_set(plain_model, family, SetProg.PrimalSpace, 2, nothing)
+    @test list_of_constraint_types(model) == list_of_constraint_types(plain_model)
+    @test num_constraints(model; count_variable_in_set_constraints = true) ==
+          num_constraints(plain_model; count_variable_in_set_constraints = true) ==
+          1
+    @test_throws DimensionMismatch Domain(family, MOI.Nonnegatives(3))
+end
+
 end
