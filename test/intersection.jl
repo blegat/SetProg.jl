@@ -316,11 +316,13 @@ end
     @test restricted.domain === domain
     @test size(restricted.set.Q) == (2, 2)
     @test num_variables(model) == 3
-    @test num_constraints(
-        model,
-        Vector{VariableRef},
-        MOI.PositiveSemidefiniteConeTriangle,
-    ) == 1
+    # SumOfSquares specializes the 2×2 PSD cone when its extension is loaded.
+    plain_model = Model()
+    SetProg.variable_set(plain_model, family, SetProg.PrimalSpace, 2, nothing)
+    @test list_of_constraint_types(model) == list_of_constraint_types(plain_model)
+    @test num_constraints(model; count_variable_in_set_constraints = true) ==
+          num_constraints(plain_model; count_variable_in_set_constraints = true) ==
+          1
     @test_throws DimensionMismatch Domain(family, MOI.Nonnegatives(3))
 end
 
