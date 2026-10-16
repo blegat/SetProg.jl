@@ -255,8 +255,9 @@ end
 Restrict a set variable family to a fixed polyhedral domain, constructing a
 `Sets.Intersection` when the variable is instantiated. Accepts a Polyhedra
 representation or polyhedron, `MOI.Nonnegatives(n)`, or `MOI.Nonnegatives`
-to infer the orthant dimension from the model. Requires primal modeling;
-supported constraints depend on the resulting intersection's set type.
+to infer the orthant dimension from the model. The domain restricts the gauge
+in the selected modeling space: dual modeling returns the polar of the
+restricted gauge. Supported constraints depend on the resulting intersection.
 """
 struct Domain{S<:AbstractVariable,D} <: AbstractVariable
     set::S
@@ -290,12 +291,12 @@ function _domain_rep(::Union{MOI.Nonnegatives,Type{MOI.Nonnegatives}}, n)
     return polyhedron(hrep(-Matrix{Float64}(I, n, n), zeros(n)))
 end
 function variable_set(model::JuMP.AbstractModel, set::Domain, space::Space, n, x)
-    space == PrimalSpace ||
-        throw(ArgumentError("domain-restricted variables require primal modeling"))
-    return Sets.Intersection(
-        variable_set(model, set.set, space, n, x),
-        _domain_rep(set.domain, n),
-    )
+    variable = variable_set(model, set.set, space, n, x)
+    domain = _domain_rep(set.domain, n)
+    if space == DualSpace
+        return Polyhedra.polar(Sets.Intersection(Polyhedra.polar(variable), domain))
+    end
+    return Sets.Intersection(variable, domain)
 end
 
 ### SetVariableRef ###

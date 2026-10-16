@@ -75,6 +75,14 @@ function set_space(
     return set_space(space, PrimalSpace)
 end
 
+# A fixed polar subset is compared with the variable's polar representation.
+function set_space(
+    space::Space,
+    ::InclusionConstraint{<:Sets.Polar{<:Number},<:SetVariableRef},
+)
+    return set_space(space, DualSpace)
+end
+
 # A constant superset which is not an ellipsoid cannot be transformed to the
 # dual space so we need to stay in the primal space where both sets are
 # represented by their gauge function
