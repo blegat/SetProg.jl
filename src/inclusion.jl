@@ -82,7 +82,8 @@ function set_space(space::Space,
                    ::InclusionConstraint{<:SetVariableRef,
                                          <:Union{Sets.PolySet{T},
                                                  Sets.ConvexPolySet{T},
-                                                 Sets.Piecewise{T}}}) where T<:Number
+                                                 Sets.Piecewise{T},
+                                                 Sets.Intersection{T}}}) where T<:Number
     return set_space(space, PrimalSpace)
 end
 

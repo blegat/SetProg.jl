@@ -30,15 +30,32 @@ function polar_perspective_ellipsoid(model, Q::Symmetric{JuMP.VariableRef},
 end
 
 ### Polytope ###
-struct Polytope <: AbstractVariable
+"""
+    Polytope(; symmetric = false, dimension = nothing, piecewise = nothing,
+             domain = nothing)
+
+A polyhedral set variable, optionally restricted to a fixed polyhedral domain.
+`domain` accepts a Polyhedra representation or polyhedron, `MOI.Nonnegatives(n)`,
+or `MOI.Nonnegatives` to infer the orthant dimension from the model.
+Domain-restricted variables currently require primal modeling.
+"""
+struct Polytope{D} <: AbstractVariable
     symmetric::Bool
-    dimension::Union{Nothing, Int}
-    piecewise::Union{Polyhedra.Rep, Nothing}
+    dimension::Union{Nothing,Int}
+    piecewise::Union{Polyhedra.Rep,Nothing}
+    domain::D
 end
+Polytope(
+    symmetric::Bool,
+    dimension::Union{Int,Nothing},
+    piecewise::Union{Polyhedra.Rep,Nothing},
+) = Polytope(symmetric, dimension, piecewise, nothing)
+
 function Polytope(;
-    symmetric::Bool=false,
-    dimension::Union{Int, Nothing}=nothing,
-    piecewise::Union{Polyhedra.Rep, Nothing}=nothing,
+    symmetric::Bool = false,
+    dimension::Union{Int,Nothing} = nothing,
+    piecewise::Union{Polyhedra.Rep,Nothing} = nothing,
+    domain::Union{Nothing,Polyhedra.Rep,MOI.Nonnegatives,Type{MOI.Nonnegatives}} = nothing,
 )
     function update_dim(object, dim_fun)
         if object !== nothing
@@ -51,14 +68,27 @@ function Polytope(;
         end
     end
     update_dim(piecewise, Polyhedra.fulldim)
-    return Polytope(symmetric, dimension, piecewise)
+    if domain isa Polyhedra.Rep
+        update_dim(domain, Polyhedra.fulldim)
+    elseif domain isa MOI.Nonnegatives
+        update_dim(domain, MOI.dimension)
+    end
+    return Polytope(symmetric, dimension, piecewise, domain)
 end
 Sets.space_variables(::Polytope) = nothing
 
+_polytope_domain(domain::Polyhedra.Polyhedron, n) = domain
+_polytope_domain(domain::Polyhedra.Representation, n) = polyhedron(domain)
+function _polytope_domain(::Union{MOI.Nonnegatives,Type{MOI.Nonnegatives}}, n)
+    return polyhedron(hrep(-Matrix{Float64}(I, n, n), zeros(n)))
+end
+
 function variable_set(model::JuMP.AbstractModel, ell::Polytope, space::Space,
                       space_dimension, space_polyvars)
+    ell.domain === nothing || space == PrimalSpace ||
+        throw(ArgumentError("domain-restricted polytopes require primal modeling"))
     n = space_dimension
-        if ell.symmetric
+    if ell.symmetric || ell.domain !== nothing
         if ell.piecewise === nothing
             set = Sets.PolarPoint(@variable(model, [1:n], base_name = "a"))
         else
@@ -89,6 +119,9 @@ function variable_set(model::JuMP.AbstractModel, ell::Polytope, space::Space,
                     end
                 end
             end
+        end
+        if ell.domain !== nothing
+            set = Sets.Intersection(set, _polytope_domain(ell.domain, n))
         end
         if space == PrimalSpace
             return set

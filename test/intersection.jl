@@ -239,4 +239,66 @@ end
     end
 end
 
+@testset "Domain-restricted Polytope variables" begin
+    lib = Polyhedra.DefaultLibrary{Float64}(
+        optimizer_with_attributes(
+            GLPK.Optimizer,
+            "presolve" => GLPK.GLP_ON,
+            MOI.Silent() => true,
+        ),
+    )
+    orthant = polyhedron(hrep(-Matrix{Float64}(I, 2, 2), zeros(2)), lib)
+    @test Polytope(domain = orthant).dimension == 2
+    @test Polytope(domain = hrep(orthant)).dimension == 2
+    @test Polytope(domain = MOI.Nonnegatives(3)).dimension == 3
+    @test Polytope(domain = MOI.Nonnegatives).dimension === nothing
+    @test Polytope(true, 2, nothing).domain === nothing
+    @test_throws DimensionMismatch Polytope(dimension = 3, domain = orthant)
+    @test_throws DimensionMismatch Polytope(dimension = 2, domain = MOI.Nonnegatives(3))
+
+    unit = Sets.Intersection(Sets.PolarPoint(ones(2)), orthant)
+    for domain in (orthant, hrep(orthant), MOI.Nonnegatives(2), MOI.Nonnegatives),
+        rate in (0.6, 0.4)
+
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        # The unit simplex supplies the dimension for the deferred orthant.
+        @variable(model, S, Polytope(domain = domain))
+        @constraint(model, S ⊆ unit)
+        @constraint(model, ([0.5 0.1; 0.0 0.25] / rate) * S ⊆ S)
+        optimize!(model)
+        @test termination_status(model) == (rate == 0.6 ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        if rate == 0.6
+            fitted = value(S)
+            @test fitted isa Sets.Intersection
+            @test all(>=(1 - 1e-7), fitted.set.a)
+            @test Sets.dimension(fitted) == 2
+            @test [-1.0, 1.0] ∉ fitted.domain
+            @test SetProg.data(model).space == SetProg.PrimalSpace
+        end
+    end
+
+    # The domain may also be bounded and affine; membership needs no conic certificate.
+    bounded = polyhedron(hrep([-1.0 0.0; 0.0 -1.0; 1.0 0.0], [0.0, 0.0, 0.5]), lib)
+    for (point, feasible) in
+        (([0.25, 0.25], true), ([-0.25, 0.25], false), ([0.75, 0.0], false))
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @variable(model, S, Polytope(domain = bounded))
+        @constraint(model, point in S)
+        optimize!(model)
+        @test termination_status(model) == (feasible ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        if feasible
+            @test value(S).domain === bounded
+        end
+    end
+
+    model = Model(GLPK.Optimizer)
+    @variable(model, S, Polytope(domain = MOI.Nonnegatives, dimension = 2))
+    @constraint(model, S ⊆ hrep(Matrix{Float64}(I, 2, 2), ones(2)))
+    @test_throws ArgumentError("domain-restricted polytopes require primal modeling") optimize!(
+        model,
+    )
+end
+
 end
