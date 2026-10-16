@@ -30,6 +30,14 @@ function apply_map(li::Sets.LinearPreImage{<:Sets.Ellipsoid}, new_vars)
     return Sets.Ellipsoid(Symmetric(li.A' * li.set.Q * li.A))
 end
 
+# A preimage distributes over intersection, including singular and rectangular maps.
+function apply_map(li::Sets.LinearPreImage{<:Sets.Intersection}, new_vars)
+    return Sets.Intersection(
+        apply_map(Sets.LinearPreImage(li.set.set, li.A), new_vars),
+        li.A \ li.set.domain,
+    )
+end
+
 function apply_map(li::Sets.LinearPreImage{<:Sets.Piecewise}, new_vars)
     return Sets.Piecewise(
         [apply_map(Sets.LinearPreImage(set, li.A), new_vars) for set in li.set.sets],
