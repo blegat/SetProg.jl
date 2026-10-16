@@ -6,14 +6,14 @@ This package allows the formulation of a mathematical programming involving both
 
 ## Variables on fixed domains
 
-The `domain` keyword restricts a `Polytope` variable to a fixed polyhedral
-region. For an orthant whose dimension is inferred from the model, use
+The `Domain` wrapper restricts a set variable to a fixed polyhedral region.
+For an orthant whose dimension is inferred from the model, use
 `MOI.Nonnegatives`:
 
 ```julia
 using SetProg
 model = Model()
-@variable(model, S, Polytope(domain = MOI.Nonnegatives))
+@variable(model, S, Domain(Polytope(symmetric = true), MOI.Nonnegatives))
 orthant = polyhedron(hrep([-1.0 0.0; 0.0 -1.0], zeros(2)))
 unit = SetProg.Sets.Intersection(SetProg.Sets.PolarPoint(ones(2)), orthant)
 @constraint(model, S ⊆ unit)
@@ -22,5 +22,8 @@ unit = SetProg.Sets.Intersection(SetProg.Sets.PolarPoint(ones(2)), orthant)
 Here the unit simplex supplies dimension two and bounds the linear gauge's
 coefficients below by one. `MOI.Nonnegatives(n)` specifies the dimension
 explicitly. A fixed Polyhedra representation or polyhedron is also accepted as
-`domain`, with its dimension checked against the other variable data.
+the second argument, with its dimension checked against the wrapped family.
+The wrapper also accepts other families, such as
+`Domain(Ellipsoid(symmetric = true), MOI.Nonnegatives)`, and constructs a
+`Sets.Intersection`. Available constraints depend on the underlying set type.
 Domain-restricted variables currently support primal modeling only.
