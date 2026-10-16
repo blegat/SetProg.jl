@@ -72,4 +72,74 @@ end
     end
 end
 
+@testset "Linear preimages of intersections" begin
+    # The affine upper bound distinguishes the domain from its recession cone.
+    domain = polyhedron(hrep([-1.0 0.0; 0.0 -1.0; 1.0 0.0], [0.0, 0.0, 0.5]))
+    for inner in
+        (Sets.PolarPoint([1.0, 1.0]), Sets.Ellipsoid(Symmetric(Matrix{Float64}(I, 2, 2))))
+        set = Sets.Intersection(inner, domain)
+        for (A, cases) in (
+            (
+                [2.0 0.0; 0.0 1.0],
+                (
+                    ([0.125, 0.25], true),
+                    ([-0.125, 0.25], false),
+                    ([0.375, 0.0], false),
+                    ([0.25, 1.0], false),
+                ),
+            ),
+            (
+                [1.0 0.0 0.0; 0.0 1.0 0.0],
+                (
+                    ([0.25, 0.25, 10.0], true),
+                    ([-0.25, 0.25, 0.0], false),
+                    ([0.75, 0.0, 0.0], false),
+                    ([0.5, 1.0, -5.0], false),
+                ),
+            ),
+            (
+                reshape([1.0, 1.0], 2, 1),
+                (([0.25], true), ([-0.25], false), ([0.75], false)),
+            ),
+            (
+                [1.0 0.0; 0.0 0.0],
+                (
+                    ([0.25, 100.0], true),
+                    ([0.25, -100.0], true),
+                    ([-0.25, 0.0], false),
+                    ([0.75, 0.0], false),
+                ),
+            ),
+        )
+            preimage = SetProg.apply_map(Sets.LinearPreImage(set, A), nothing)
+            @test Sets.dimension(preimage) == size(A, 2)
+            for (point, feasible) in cases
+                model = Model(GLPK.Optimizer)
+                set_silent(model)
+                @constraint(model, point in preimage)
+                optimize!(model)
+                @test termination_status(model) == (feasible ? MOI.OPTIMAL : MOI.INFEASIBLE)
+            end
+        end
+    end
+end
+
+@testset "Linear preimages retain variable coefficients" begin
+    domain = polyhedron(hrep([-1.0 0.0; 0.0 -1.0], zeros(2)))
+    for (point, feasible) in
+        (([0.25, 0.0], true), ([0.75, 0.0], false), ([-0.25, 0.0], false))
+        model = Model(GLPK.Optimizer)
+        set_silent(model)
+        @variable(model, c[i=1:2] == i)
+        set = Sets.Intersection(Sets.PolarPoint(c), domain)
+        preimage = SetProg.apply_map(Sets.LinearPreImage(set, [2.0 0.0; 0.0 1.0]), nothing)
+        @constraint(model, point in preimage)
+        optimize!(model)
+        @test termination_status(model) == (feasible ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        if feasible
+            @test value(preimage).set.a ≈ [2.0, 2.0]
+        end
+    end
+end
+
 end
