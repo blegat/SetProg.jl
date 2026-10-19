@@ -351,6 +351,49 @@ end
         F = MOI.VectorAffineFunction{Float64}
         S = SumOfSquares.PositiveSemidefinite2x2ConeTriangle
         @test _num_constraints(model, F, S) == 1
+        @test _num_constraints(model, MOI.VectorOfVariables, S) == 1
+    end
+end
+
+@testset "Ellipsoid positivity from inclusion" begin
+    cone = SumOfSquares.PositiveSemidefinite2x2ConeTriangle
+    @testset "$diagonal" for diagonal in ([1.0, 2.0], [0.0, 1.0], [-1.0, 1.0])
+        model = _mock_model()
+        @variable(model, S, Ellipsoid(symmetric = true, dimension = 2))
+        bound = Sets.Ellipsoid(Symmetric(Matrix(Diagonal(diagonal))))
+        c = @constraint(model, S ⊆ bound)
+        optimize!(model)
+        @test SetProg.data(model).space == SetProg.PrimalSpace
+        @test _num_constraints(model, MOI.VectorOfVariables, cone) ==
+              (all(>(0), diagonal) ? 0 : 1)
+        @test _num_constraints(model, MOI.VectorAffineFunction{Float64}, cone) == 1
+        Q = S.variable.Q
+        expected = [Q[i, j] - bound.Q[i, j] for j = 1:2 for i = 1:j]
+        actual = constraint_object(SetProg.transformed_constraint(c)).func
+        @test JuMP.isequal_canonical(actual, expected)
+    end
+    @testset "Shared family" begin
+        model = _mock_model()
+        family = Ellipsoid(symmetric = true, dimension = 2)
+        @variable(model, S, family)
+        @variable(model, T, family)
+        bound = Sets.Ellipsoid(Symmetric(Matrix(1.0I, 2, 2)))
+        @constraint(model, S ⊆ bound)
+        optimize!(model)
+        # Only S has a lower bound; T still needs a positivity constraint.
+        @test _num_constraints(model, MOI.VectorOfVariables, cone) == 1
+        @test !family.guaranteed_psd
+    end
+    @testset "Shifted gauge" begin
+        model = _mock_model()
+        bound = Sets.Ellipsoid(Symmetric(Matrix(1.0I, 2, 2)))
+        superset = Sets.Ellipsoid(Symmetric(2 * bound.Q))
+        @variable(model, S, Ellipsoid(symmetric = true, superset = superset))
+        @constraint(model, S ⊆ bound)
+        optimize!(model)
+        # Q = R + 2I; the inclusion only implies R ⪰ -I.
+        # Keep the stronger constraint on the PSD remainder R.
+        @test _num_constraints(model, MOI.VectorOfVariables, cone) == 1
     end
 end
 
@@ -365,6 +408,8 @@ end
         F = MOI.VectorAffineFunction{Float64}
         cone = SumOfSquares.PositiveSemidefinite2x2ConeTriangle
         @test _num_constraints(model, F, cone) == 2
+        # An upper bound Q ⪯ Q_E does not imply Q ⪰ 0.
+        @test _num_constraints(model, MOI.VectorOfVariables, cone) == 1
         for (subset, constraint) in zip(subsets, constraints)
             # E ⊆ S requires Q_E - Q_S to be positive semidefinite.
             Q = S.variable.Q

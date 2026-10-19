@@ -4,6 +4,12 @@ struct InclusionConstraint{SubSetType, SupSetType, KWT} <: SetConstraint
     supset::SupSetType
     kws::KWT
 end
+function _implies_psd(
+    c::InclusionConstraint{<:SetVariableRef,<:Sets.Ellipsoid{<:Number}},
+    variable::SetVariableRef,
+)
+    return c.subset === variable && isposdef(c.supset.Q)
+end
 function need_variablify(c::InclusionConstraint)
     return need_variablify(c.subset) || need_variablify(c.supset)
 end

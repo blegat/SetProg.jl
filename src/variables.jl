@@ -346,9 +346,35 @@ function create_spaces(vref::SetVariableRef, spaces::Spaces)
 end
 space_index(vref::SetVariableRef) = vref.space_index
 
+_implies_psd(::Any, ::SetVariableRef) = false
+_variable_family(vref::SetVariableRef, ::Space) = vref.set
+function _variable_family(
+    vref::SetVariableRef{<:JuMP.AbstractModel,Ellipsoid},
+    space::Space,
+)
+    ell = vref.set
+    # In primal space, S ⊆ {x : x'Px ≤ 1} implies Q ⪰ P.
+    # A shifted or piecewise representation still needs its own PSD constraints.
+    if space == PrimalSpace &&
+       ell.symmetric &&
+       ell.superset === nothing &&
+       ell.piecewise === nothing &&
+       any(c -> _implies_psd(c, vref), values(data(vref.model).constraints))
+        return Ellipsoid(
+            ell.point,
+            ell.symmetric,
+            ell.dimension,
+            true,
+            ell.superset,
+            ell.piecewise,
+        )
+    end
+    return ell
+end
+
 function load(model::JuMP.AbstractModel, vref::SetVariableRef)
     d = data(model)
-    vref.variable = variable_set(model, vref.set, d.space,
+    vref.variable = variable_set(model, _variable_family(vref, d.space), d.space,
                                  space_dimension(d.spaces, vref.space_index),
                                  variable_polyvars(vref.set, d.spaces, vref.space_index))
 end
