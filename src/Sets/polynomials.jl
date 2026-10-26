@@ -6,8 +6,8 @@ using Polyhedra
         p::P
     end
 
-Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
-of degree `degree`.
+Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a polynomial
+of degree at most `degree`.
 """
 struct PolySet{T, B, U, P} <: AbstractSet{U}
     degree::Int
