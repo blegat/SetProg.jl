@@ -46,8 +46,13 @@ using Test
     ))
     model = direct_model(mock)
     @variable(model, S, Ellipsoid(psd = false, dimension = 2))
+    initial = SetProg.Sets.ShiftedEllipsoid(Symmetric([1.0 0; 0 1]), zeros(2), -16.0)
+    inclusion = @constraint(model, initial ⊆ S)
+    @constraint(model, [S, initial] in Disjoint())
     optimize!(model)
-    @test num_variables(model) == 6
+    @test num_variables(model) == 8
+    @test num_constraints(model, Vector{AffExpr}, MOI.PositiveSemidefiniteConeTriangle) == 2
+    @test size(SetProg.certificate_matrix(inclusion)) == (3, 3)
     @test value(S) isa SetProg.Sets.ShiftedEllipsoid
     @test SetProg.sublevel_eval(value(S), [1.0, 1.0]) == 1
     @test SetProg.data(model).perspective_polyvar === nothing

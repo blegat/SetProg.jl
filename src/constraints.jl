@@ -60,4 +60,5 @@ end
 
 include("membership.jl")
 include("inclusion.jl")
+include("separation.jl")
 include("tangent.jl")
