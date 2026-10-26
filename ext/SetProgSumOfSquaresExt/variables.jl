@@ -23,6 +23,7 @@ function polyset(;
     degree::Union{Int,Nothing} = nothing,
     dimension::Union{Int,Nothing} = nothing,
     convex::Bool = false,
+    psd::Bool = true,
     variables::Union{AbstractVector,Nothing} = nothing,
     superset::Union{Sets.PolySet,Nothing} = nothing,
     basis::Type = MultivariateBases.Monomial,
@@ -50,7 +51,17 @@ function polyset(;
             error("Space variables set does not correspond to superset space variables.")
         end
     end
-    return PolySet(point, symmetric, degree, dimension, convex, variables, superset, basis)
+    return PolySet(
+        point,
+        symmetric,
+        degree,
+        dimension,
+        convex,
+        psd,
+        variables,
+        superset,
+        basis,
+    )
 end
 
 function constrain_convex(model, p, vars)
@@ -92,12 +103,18 @@ function variable_set(
     space_polyvars,
 )
     n = space_dimension
+    !set.psd &&
+        !set.symmetric &&
+        space != PrimalSpace &&
+        throw(ArgumentError("an indefinite polynomial requires primal modeling"))
     d = data(model)
     # General all monomials of degree `degree`, we don't want monomials of
     # lower degree as the polynomial is homogeneous
     @assert iseven(set.degree)
     if set.symmetric
         monos = MP.monomials(space_polyvars, div(set.degree, 2))
+    elseif !set.psd
+        monos = MP.monomials(space_polyvars, 0:div(set.degree, 2))
     else
         monos = MP.monomials(lift_space_variables(d, space_polyvars), div(set.degree, 2))
     end
@@ -107,7 +124,23 @@ function variable_set(
     )
     # TODO If `set.convex` and `set.symmetric`, no need for the poly to be SOS,
     # see Lemma 6.33 of [BPT12].
-    p = @variable(model, variable_type=SOSPoly(basis))
+    p = if set.psd || set.superset !== nothing
+        @variable(model, variable_type=SOSPoly(basis))
+    else
+        Q = @variable(model, [1:length(basis), 1:length(basis)], Symmetric)
+        SumOfSquares.GramMatrix(Q, basis)
+    end
+    if !set.psd && !set.symmetric
+        set.point === nothing && set.superset === nothing || throw(
+            ArgumentError(
+                "indefinite affine polynomials do not support point or superset hints",
+            ),
+        )
+        set.convex && throw(
+            ArgumentError("convex indefinite polynomial families are not implemented"),
+        )
+        return Sets.PolySet(set.degree, p)
+    end
     if set.convex
         set.superset === nothing || error("superset not supported for convex PolySet")
         if set.symmetric

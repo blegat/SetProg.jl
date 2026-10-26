@@ -96,10 +96,9 @@ function apply_matrix(
     new_vars,
     d,
 ) where {T}
-    return apply_transformation(
-        p,
-        transformation(MultivariateBases.keys_as_monomials(p.basis), A, new_vars, d),
-    )
+    monos = MultivariateBases.keys_as_monomials(p.basis)
+    degrees = minimum(MP.degree, monos):d
+    return apply_transformation(p, transformation(monos, A, new_vars, degrees))
 end
 
 # computes A # μ or more precisely p(variables(p) => A * new_vars)

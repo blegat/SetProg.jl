@@ -40,6 +40,21 @@ using Test
     SetProg.create_spaces(SetProg.data(model))
     SetProg.load(model, P)
     @test P.variable isa SetProg.Sets.PolarPoint
+    mock = MOI.Utilities.MockOptimizer(MOI.Utilities.Model{Float64}())
+    MOI.Utilities.set_mock_optimize!(mock, m -> MOI.Utilities.mock_optimize!(
+        m, zeros(MOI.get(m, MOI.NumberOfVariables())),
+    ))
+    model = direct_model(mock)
+    @variable(model, S, Ellipsoid(psd = false, dimension = 2))
+    initial = SetProg.Sets.ShiftedEllipsoid(Symmetric([1.0 0; 0 1]), zeros(2), -16.0)
+    inclusion = @constraint(model, initial ⊆ S)
+    @constraint(model, [S, initial] in Disjoint())
+    optimize!(model)
+    @test num_variables(model) == 8
+    @test num_constraints(model, Vector{AffExpr}, MOI.PositiveSemidefiniteConeTriangle) == 2
+    @test value(S) isa SetProg.Sets.ShiftedEllipsoid
+    @test SetProg.sublevel_eval(value(S), [1.0, 1.0]) == 1
+    @test size(SetProg.certificate_matrix(inclusion)) == (3, 3)
     check_core_only()
     using DynamicPolynomials
     @test Base.get_extension(SetProg, :SetProgSumOfSquaresExt) === nothing

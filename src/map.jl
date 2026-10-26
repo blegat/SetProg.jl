@@ -30,6 +30,11 @@ function apply_map(li::Sets.LinearPreImage{<:Sets.Ellipsoid}, new_vars)
     return Sets.Ellipsoid(Symmetric(li.A' * li.set.Q * li.A))
 end
 
+function apply_map(li::Sets.LinearPreImage{<:Sets.ShiftedEllipsoid}, new_vars)
+    set = li.set
+    return Sets.ShiftedEllipsoid(Symmetric(li.A' * set.Q * li.A), li.A' * set.b, set.β)
+end
+
 # A preimage distributes over intersection, including singular and rectangular maps.
 function apply_map(li::Sets.LinearPreImage{<:Sets.Intersection}, new_vars)
     return Sets.Intersection(
@@ -75,7 +80,7 @@ function Base.:(*)(A::AbstractMatrix, set::Union{SetVariableRef, Sets.AbstractSe
 end
 
 needs_polyvars(::Sets.AbstractSet) = true
-needs_polyvars(::Union{Sets.Ellipsoid,Sets.PolarPoint}) = false
+needs_polyvars(::Union{Sets.Ellipsoid,Sets.ShiftedEllipsoid,Sets.PolarPoint}) = false
 needs_polyvars(set::Union{Sets.Polar,Sets.PerspectiveDual}) = needs_polyvars(set.set)
 needs_polyvars(set::Sets.Piecewise) = any(needs_polyvars, set.sets)
 
