@@ -11,6 +11,8 @@ function JuMP.build_constraint(
     if subset isa Sets.PolySet &&
        supset isa Sets.PolySet &&
        (
+           !(subset.degree isa Int) ||
+           !(supset.degree isa Int) ||
            MP.mindegree(MP.polynomial(subset.p)) != subset.degree ||
            MP.mindegree(MP.polynomial(supset.p)) != supset.degree
        )

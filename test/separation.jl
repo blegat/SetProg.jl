@@ -58,7 +58,7 @@ end
 @testset "Polynomial separation" begin
     @polyvar x[1:2]
     model = mock_model()
-    @variable(model, S, PolySet(psd = false, degree = 4, variables = x))
+    @variable(model, S, PolySet(psd = false, degree = 0:4, variables = x))
     initial = Shifted(Symmetric([1.0 0; 0 1]), zeros(2), -16.0)
     gamma = SProcedureMultiplier(; degree = 2)
     @constraint(model, initial ⊆ S, S_procedure_scaling = gamma)
