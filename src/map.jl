@@ -61,14 +61,14 @@ Given ``S = \\{\\, x \\mid p(x) \\le 1\\,\\}``, we have
 """
 function apply_map(li::Sets.LinearPreImage{<:Sets.PolySet}, new_vars)
     deg = li.set.degree
-    @assert iseven(deg)
-    q = apply_matrix(li.set.p, li.A, new_vars, div(deg, 2))
+    @assert iseven(maximum(deg))
+    q = apply_matrix(li.set.p, li.A, new_vars, div(maximum(deg), 2))
     return Sets.PolySet(deg, q)
 end
 function apply_map(li::Sets.LinearPreImage{<:Sets.ConvexPolySet}, new_vars)
     deg = li.set.degree
-    @assert iseven(deg)
-    q = apply_matrix(li.set.p, li.A, new_vars, div(deg, 2))
+    @assert iseven(maximum(deg))
+    q = apply_matrix(li.set.p, li.A, new_vars, div(maximum(deg), 2))
     return Sets.ConvexPolySet(deg, q, nothing)
 end
 

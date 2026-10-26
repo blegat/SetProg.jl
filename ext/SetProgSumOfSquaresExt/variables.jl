@@ -20,7 +20,7 @@ end
 function polyset(;
     point::Union{Nothing,HintPoint} = nothing,
     symmetric::Bool = false,
-    degree::Union{Int,Nothing} = nothing,
+    degree::Union{Sets.PolynomialDegrees,Nothing} = nothing,
     dimension::Union{Int,Nothing} = nothing,
     convex::Bool = false,
     psd::Bool = true,
@@ -31,7 +31,9 @@ function polyset(;
     if degree === nothing
         error("Degree of PolySet not specified, use PolySet(degree=..., ...)")
     end
-    if isodd(degree)
+    isempty(degree) && throw(ArgumentError("the degree selection must not be empty"))
+    minimum(degree) >= 0 || throw(ArgumentError("polynomial degrees must be nonnegative"))
+    if isodd(maximum(degree))
         throw(ArgumentError("Degree of PolySet not even"))
     end
     if dimension === nothing
@@ -103,18 +105,18 @@ function variable_set(
     space_polyvars,
 )
     n = space_dimension
-    !set.psd &&
-        !set.symmetric &&
+    explicit_degrees = !(set.degree isa Int)
+    explicit_degrees &&
         space != PrimalSpace &&
-        throw(ArgumentError("an indefinite polynomial requires primal modeling"))
+        throw(
+            ArgumentError("explicit polynomial degree selections require primal modeling"),
+        )
     d = data(model)
-    # General all monomials of degree `degree`, we don't want monomials of
-    # lower degree as the polynomial is homogeneous
-    @assert iseven(set.degree)
-    if set.symmetric
+    if explicit_degrees
+        degrees = div(minimum(set.degree), 2):div(maximum(set.degree), 2)
+        monos = MP.monomials(space_polyvars, degrees)
+    elseif set.symmetric
         monos = MP.monomials(space_polyvars, div(set.degree, 2))
-    elseif !set.psd
-        monos = MP.monomials(space_polyvars, 0:div(set.degree, 2))
     else
         monos = MP.monomials(lift_space_variables(d, space_polyvars), div(set.degree, 2))
     end
@@ -130,15 +132,26 @@ function variable_set(
         Q = @variable(model, [1:length(basis), 1:length(basis)], Symmetric)
         SumOfSquares.GramMatrix(Q, basis)
     end
-    if !set.psd && !set.symmetric
-        set.point === nothing && set.superset === nothing || throw(
-            ArgumentError(
-                "indefinite affine polynomials do not support point or superset hints",
-            ),
+    if explicit_degrees
+        set.point === nothing || throw(
+            ArgumentError("point hints are not supported with explicit degree ranges"),
         )
-        set.convex && throw(
-            ArgumentError("convex indefinite polynomial families are not implemented"),
-        )
+        if set.superset !== nothing
+            set.convex && error("superset not supported for convex PolySet")
+            p = SumOfSquares.gram_operate(+, set.superset.p, p)
+        end
+        # A Gram product may introduce degrees absent from the selection.
+        # Symmetric sets also exclude odd-degree terms.
+        for term in MP.terms(MP.polynomial(p))
+            degree = MP.degree(term)
+            if degree ∉ set.degree || (set.symmetric && isodd(degree))
+                @constraint(model, MP.coefficient(term) == 0)
+            end
+        end
+        if set.convex
+            proof = constrain_convex(model, p, space_polyvars)
+            return Sets.ConvexPolySet(set.degree, p, proof)
+        end
         return Sets.PolySet(set.degree, p)
     end
     if set.convex

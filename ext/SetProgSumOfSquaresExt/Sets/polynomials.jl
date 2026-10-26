@@ -2,7 +2,7 @@ function space_variables(set::PolySet)
     return MP.variables(set.p)
 end
 function ConvexPolySet(
-    degree::Int,
+    degree::Sets.PolynomialDegrees,
     p::GramMatrix{T,B,U},
     convexity_proof::SumOfSquares.SymMatrix{T},
 ) where {T,B,U}
@@ -13,7 +13,7 @@ function ConvexPolySet(
     )
 end
 function ConvexPolySet(
-    degree::Int,
+    degree::Sets.PolynomialDegrees,
     p::GramMatrix{S},
     convexity_proof::SumOfSquares.SymMatrix{T},
 ) where {S,T}

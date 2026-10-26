@@ -231,8 +231,8 @@ end
 struct PolySet <: AbstractVariable
     point::Union{Nothing, HintPoint}
     symmetric::Bool
-    degree::Int
-    dimension::Union{Nothing, Int}
+    degree::Sets.PolynomialDegrees
+    dimension::Union{Nothing,Int}
     convex::Bool
     psd::Bool
     variables::Union{Nothing,AbstractVector}

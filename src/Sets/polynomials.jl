@@ -1,16 +1,19 @@
 using Polyhedra
 
+const PolynomialDegrees = Union{Int,AbstractVector{Int}}
+
 """
     struct PolySet{T, B, U, P} <: AbstractSet{U}
-        degree::Int
+        degree::PolynomialDegrees
         p::P
     end
 
-Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a polynomial
-of degree at most `degree`.
+Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `degree` selects the
+allowed total degrees of `p`. An integer selects a homogeneous polynomial;
+`0:d` allows all degrees from zero through `d`.
 """
-struct PolySet{T, B, U, P} <: AbstractSet{U}
-    degree::Int
+struct PolySet{T,B,U,P} <: AbstractSet{U}
+    degree::PolynomialDegrees
     p::P
 end
 
@@ -18,16 +21,16 @@ perspective_variable(::PolySet) = nothing
 
 """
     struct ConvexPolySet{T, B, U, P, C} <: AbstractSet{U}
-        degree::Int
+        degree::PolynomialDegrees
         p::P
         convexity_proof::C # may be nothing after applying LinearMap
     end
 
-Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `p` is a homogeneous polynomial
-of degree `degree`.
+Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `degree` selects the
+allowed total degrees of `p`, as for [`PolySet`](@ref).
 """
-struct ConvexPolySet{T, B, U, P, C} <: AbstractSet{U}
-    degree::Int
+struct ConvexPolySet{T,B,U,P,C} <: AbstractSet{U}
+    degree::PolynomialDegrees
     p::P
     convexity_proof::C # may be nothing after applying LinearMap
 end
