@@ -22,3 +22,7 @@ function apply_map(
     )
     return Sets.perspective_dual(dual)
 end
+
+function apply_matrix(p::MP.AbstractPolynomial, A::AbstractMatrix, new_vars, degree)
+    return MP.subs(p, MP.variables(p) => A * new_vars)
+end

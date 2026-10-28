@@ -138,7 +138,7 @@ function variable_set(
         )
         if set.superset !== nothing
             set.convex && error("superset not supported for convex PolySet")
-            p = SumOfSquares.gram_operate(+, set.superset.p, p)
+            p = _add_reference(set.superset.p, p)
         end
         # A Gram product may introduce degrees absent from the selection.
         # Symmetric sets also exclude odd-degree terms.
@@ -190,7 +190,7 @@ function variable_set(
         if set.symmetric
             if space == PrimalSpace
                 if set.superset !== nothing
-                    p = SumOfSquares.gram_operate(+, set.superset.p, p)
+                    p = _add_reference(set.superset.p, p)
                 end
                 return Sets.PolySet(set.degree, p)
             else
@@ -204,3 +204,7 @@ end
 function _value(convexity_proof::MultivariateMoments.SymMatrix)
     return MultivariateMoments.SymMatrix(JuMP.value.(convexity_proof.Q), convexity_proof.n)
 end
+
+_add_reference(reference::GramMatrix, p::GramMatrix) =
+    SumOfSquares.gram_operate(+, reference, p)
+_add_reference(reference::MP.AbstractPolynomial, p::GramMatrix) = reference + p

@@ -3,6 +3,9 @@ using Polyhedra
 const PolynomialDegrees = Union{Int,AbstractVector{Int}}
 
 """
+    PolySet(p)
+    PolySet(degree, p)
+
     struct PolySet{T, B, U, P} <: AbstractSet{U}
         degree::PolynomialDegrees
         p::P
@@ -11,6 +14,10 @@ const PolynomialDegrees = Union{Int,AbstractVector{Int}}
 Set ``\\{\\, x \\mid p(x) \\le 1 \\,\\}`` where `degree` selects the
 allowed total degrees of `p`. An integer selects a homogeneous polynomial;
 `0:d` allows all degrees from zero through `d`.
+
+A fixed polynomial `p` can be supplied directly. Without `degree`, its
+minimum and maximum degrees determine whether the set is homogeneous.
+This requires loading SumOfSquares.
 """
 struct PolySet{T,B,U,P} <: AbstractSet{U}
     degree::PolynomialDegrees
