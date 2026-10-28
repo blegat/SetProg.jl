@@ -5,7 +5,20 @@ function JuMP.build_constraint(
     subset::Union{Sets.PolySet,Sets.ConvexPolySet},
     sup_powerset::PowerSet{<:Union{Sets.PolySet,Sets.ConvexPolySet}};
     S_procedure_scaling = nothing,
+    margin = 0,
 )
+    supset = sup_powerset.set
+    if subset isa Sets.PolySet &&
+       supset isa Sets.PolySet &&
+       (
+           !(subset.degree isa Int) ||
+           !(supset.degree isa Int) ||
+           MP.mindegree(MP.polynomial(subset.p)) != subset.degree ||
+           MP.mindegree(MP.polynomial(supset.p)) != supset.degree
+       )
+        return InclusionConstraint(subset, supset, (; S_procedure_scaling, margin))
+    end
+    @assert iszero(margin)
     @assert S_procedure_scaling === nothing || isone(S_procedure_scaling)
     q = subset.p
     p = sup_powerset.set.p
