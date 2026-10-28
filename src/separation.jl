@@ -6,6 +6,9 @@ For quadratic and polynomial sublevel sets, the certificate is a positive
 combination of their defining inequalities. `margin` subtracts a positive
 reference polynomial; its default of one certifies strict separation.
 An explicit zero margin permits shared boundary points.
+For a polytope with a fixed normal fan and an exterior ellipsoid, separation
+uses second-order cones and `margin` reduces the complementary ellipsoid's
+radius.
 """
 struct Disjoint <: JuMP.AbstractVectorSet end
 
@@ -125,6 +128,15 @@ function certificate_matrix(cref::JuMP.ConstraintRef)
         return JuMP.value.(certificates[cref])
     end
     object = JuMP.constraint_object(cref)
+    if object.set isa MOI.LessThan
+        return reshape([object.set.upper - JuMP.value(object.func)], 1, 1)
+    elseif object.set isa MOI.Nonnegatives
+        return Diagonal(JuMP.value.(object.func))
+    elseif object.set isa MOI.SecondOrderCone
+        values = JuMP.value.(object.func)
+        t, x = first(values), values[2:end]
+        return Symmetric([t x'; x t * Matrix{Float64}(I, length(x), length(x))])
+    end
     if object.set isa MOI.PositiveSemidefiniteConeTriangle
         values = JuMP.value.(object.func)
         n = MOI.side_dimension(object.set)
@@ -202,4 +214,206 @@ function JuMP.add_constraint(
         true;
         c.kws...,
     )
+end
+
+# A set constraint can produce several independent conic certificates.
+function certificate_matrix(crefs::AbstractVector{<:JuMP.ConstraintRef})
+    return cat(certificate_matrix.(crefs)...; dims = (1, 2))
+end
+
+const _PolytopeVariableRef = SetVariableRef{<:JuMP.AbstractModel,<:Polytope}
+const _VertexPolytope = Sets.PolarOf{<:Sets.Piecewise{<:Any,<:Sets.PolarPoint}}
+const _FixedEllipsoid = Union{Sets.Ellipsoid{<:Real},Sets.ShiftedEllipsoid{<:Real}}
+
+# Both gauge and vertex coordinates admit conic separation certificates.
+# Leave the space undecided so other constraints can select a representation.
+set_space(
+    space::Space,
+    ::InclusionConstraint{<:Sets.ShiftedEllipsoid{<:Real},<:_PolytopeVariableRef},
+) = space
+set_space(
+    space::Space,
+    ::InclusionConstraint{<:Sets.Ellipsoid{<:Real},<:_PolytopeVariableRef},
+) = space
+set_space(
+    space::Space,
+    ::DisjointConstraint{<:_PolytopeVariableRef,<:Sets.ShiftedEllipsoid{<:Real}},
+) = space
+set_space(
+    space::Space,
+    ::DisjointConstraint{<:Sets.ShiftedEllipsoid{<:Real},<:_PolytopeVariableRef},
+) = space
+
+function _ellipsoid_geometry(set::Sets.ShiftedEllipsoid{<:Real})
+    factor = cholesky(set.Q)
+    center = -(factor \ set.b)
+    radius = sqrt(dot(set.b, factor \ set.b) - set.β)
+    return factor, center, radius
+end
+
+function _check_normal_fan(inner::Sets.Piecewise)
+    partition = inner.polytope
+    isempty(rays(partition)) &&
+    isempty(lines(partition)) &&
+    isempty(hyperplanes(partition)) &&
+    all(h -> h.β > 0, halfspaces(partition)) || throw(
+        ArgumentError(
+            "the partition must be a bounded polytope with the origin in its interior",
+        ),
+    )
+    return nothing
+end
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::InclusionConstraint{<:_FixedEllipsoid,<:_VertexPolytope},
+    name::String = "",
+)
+    return _ellipsoid_in_polytope(model, _as_shifted(c.subset), c.supset; c.kws...)
+end
+
+function _ellipsoid_in_polytope(
+    model,
+    ellipsoid,
+    polytope;
+    margin = 0,
+    S_procedure_scaling::Nothing = nothing,
+)
+    inner = polar(polytope)
+    _check_normal_fan(inner)
+    factor, center, radius = _ellipsoid_geometry(ellipsoid)
+    residuals = JuMP.AffExpr[]
+    # The fixed partition supplies the extreme normal directions. The support
+    # function of the variable polytope is linear on each partition cone, so
+    # these finitely many tests imply containment of the whole ellipsoid.
+    for point in points(inner.polytope)
+        normal = Polyhedra.coord(point)
+        iszero(normal) && continue
+        piece = findfirst(cone -> normal in cone, inner.pieces)
+        support = dot(center, normal) + radius * sqrt(dot(normal, factor \ normal))
+        # The polar family contains the origin. A positive margin also keeps
+        # its support function strictly positive in every normal direction.
+        bound = max(0, support) + margin * norm(normal)
+        push!(residuals, dot(inner.sets[piece].a, normal) - bound)
+    end
+    return @constraint(model, residuals in MOI.Nonnegatives(length(residuals)))
+end
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::DisjointConstraint{<:_VertexPolytope,<:Sets.ShiftedEllipsoid{<:Real}},
+    name::String = "",
+)
+    return _polytope_disjoint(model, c.first, c.second; c.kws...)
+end
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::DisjointConstraint{<:Sets.ShiftedEllipsoid{<:Real},<:_VertexPolytope},
+    name::String = "",
+)
+    return _polytope_disjoint(model, c.second, c.first; c.kws...)
+end
+
+function _polytope_disjoint(
+    model,
+    polytope,
+    unsafe;
+    margin = 1,
+    S_procedure_scaling::Nothing = nothing,
+)
+    inner = polar(polytope)
+    _check_normal_fan(inner)
+    # The unsafe quadratic describes an ellipsoid's exterior. Its complement
+    # is convex, so testing all variable vertices is exact. Eroding its radius
+    # by margin gives strict separation using only second-order cones.
+    complement = Sets.ShiftedEllipsoid(Symmetric(-unsafe.Q), -unsafe.b, -unsafe.β)
+    factor, center, radius = _ellipsoid_geometry(complement)
+    constraints = JuMP.ConstraintRef[
+        @constraint(
+            model,
+            [radius - margin; factor.U * (vertex.a - center)] in SecondOrderCone()
+        ) for vertex in inner.sets
+    ]
+    # A polar set also contains the origin. For a centered ellipsoid this
+    # follows from each SOC; otherwise its radius bound must be checked too.
+    offset = norm(factor.U * center)
+    if !iszero(offset)
+        push!(constraints, @constraint(model, margin <= radius - offset))
+    end
+    return constraints
+end
+
+const _LinearPiecewise = Sets.Piecewise{<:Any,<:Sets.PolarPoint}
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::InclusionConstraint{<:_FixedEllipsoid,<:_LinearPiecewise},
+    name::String = "",
+)
+    return _ellipsoid_in_gauge(model, _as_shifted(c.subset), c.supset; c.kws...)
+end
+function _ellipsoid_in_gauge(
+    model,
+    ellipsoid,
+    gauge;
+    margin = 0,
+    S_procedure_scaling::Nothing = nothing,
+)
+    _check_normal_fan(gauge)
+    factor, center, radius = _ellipsoid_geometry(ellipsoid)
+    support_map = radius * inv(Matrix(factor.L))
+    # The gauge is the maximum of its linear pieces. Its value is at most
+    # 1 - margin throughout the initial ellipsoid exactly when each support
+    # bound holds; no S-procedure multiplier is needed.
+    return [
+        @constraint(
+            model,
+            [1 - margin - dot(center, piece.a); support_map * piece.a] in SecondOrderCone()
+        ) for piece in gauge.sets
+    ]
+end
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::DisjointConstraint{<:_LinearPiecewise,<:Sets.ShiftedEllipsoid{<:Real}},
+    name::String = "",
+)
+    return _gauge_disjoint(model, c.first, c.second; c.kws...)
+end
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::DisjointConstraint{<:Sets.ShiftedEllipsoid{<:Real},<:_LinearPiecewise},
+    name::String = "",
+)
+    return _gauge_disjoint(model, c.second, c.first; c.kws...)
+end
+function _gauge_disjoint(
+    model,
+    gauge,
+    unsafe;
+    margin = 1,
+    S_procedure_scaling::Nothing = nothing,
+)
+    _check_normal_fan(gauge)
+    complement = Sets.ShiftedEllipsoid(Symmetric(-unsafe.Q), -unsafe.b, -unsafe.β)
+    _ellipsoid_geometry(complement) # The complement must be a bounded ellipsoid.
+    # Every finite homogeneous gauge contains a neighborhood of zero. It
+    # cannot lie strictly inside an ellipsoid which does not contain zero.
+    if complement.β >= 0
+        return @constraint(model, 0 <= -1)
+    end
+    residuals = JuMP.AffExpr[]
+    for point in points(gauge.polytope)
+        normal = Polyhedra.coord(point)
+        iszero(normal) && continue
+        piece = findfirst(cone -> normal in cone, gauge.pieces)
+        q = dot(normal, complement.Q * normal)
+        b = dot(complement.b, normal)
+        root = sqrt(b^2 - complement.β * q)
+        # Gauge of the complementary ellipsoid, evaluated in this fixed
+        # direction. The two formulas avoid cancellation for either sign.
+        bound = b >= 0 ? (root + b) / (-complement.β) : q / (root - b)
+        push!(residuals, dot(gauge.sets[piece].a, normal) - bound - margin * norm(normal))
+    end
+    return @constraint(model, residuals in MOI.Nonnegatives(length(residuals)))
 end

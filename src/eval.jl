@@ -18,3 +18,21 @@ function sublevel_eval(set::Sets.Householder, a::AbstractVector, β)
     end
     return Sets.perspective_gauge0(set)(z => β / scaling, x => a / scaling)
 end
+
+function sublevel_eval(
+    set::Sets.PolarOf{<:Sets.Piecewise{<:Any,<:Sets.PolarPoint}},
+    x::AbstractVector,
+)
+    inner = polar(set)
+    return maximum(
+        dot(x, Polyhedra.coord(ray)) / dot(piece.a, Polyhedra.coord(ray)) for
+        (piece, cone) in zip(inner.sets, inner.pieces) for ray in rays(cone)
+    )
+end
+
+function sublevel_eval(set::Sets.PolarPoint, x::AbstractVector)
+    return dot(set.a, x)
+end
+function sublevel_eval(set::Sets.Piecewise{<:Any,<:Sets.PolarPoint}, x::AbstractVector)
+    return maximum(sublevel_eval(piece, x) for piece in set.sets)
+end

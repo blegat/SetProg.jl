@@ -78,3 +78,31 @@ or a nonnegative number for a fixed multiplier. Two variable sets require a
 fixed multiplier, defaulting to one. The `Disjoint` constraint defaults to a
 margin of one, certifying strict disjointness. A zero-margin certificate alone
 can allow the sets to share boundary points.
+
+### Polyhedral separation
+
+A polytope family with a fixed partition also supports ellipsoid containment
+and separation from an ellipsoid's exterior:
+
+```julia
+@variable(model, S, Polytope(symmetric = true, piecewise = partition))
+@constraint(model, initial ⊆ S, margin = ε)
+@constraint(model, [S, unsafe] in Disjoint(), margin = ε)
+```
+
+Here `initial` is a bounded ellipsoid and `unsafe` is a `ShiftedEllipsoid`
+whose quadratic part is negative definite: it describes the exterior of a
+bounded ellipsoid. The partition must be bounded and contain the origin in its interior. Both
+modeling spaces are supported, and other constraints can select between them:
+in primal gauge coordinates, initial containment uses second-order cones and
+unsafe separation is linear on the fixed cone rays; in dual vertex
+coordinates, initial containment is linear and each vertex is constrained by
+an SOC. No SOS dependency is needed.
+
+Margins are representation-dependent. In primal coordinates, the gauge is
+at most `1 - ε` on the initial set and exceeds the safe ellipsoid's gauge by
+`ε * norm(direction)` on each cone ray. In dual coordinates, the margin pads
+the initial support and reduces the safe ellipsoid's Cholesky radius. A
+positive margin certifies strict separation in either representation.
+`certificate_matrix` assembles all conic parts for numerical checks; `dual`
+returns one dual vector per part when a constraint generates several cones.
