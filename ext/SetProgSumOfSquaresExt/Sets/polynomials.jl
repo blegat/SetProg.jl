@@ -1,3 +1,11 @@
+function PolySet(degree::Sets.PolynomialDegrees, p::MP.AbstractPolynomial{T}) where {T}
+    return PolySet{T,Nothing,T,typeof(p)}(degree, p)
+end
+function PolySet(p::MP.AbstractPolynomial)
+    degree = MP.maxdegree(p)
+    return PolySet(MP.mindegree(p) == degree ? degree : 0:degree, p)
+end
+
 function space_variables(set::PolySet)
     return MP.variables(set.p)
 end

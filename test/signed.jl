@@ -187,4 +187,37 @@ end
     @test num_variables(model) == 14
 end
 
+@testset "Fixed polynomial sublevel sets" begin
+    @polyvar x[1:2]
+    for p in (sum(x .^ 2)^2, -(1 + sum(x .^ 2))^2)
+        fixed = SetProg.Sets.PolySet(p)
+        @test fixed.degree == (iszero(p(x => zeros(2))) ? 4 : 0:4)
+        @test SetProg.Sets.space_variables(fixed) == x
+        @test SetProg.sublevel_eval(fixed, [2.0, 3.0]) ≈ p(x => [2.0, 3.0])
+    end
+    for degree in (4, 0:4)
+        model = fitted_model()
+        reference = SetProg.Sets.PolySet(degree, sum(x .^ 2)^2)
+        @variable(
+            model,
+            S,
+            PolySet(symmetric = true, degree = degree, superset = reference)
+        )
+        optimize!(model)
+        @test SetProg.sublevel_eval(value(S), [1.0, 2.0]) ≈
+              value(SetProg.sublevel_eval(S.variable, [1.0, 2.0]))
+        @test num_constraints(
+            model,
+            Vector{VariableRef},
+            MOI.PositiveSemidefiniteConeTriangle,
+        ) == 1
+        mapped = SetProg.apply_map(
+            SetProg.Sets.LinearPreImage(S.variable, 0.5 * Matrix{Float64}(I, 2, 2)),
+            x,
+        )
+        @test SetProg.sublevel_eval(value(mapped), [2.0, 4.0]) ≈
+              SetProg.sublevel_eval(value(S), [1.0, 2.0])
+    end
+end
+
 end
