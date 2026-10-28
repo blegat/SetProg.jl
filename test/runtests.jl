@@ -8,6 +8,7 @@ const lib = Polyhedra.DefaultLibrary{Float64}(lp_solver)
 
 include("Sets.jl")
 include("intersection.jl")
+include("lp_sum.jl")
 include("apply.jl")
 include("variables.jl")
 include("signed.jl")
