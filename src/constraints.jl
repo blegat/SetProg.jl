@@ -1,4 +1,6 @@
-abstract type SetConstraint  <: JuMP.AbstractConstraint end
+const TransformedConstraint = Union{JuMP.ConstraintRef,AbstractVector{<:JuMP.ConstraintRef}}
+
+abstract type SetConstraint <: JuMP.AbstractConstraint end
 
 ## Loading  ##
 
@@ -55,7 +57,8 @@ function transformed_constraint(cref::SetConstraintRef)
     return data(cref.model).transformed_constraints[cref.index]
 end
 function JuMP.dual(cref::SetConstraintRef)
-    return JuMP.dual(transformed_constraint(cref))
+    transformed = transformed_constraint(cref)
+    return transformed isa AbstractVector ? JuMP.dual.(transformed) : JuMP.dual(transformed)
 end
 
 include("membership.jl")

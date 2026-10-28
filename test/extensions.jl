@@ -57,6 +57,24 @@ using Test
     @test SetProg.sublevel_eval(value(S), [1.0, 1.0]) == 1
     @test SetProg.data(model).perspective_polyvar === nothing
     @test isempty(SetProg.data(model).spaces.polyvars)
+    import GLPK
+    lib = SetProg.Polyhedra.DefaultLibrary{Float64}(optimizer_with_attributes(GLPK.Optimizer, MOI.Silent() => true, "presolve" => GLPK.GLP_ON))
+    partition = polyhedron(vrep([[1.0, 0], [-1.0, 0], [0.0, 1], [0.0, -1]]), lib)
+    mock = MOI.Utilities.MockOptimizer(MOI.Utilities.Model{Float64}())
+    MOI.Utilities.set_mock_optimize!(mock, m -> MOI.Utilities.mock_optimize!(m, zeros(MOI.get(m, MOI.NumberOfVariables()))))
+    model = direct_model(mock)
+    @variable(model, S, Polytope(symmetric = true, piecewise = partition))
+    reference = polar(SetProg.Sets.Piecewise([
+        SetProg.Sets.PolarPoint(collect(h.a)) for h in halfspaces(partition)
+    ], partition))
+    @constraint(model, reference ⊆ S)
+    initial = SetProg.Sets.ShiftedEllipsoid(Symmetric([1.0 0; 0 1]), zeros(2), -16.0)
+    unsafe = SetProg.Sets.ShiftedEllipsoid(Symmetric([-1.0 0; 0 -1]), zeros(2), 36.0)
+    @constraint(model, initial ⊆ S)
+    certificate = @constraint(model, [S, unsafe] in Disjoint())
+    optimize!(model)
+    @test SetProg.data(model).space == SetProg.DualSpace
+    @test size(SetProg.certificate_matrix(certificate)) == (12, 12)
     check_core_only()
     using DynamicPolynomials
     @test Base.get_extension(SetProg, :SetProgSumOfSquaresExt) === nothing
