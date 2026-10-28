@@ -138,8 +138,27 @@ for `LpSum` evaluates its ordinary, degree-one support function. Evaluating
 polynomial gauges requires loading SumOfSquares and homogeneous operands.
 
 These expressions support dimension inference, polynomial coordinates,
-set-variable loading, and `JuMP.value`. Constraint certificates and controller
-synthesis for these operations are not implemented yet.
+set-variable loading, and `JuMP.value`.
+
+For exponent two, an ellipsoid can be constrained inside a `PolarLpSum`
+of fixed ellipsoids and polars of matrix ellipsoids, including their linear
+preimages. SetProg writes a Schur-complement PSD constraint, keeping inverse
+matrices as diagonal blocks. This supports affine maps and affine matrix
+ellipsoids without multiplying optimization variables. For example:
+
+```julia
+model = Model()
+@variable(model, X[1:2, 1:2], Symmetric)
+@variable(model, D[1:2, 1:2], Symmetric)
+@variable(model, A[1:2, 1:2])
+source = SetProg.Sets.Ellipsoid(X)
+destination = SetProg.Sets.LinearPreImage(polar(SetProg.Sets.Ellipsoid(D)), A)
+@constraint(model, source ⊆ PolarLpSum(destination, C, 2))
+```
+
+The optional `psd_margin` keyword subtracts a uniform diagonal margin from
+this certificate matrix; it defaults to zero. Other exponents and set
+families still need their own constraint certificates.
 
 See Section 5.5 of Gardner, Hug and Weil,
 [*Operations between sets in geometry*](https://doi.org/10.4171/JEMS/422).
