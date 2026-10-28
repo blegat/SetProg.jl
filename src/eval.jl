@@ -1,5 +1,8 @@
-function sublevel_eval(ell::Sets.Ellipsoid,
-                       a::AbstractVector)
+function sublevel_eval(set::Sets.ShiftedEllipsoid, a::AbstractVector)
+    return quad_form(set.Q, a) + 2dot(set.b, a) + set.β + 1
+end
+
+function sublevel_eval(ell::Sets.Ellipsoid, a::AbstractVector)
     return quad_form(ell.Q, a)
 end
 function sublevel_eval(set::Sets.Householder, a::AbstractVector, β)

@@ -10,3 +10,7 @@ end
 function sublevel_eval(set::Union{Sets.PolySet,Sets.ConvexPolySet}, a::AbstractVector)
     return poly_eval(MP.polynomial(set.p), a)
 end
+
+function poly_eval(p::MP.AbstractPolynomial{<:Real}, a::AbstractVector{<:Real})
+    return p(MP.variables(p) => a)
+end

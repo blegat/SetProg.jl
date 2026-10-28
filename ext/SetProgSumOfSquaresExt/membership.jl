@@ -26,9 +26,10 @@ function JuMP.add_constraint(
     name::String = "",
 ) where {T}
     set = constraint.set
-    @assert iseven(set.degree)
+    degree = maximum(set.degree)
+    @assert iseven(degree)
     vars = SetProg.Sets.space_variables(set)
-    monos = MP.monomials(vars, 0:div(set.degree, 2))
+    monos = MP.monomials(vars, 0:div(degree, 2))
     U = promote_type(T, Int, JuMP.VariableRef)
     function variable(i, j)
         mono = monos[i] * monos[j]

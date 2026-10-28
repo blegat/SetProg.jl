@@ -30,6 +30,11 @@ function apply_map(li::Sets.LinearPreImage{<:Sets.Ellipsoid}, new_vars)
     return Sets.Ellipsoid(Symmetric(li.A' * li.set.Q * li.A))
 end
 
+function apply_map(li::Sets.LinearPreImage{<:Sets.ShiftedEllipsoid}, new_vars)
+    set = li.set
+    return Sets.ShiftedEllipsoid(Symmetric(li.A' * set.Q * li.A), li.A' * set.b, set.β)
+end
+
 # A preimage distributes over intersection, including singular and rectangular maps.
 function apply_map(li::Sets.LinearPreImage{<:Sets.Intersection}, new_vars)
     return Sets.Intersection(
@@ -56,14 +61,14 @@ Given ``S = \\{\\, x \\mid p(x) \\le 1\\,\\}``, we have
 """
 function apply_map(li::Sets.LinearPreImage{<:Sets.PolySet}, new_vars)
     deg = li.set.degree
-    @assert iseven(deg)
-    q = apply_matrix(li.set.p, li.A, new_vars, div(deg, 2))
+    @assert iseven(maximum(deg))
+    q = apply_matrix(li.set.p, li.A, new_vars, div(maximum(deg), 2))
     return Sets.PolySet(deg, q)
 end
 function apply_map(li::Sets.LinearPreImage{<:Sets.ConvexPolySet}, new_vars)
     deg = li.set.degree
-    @assert iseven(deg)
-    q = apply_matrix(li.set.p, li.A, new_vars, div(deg, 2))
+    @assert iseven(maximum(deg))
+    q = apply_matrix(li.set.p, li.A, new_vars, div(maximum(deg), 2))
     return Sets.ConvexPolySet(deg, q, nothing)
 end
 
@@ -75,7 +80,7 @@ function Base.:(*)(A::AbstractMatrix, set::Union{SetVariableRef, Sets.AbstractSe
 end
 
 needs_polyvars(::Sets.AbstractSet) = true
-needs_polyvars(::Union{Sets.Ellipsoid,Sets.PolarPoint}) = false
+needs_polyvars(::Union{Sets.Ellipsoid,Sets.ShiftedEllipsoid,Sets.PolarPoint}) = false
 needs_polyvars(set::Union{Sets.Polar,Sets.PerspectiveDual}) = needs_polyvars(set.set)
 needs_polyvars(set::Sets.Piecewise) = any(needs_polyvars, set.sets)
 

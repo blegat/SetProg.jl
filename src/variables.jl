@@ -110,16 +110,20 @@ end
 struct Ellipsoid <: AbstractVariable
     point::Union{Nothing, HintPoint}
     symmetric::Bool
-    dimension::Union{Nothing, Int}
+    dimension::Union{Nothing,Int}
+    psd::Bool
     guaranteed_psd::Bool # Is it already guaranteed that it is PSD ? e.g. by nth_root or log
     superset::Union{Sets.Ellipsoid, Nothing}
     piecewise::Union{Polyhedra.Rep, Nothing}
 end
-function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
-                   symmetric::Bool=false,
-                   dimension::Union{Int, Nothing}=nothing,
-                   superset::Union{Sets.Ellipsoid, Nothing}=nothing,
-                   piecewise::Union{Polyhedra.Rep, Nothing}=nothing)
+function Ellipsoid(;
+    point::Union{Nothing,HintPoint} = nothing,
+    symmetric::Bool = false,
+    psd::Bool = true,
+    dimension::Union{Int,Nothing} = nothing,
+    superset::Union{Sets.Ellipsoid,Nothing} = nothing,
+    piecewise::Union{Polyhedra.Rep,Nothing} = nothing,
+)
     function update_dim(object, dim_fun)
         if object !== nothing
             d = dim_fun(object)
@@ -133,17 +137,33 @@ function Ellipsoid(; point::Union{Nothing, HintPoint}=nothing,
     update_dim(point, point -> length(point.h))
     update_dim(superset, Sets.dimension)
     update_dim(piecewise, Polyhedra.fulldim)
-    return Ellipsoid(point, symmetric, dimension, false, superset, piecewise)
+    return Ellipsoid(point, symmetric, dimension, psd, false, superset, piecewise)
 end
 Sets.space_variables(::Ellipsoid) = nothing
 
 function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
                       space_dimension, space_polyvars)
     n = space_dimension
-    function new_Q()
+    !ell.psd &&
+        !ell.symmetric &&
+        space != PrimalSpace &&
+        throw(ArgumentError("an indefinite quadratic requires primal modeling"))
+    if !ell.psd && !ell.symmetric
+        ell.point === nothing && ell.superset === nothing && ell.piecewise === nothing ||
+            throw(
+                ArgumentError(
+                    "indefinite affine quadratics do not support point, superset, or piecewise options",
+                ),
+            )
+        Q = @variable(model, [1:n, 1:n], Symmetric, base_name="Q")
+        b = @variable(model, [1:n], base_name="b")
+        β = @variable(model, base_name="β")
+        return Sets.ShiftedEllipsoid(Q, b, β)
+    end
+    function new_Q(; force_psd = false)
         # TODO, we should use constraiend variable instead in case direct mode is used.
         Q = @variable(model, [1:n, 1:n], Symmetric, base_name="Q")
-        if !ell.guaranteed_psd
+        if force_psd || (ell.psd && !ell.guaranteed_psd)
             psd_constraint(model, Q)
         end
         return Q
@@ -152,7 +172,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Ellipsoid, space::Space,
         function new_piece()
             if space == PrimalSpace
                 if ell.superset !== nothing
-                    Q = Symmetric(new_Q() + ell.superset.Q)
+                    Q = Symmetric(new_Q(; force_psd = true) + ell.superset.Q)
                 else
                     Q = new_Q()
                 end
@@ -211,11 +231,12 @@ end
 struct PolySet <: AbstractVariable
     point::Union{Nothing, HintPoint}
     symmetric::Bool
-    degree::Int
-    dimension::Union{Nothing, Int}
+    degree::Sets.PolynomialDegrees
+    dimension::Union{Nothing,Int}
     convex::Bool
-    variables::Union{Nothing, AbstractVector}
-    superset::Union{Sets.PolySet, Nothing}
+    psd::Bool
+    variables::Union{Nothing,AbstractVector}
+    superset::Union{Sets.PolySet,Nothing}
     basis::Type
 end
 PolySet(; kws...) = sos_extension().polyset(; kws...)
@@ -357,7 +378,7 @@ variablify(p::Sets.Projection) = Polyhedra.project(variablify(p.set), p.indices)
 
 variable_polyvars(::Polytope, ::Spaces, ::SpaceIndex) = nothing
 function variable_polyvars(ell::Ellipsoid, spaces::Spaces, index::SpaceIndex)
-    return ell.symmetric ? nothing : space_polyvars(spaces, index)
+    return ell.symmetric || !ell.psd ? nothing : space_polyvars(spaces, index)
 end
 variable_polyvars(::PolySet, spaces::Spaces, index::SpaceIndex) = space_polyvars(spaces, index)
 

@@ -78,6 +78,7 @@ function piecewise_ellipsoid_continuity(model, set, n)
 end
 
 module PolynomialSets
+import SetProg.Sets
 using LinearAlgebra
 using Polyhedra
 using SumOfSquares
@@ -99,10 +100,14 @@ import SetProg.Sets:
     space_variables,
     zero_eliminate
 
-function PolySet(degree::Int, p::GramMatrix{T,B,U}) where {T,B,U}
+function PolySet(degree::Sets.PolynomialDegrees, p::GramMatrix{T,B,U}) where {T,B,U}
     return PolySet{T,B,U,typeof(p)}(degree, p)
 end
-function ConvexPolySet(degree::Int, p::GramMatrix{T,B,U}, ::Nothing) where {T,B,U}
+function ConvexPolySet(
+    degree::Sets.PolynomialDegrees,
+    p::GramMatrix{T,B,U},
+    ::Nothing,
+) where {T,B,U}
     return ConvexPolySet{T,B,U,typeof(p),Nothing}(degree, p, nothing)
 end
 function ConvexPolynomialSet(

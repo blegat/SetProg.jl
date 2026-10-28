@@ -40,6 +40,18 @@ using Test
     SetProg.create_spaces(SetProg.data(model))
     SetProg.load(model, P)
     @test P.variable isa SetProg.Sets.PolarPoint
+    mock = MOI.Utilities.MockOptimizer(MOI.Utilities.Model{Float64}())
+    MOI.Utilities.set_mock_optimize!(mock, m -> MOI.Utilities.mock_optimize!(
+        m, zeros(MOI.get(m, MOI.NumberOfVariables())),
+    ))
+    model = direct_model(mock)
+    @variable(model, S, Ellipsoid(psd = false, dimension = 2))
+    optimize!(model)
+    @test num_variables(model) == 6
+    @test value(S) isa SetProg.Sets.ShiftedEllipsoid
+    @test SetProg.sublevel_eval(value(S), [1.0, 1.0]) == 1
+    @test SetProg.data(model).perspective_polyvar === nothing
+    @test isempty(SetProg.data(model).spaces.polyvars)
     check_core_only()
     using DynamicPolynomials
     @test Base.get_extension(SetProg, :SetProgSumOfSquaresExt) === nothing

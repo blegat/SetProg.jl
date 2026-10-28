@@ -130,6 +130,13 @@ struct ShiftedEllipsoid{T} <: AbstractEllipsoid{T}
     b::Vector{T}
     β::T
 end
+function ShiftedEllipsoid(Q::Symmetric, b::AbstractVector, β)
+    T = promote_type(eltype(Q), eltype(b), typeof(β))
+    return ShiftedEllipsoid{T}(Symmetric(Matrix{T}(Q)), Vector{T}(b), convert(T, β))
+end
+perspective_variable(::ShiftedEllipsoid) = nothing
+space_variables(::ShiftedEllipsoid) = nothing
+
 _perspective_cat(q::ShiftedEllipsoid) = _perspective_cat(q.Q, q.b, q.β)
 convexity_proof(ell::ShiftedEllipsoid) = ell.Q
 
