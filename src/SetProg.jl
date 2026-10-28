@@ -26,6 +26,8 @@ end
 new_polyvars(n::Int) = sos_extension().new_polyvars(n)
 new_perspective_variable() = sos_extension().new_perspective_variable()
 
+using .Sets: LpSum, PolarLpSum
+export LpSum, PolarLpSum
 export Polytope, Ellipsoid, PolySet, Domain
 export Disjoint, SProcedureMultiplier
 export nth_root, L1_heuristic
@@ -40,6 +42,7 @@ include("map.jl")
 include("constraints.jl")
 include("objective.jl")
 include("data.jl")
+include("lp_sum.jl")
 include("optimize.jl")
 
 function _moment_matrix end

@@ -14,3 +14,11 @@ end
 function poly_eval(p::MP.AbstractPolynomial{<:Real}, a::AbstractVector{<:Real})
     return p(MP.variables(p) => a)
 end
+
+function SetProg._gauge_power(set::Union{Sets.PolySet,Sets.ConvexPolySet}, x, p)
+    return _homogeneous_gauge_power(set.degree, set, x, p)
+end
+
+function _homogeneous_gauge_power(degree::Int, set, x, p)
+    return sublevel_eval(set, x)^(p / degree)
+end
