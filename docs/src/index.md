@@ -197,3 +197,32 @@ such as exponent two applied to a quartic defining polynomial, require other
 certificates. The inclusion is an SDP when the residual coefficients are
 affine in the optimization variables; maps containing feedback variables
 can make those coefficients nonlinear.
+
+### Polyhedral powered-gauge certificates
+
+For a `Polytope` family with a fixed `piecewise` partition, inclusions into
+`PolarLpSum` use the extreme rays of each source cone. On that cone the
+source gauge is linear and the target gauge is sublinear, so checking the
+rays suffices. This preserves the supplied partition without intersecting
+it with the target's cones.
+
+Exponent one produces linear constraints; exponent two produces
+second-order cone constraints. Operands may be piecewise-linear gauges or
+fixed ellipsoids, with fixed linear preimages and nested sums of the same
+exponent. For proper gauges these ray tests are exact. For an unbounded
+piecewise-linear target, the squared certificate uses the absolute value
+of each selected linear piece and is sufficient, potentially conservative.
+The optional `margin` adds `margin * ‖x‖^p` to the powered target gauge.
+
+```julia
+model = Model()
+@variable(model, V, Polytope(symmetric = true, piecewise = partition))
+next_value = SetProg.Sets.LinearPreImage(V, F)
+@constraint(model, V ⊆ PolarLpSum(next_value, cost, 2))
+@objective(model, Max, L1_heuristic(volume(V)))
+```
+
+Here `partition` is a bounded polytope containing zero in its interior,
+`F` is fixed, and `cost` is a fixed gauge set. The default volume heuristic
+minimizes integrals of the linear gauge pieces over bounded sections of
+their cones. Neither exponent requires SumOfSquares.
