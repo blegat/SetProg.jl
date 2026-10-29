@@ -38,3 +38,68 @@ needs_polyvars(::AbstractVariable) = true
 needs_polyvars(set::Ellipsoid) = !set.symmetric
 needs_polyvars(::Polytope) = false
 needs_polyvars(set::Domain) = needs_polyvars(set.set)
+
+# A squared-gauge sum can be written as a Schur-complement certificate when
+# each term is a fixed ellipsoid or the polar of an affine matrix ellipsoid.
+# Keeping inverse matrices in the diagonal blocks avoids products of variables.
+function _quadratic_lp_terms(set::PolarLpSum)
+    return _quadratic_lp_terms(Val(set.p == 2 ? 2 : set.p), set)
+end
+function _quadratic_lp_terms(::Val{2}, set::PolarLpSum)
+    return (_quadratic_lp_terms(set.first)..., _quadratic_lp_terms(set.second)...)
+end
+function _quadratic_lp_terms(set::Sets.LinearPreImage)
+    return _quadratic_lp_terms(set.set, set.A)
+end
+function _quadratic_lp_terms(set::Sets.Ellipsoid{<:Number}, A)
+    return ((A, inv(Matrix(set.Q))),)
+end
+function _quadratic_lp_terms(set::Sets.PolarOf{<:Sets.Ellipsoid}, A)
+    return ((A, polar(set).Q),)
+end
+function _quadratic_lp_terms(
+    set::Union{Sets.Ellipsoid{<:Number},Sets.PolarOf{<:Sets.Ellipsoid}},
+)
+    return _quadratic_lp_terms(
+        set,
+        Matrix{Bool}(I, Sets.dimension(set), Sets.dimension(set)),
+    )
+end
+
+function JuMP.build_constraint(
+    _error::Function,
+    subset::Sets.Ellipsoid,
+    superset::PowerSet{<:PolarLpSum};
+    psd_margin::Real = 0,
+)
+    psd_margin >= 0 || throw(ArgumentError("psd_margin must be nonnegative"))
+    terms = _quadratic_lp_terms(superset.set)
+    n = Sets.dimension(subset)
+    for (A, D) in terms
+        size(A, 2) == n && size(A, 1) == LinearAlgebra.checksquare(D) ||
+            throw(DimensionMismatch())
+    end
+    T = promote_type(
+        JuMP.AffExpr,
+        eltype(subset.Q),
+        (eltype(A) for (A, _) in terms)...,
+        (eltype(D) for (_, D) in terms)...,
+        typeof(psd_margin),
+    )
+    dimension = n + sum(size(A, 1) for (A, _) in terms)
+    matrix = zeros(T, dimension, dimension)
+    matrix[1:n, 1:n] .= subset.Q
+    offset = n
+    for (A, D) in terms
+        indices = (offset+1):(offset+size(A, 1))
+        matrix[indices, 1:n] .= A
+        matrix[1:n, indices] .= A'
+        matrix[indices, indices] .= D
+        offset += size(A, 1)
+    end
+    return JuMP.build_constraint(_error, matrix - psd_margin * I, JuMP.PSDCone())
+end
+
+function JuMP.value(set::Sets.LinearPreImage)
+    return Sets.LinearPreImage(JuMP.value(set.set), JuMP.value.(set.A))
+end

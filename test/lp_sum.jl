@@ -125,6 +125,9 @@ end
         @test SetProg.sublevel_eval(value(expression), [1.0, 1.0]) ≈ 2 + 2gauge_squared
         support_squared = space == SetProg.PrimalSpace ? 5 / 3 : 10.0
         @test support_function([1.0, 1.0], value(LpSum(S, T, 2)))^2 ≈ support_squared
+        matrix = space == SetProg.PrimalSpace ? S.variable.Q : polar(S.variable).Q
+        mapped = Sets.LinearPreImage(BALL, matrix)
+        @test SetProg.sublevel_eval(PolarLpSum(value(mapped), BALL, 2), [1.0, 1.0]) ≈ 15
         @test value(LpSum(S, T, 2)) isa LpSum
         @test SetProg.variablify(LpSum(S, T, 2)) isa LpSum
         outer_polar = polar(LpSum(S, PolarLpSum(BALL, T, 2), 2))
@@ -137,6 +140,54 @@ end
         index = SetProg.create_spaces(outer_polar, d.spaces)
         @test SetProg.space_dimension(d.spaces, index) == 2
     end
+end
+
+@testset "Quadratic Lₚ inclusion preserves the Schur complement" begin
+    model = Model()
+    @variable(model, S[1:2, 1:2], Symmetric)
+    @variable(model, T[1:2, 1:2], Symmetric)
+    @variable(model, Y[1:1, 1:2])
+    source = Sets.Ellipsoid(S)
+    destination = polar(Sets.Ellipsoid(T))
+    A = [0.5 0.25; -0.5 0.75]
+    B = [1.0; 0.5;;]
+    Q = Symmetric([2.0 0.25; 0.25 1.0])
+    R = Symmetric([3.0;;])
+    next = Sets.LinearPreImage(destination, A * S + B * Y)
+    state = Sets.LinearPreImage(Sets.Ellipsoid(Q), S)
+    input = Sets.LinearPreImage(Sets.Ellipsoid(R), Y)
+    target = PolarLpSum(next, PolarLpSum(state, input, 2), 2)
+    margin = 1e-4
+    c = @constraint(model, source ⊆ target, psd_margin = margin)
+    expected =
+        [
+            S S*A'+(B*Y)' S Y';
+            A*S+B*Y T zeros(2, 2) zeros(2, 1);
+            S zeros(2, 2) inv(Matrix(Q)) zeros(2, 1);
+            Y zeros(1, 2) zeros(1, 2) inv(Matrix(R))
+        ] - margin * I
+    canonical = vec(convert.(AffExpr, expected))
+    @test all(isequal_canonical.(constraint_object(c).func, canonical))
+    @test num_variables(model) == 8
+    @test num_constraints(model; count_variable_in_set_constraints = true) == 1
+    @test constraint_object(c).set == MOI.PositiveSemidefiniteConeSquare(7)
+    @test Sets.dimension(state) == 2
+    @test Sets.space_variables(state) === nothing
+    @test Sets.perspective_variable(state) === nothing
+    @test_throws ArgumentError @constraint(model, source ⊆ target, psd_margin = -1)
+    @test_throws MethodError @constraint(model, source ⊆ PolarLpSum(E, F, 4))
+    invalid = PolarLpSum(Sets.LinearPreImage(E, ones(1, 2)), F, 2)
+    @test_throws DimensionMismatch @constraint(model, source ⊆ invalid)
+
+    # Direct operands use identity maps; 2.0 and 2 have the same certificate.
+    fixed = PolarLpSum(E, polar(F), 2.0)
+    c = @constraint(model, Sets.Ellipsoid(Symmetric(10.0 * Matrix(I, 2, 2))) ⊆ fixed)
+    @test constraint_object(c).set == MOI.PositiveSemidefiniteConeSquare(6)
+    @test num_variables(model) == 8
+    mapped = Sets.LinearPreImage(E, [1.0 0.0; 0.0 2.0])
+    @test SetProg.sublevel_eval(PolarLpSum(mapped, F, 2), [1.0, 2.0]) ≈
+          dot([1.0, 4.0], E.Q * [1.0, 4.0]) + dot([1.0, 2.0], F.Q * [1.0, 2.0])
+    @test value(mapped).A == mapped.A
 end
 
 # Polynomial operands use the SOS extension; the tests above run without it.
