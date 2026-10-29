@@ -105,6 +105,61 @@ function JuMP.value(set::Sets.LinearPreImage)
 end
 
 const _LinearLpSource = Sets.Piecewise{<:Any,<:Sets.PolarPoint}
+const _QuadraticLpSource = Sets.Piecewise{<:Any,<:Sets.Ellipsoid}
+function set_space(
+    space::Space,
+    ::InclusionConstraint{<:SetVariableRef{<:Any,<:Ellipsoid},<:PolarLpSum},
+)
+    return set_space(space, PrimalSpace)
+end
+
+# Refine the source cones by the preimages of all piecewise operands. On
+# each resulting cone, a squared-gauge sum is an affine quadratic matrix.
+_quadratic_lp_regions(set) = _quadratic_lp_regions(Val(2), set)
+_quadratic_lp_regions(::Val{2}, set::Sets.Ellipsoid) = [(set.Q, nothing)]
+function _quadratic_lp_regions(::Val{2}, set::_QuadraticLpSource)
+    return [(piece.Q, cone) for (piece, cone) in zip(set.sets, set.pieces)]
+end
+function _quadratic_lp_regions(p::Val, set::Sets.LinearPreImage)
+    return [
+        (Symmetric(set.A' * Q * set.A), domain === nothing ? nothing : set.A \ domain) for
+        (Q, domain) in _quadratic_lp_regions(p, set.set)
+    ]
+end
+_lp_intersect(::Nothing, ::Nothing) = nothing
+_lp_intersect(::Nothing, domain) = domain
+_lp_intersect(domain, ::Nothing) = domain
+_lp_intersect(first, second) = first ∩ second
+function _quadratic_lp_regions(::Val{2}, set::PolarLpSum)
+    return _quadratic_lp_sum_regions(Val(set.p == 2), set)
+end
+function _quadratic_lp_sum_regions(::Val{true}, set)
+    return [
+        (Symmetric(Q + R), _lp_intersect(D, E)) for
+        (Q, D) in _quadratic_lp_regions(set.first) for
+        (R, E) in _quadratic_lp_regions(set.second)
+    ]
+end
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::InclusionConstraint{<:_QuadraticLpSource,<:PolarLpSum},
+    name::String = "",
+)
+    margin = get(c.kws, :margin, 0)
+    margin >= 0 || throw(ArgumentError("margin must be nonnegative"))
+    regions = _quadratic_lp_regions(c.supset)
+    constraints = JuMP.ConstraintRef[]
+    for (piece, cone) in zip(c.subset.sets, c.subset.pieces), (Q, domain) in regions
+        residual = Symmetric(piece.Q - Q - margin * I)
+        certificate = psd_in_domain(model, residual, _lp_intersect(cone, domain))
+        if certificate !== nothing
+            push!(constraints, JuMP.add_constraint(model, certificate))
+        end
+    end
+    return constraints
+end
+
 function set_space(
     space::Space,
     ::InclusionConstraint{<:SetVariableRef{<:Any,<:Polytope},<:PolarLpSum},

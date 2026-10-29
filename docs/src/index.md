@@ -198,6 +198,21 @@ certificates. The inclusion is an SDP when the residual coefficients are
 affine in the optimization variables; maps containing feedback variables
 can make those coefficients nonlinear.
 
+### Piecewise quadratic powered-gauge certificates
+
+For `Ellipsoid(symmetric = true, piecewise = partition)`, inclusions into
+`PolarLpSum(..., 2)` use quadratic positivity certificates on each common
+cone. The source cones are intersected with the preimages of the cones of
+every piecewise operand. On each intersection the squared gauges are
+quadratic forms, so their difference is constrained to be nonnegative using
+the same cone multipliers as piecewise quadratic inclusion.
+
+Operands may be ellipsoids, piecewise ellipsoids, fixed linear preimages,
+or nested sums with exponent two. The resulting constraints are an SDP
+when the quadratic matrices are affine and the maps are fixed. The cone
+positivity certificates can be conservative. `margin` adds
+`margin * ‖x‖²` to the target squared gauge.
+
 ### Polyhedral powered-gauge certificates
 
 For a `Polytope` family with a fixed `piecewise` partition, inclusions into
