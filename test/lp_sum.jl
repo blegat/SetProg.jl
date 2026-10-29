@@ -1,7 +1,7 @@
 module TestLpSum
 
 using Test, LinearAlgebra, SetProg
-import GLPK
+import GLPK, Hypatia
 const Sets = SetProg.Sets
 const E = Sets.Ellipsoid(Symmetric([2.0 0.25; 0.25 1.0]))
 const F = Sets.Ellipsoid(Symmetric([1.0 0.0; 0.0 3.0]))
@@ -49,7 +49,9 @@ end
           5dot(x, x)
 end
 
-const LIB = Polyhedra.DefaultLibrary{Float64}(GLPK.Optimizer)
+const LIB = Polyhedra.DefaultLibrary{Float64}(
+    optimizer_with_attributes(GLPK.Optimizer, "presolve" => GLPK.GLP_ON),
+)
 const BOX = polyhedron(hrep([1.0 0.0; 0.0 1.0; -1.0 0.0; 0.0 -1.0], ones(4)), LIB)
 const DIAMOND = polyhedron(hrep([1.0 1.0; 1.0 -1.0; -1.0 1.0; -1.0 -1.0], ones(4)), LIB)
 linear_pieces(partition) =
@@ -372,6 +374,81 @@ end
     @test SetProg.variablify(constraint_object(c)) isa JuMP.AbstractConstraint
     SetProg.clear_spaces(expression)
     @test S.space_index === nothing
+end
+
+@testset "Piecewise quadratic Bellman inclusions" begin
+    model = Model(() -> Hypatia.Optimizer(verbose = false))
+    @variable(model, S, Ellipsoid(symmetric = true, piecewise = BOX))
+    @variable(model, T, Ellipsoid(symmetric = true, piecewise = DIAMOND))
+    A = [0.3 0.1; -0.05 0.2]
+    # Different partitions, nested sums and a rectangular input map all
+    # contribute to the common refinement in the source coordinates.
+    input = Sets.LinearPreImage(Sets.Ellipsoid(Symmetric([1.0;;])), [0.1 -0.2])
+    stage = PolarLpSum(BALL, input, 2)
+    c = @constraint(
+        model,
+        S ⊆ PolarLpSum(Sets.LinearPreImage(T, A), stage, 2),
+        margin = 0.01
+    )
+    d = @constraint(model, T ⊆ PolarLpSum(Sets.LinearPreImage(S, A), stage, 2))
+    @objective(model, Max, L1_heuristic(volume(S)) + L1_heuristic(volume(T)))
+    optimize!(model)
+    @test is_solved_and_feasible(model; allow_almost = true)
+    @test SetProg.data(model).space == SetProg.PrimalSpace
+    fitted = value.([S, T])
+    for cref in (c, d)
+        @test eigmin(Symmetric(SetProg.certificate_matrix(cref))) >= -1e-6
+    end
+    for t in range(0, 2pi; length = 101)
+        x = [cos(t), sin(t)]
+        for (i, j, margin) in ((1, 2, 0.01), (2, 1, 0.0))
+            @test SetProg.sublevel_eval(fitted[i], x) + 1e-6 >=
+                  SetProg.sublevel_eval(fitted[j], A*x) +
+                  dot(x, x) +
+                  only([0.1 -0.2]*x)^2 +
+                  margin * dot(x, x)
+        end
+    end
+    @test_throws ArgumentError JuMP.add_constraint(
+        model,
+        SetProg.InclusionConstraint(fitted[1], PolarLpSum(BALL, BALL, 2), (; margin = -1)),
+    )
+    @test_throws MethodError SetProg._quadratic_lp_regions(PolarLpSum(BALL, BALL, 1))
+    # Each residual is indefinite globally, but nonnegative on its cone:
+    # 0.5(x1^2-x2^2) on |x1| >= |x2|, and the reverse on the other cones.
+    source = Sets.Piecewise(
+        [
+            Sets.Ellipsoid(
+                Symmetric(iszero(h.a[1]) ? [1.0 0.0; 0.0 2.0] : [2.0 0.0; 0.0 1.0]),
+            ) for h in halfspaces(BOX)
+        ],
+        BOX,
+    )
+    stage = PolarLpSum(
+        Sets.Ellipsoid(Symmetric(0.75Matrix{Float64}(I, 2, 2))),
+        Sets.Ellipsoid(Symmetric(0.75Matrix{Float64}(I, 2, 2))),
+        2,
+    )
+    check = Model(() -> Hypatia.Optimizer(verbose = false))
+    ref = @constraint(check, source ⊆ stage)
+    optimize!(check)
+    @test is_solved_and_feasible(check)
+    @test eigmin(Symmetric(SetProg.certificate_matrix(ref))) >= -1e-6
+    check = Model(() -> Hypatia.Optimizer(verbose = false))
+    @constraint(check, Sets.Piecewise(fill(BALL, 4), BOX) ⊆ stage)
+    optimize!(check)
+    @test termination_status(check) == MOI.INFEASIBLE
+    # Preimage cones must remain valid for singular maps, including zero.
+    for M in ([0.3 0.0; 0.0 0.0], zeros(2, 2))
+        check = Model(() -> Hypatia.Optimizer(verbose = false))
+        ref = @constraint(
+            check,
+            fitted[1] ⊆ PolarLpSum(Sets.LinearPreImage(fitted[2], M), BALL, 2)
+        )
+        optimize!(check)
+        @test is_solved_and_feasible(check)
+        @test eigmin(Symmetric(SetProg.certificate_matrix(ref))) >= -1e-6
+    end
 end
 
 end
