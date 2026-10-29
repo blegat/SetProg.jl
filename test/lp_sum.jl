@@ -250,4 +250,70 @@ using SumOfSquares
     )
 end
 
+@testset "Polynomial Lₚ inclusion certificates" begin
+    x = SetProg.new_polyvars(2)
+    MP = SumOfSquares.MP
+    gram = SumOfSquares.GramMatrix(Matrix(Diagonal([2.0, 4.0, 2.0])), MP.monomials(x, 2))
+    source = Sets.PolySet(4, gram)
+    A = [0.5 0.0; 0.0 0.25]
+    K = [0.25 0.5]
+    input = Sets.Ellipsoid(Symmetric([2.0;;]))
+    target = PolarLpSum(
+        Sets.LinearPreImage(source, A),
+        PolarLpSum(BALL, Sets.LinearPreImage(input, K), 4),
+        4,
+    )
+    ext = Base.get_extension(SetProg, :SetProgSumOfSquaresExt)
+    expected =
+        MP.polynomial(source.p) - MP.polynomial(source.p)(x => A*x) - sum(x .^ 2)^2 -
+        (2only(K*x)^2)^2
+    @test all(
+        iszero,
+        MP.coefficients(
+            ext._powered_gauge_polynomial(source, x, 4) - MP.polynomial(source.p),
+        ),
+    )
+    @test ext._powered_gauge_polynomial(target, x, 4) ≈ MP.polynomial(source.p) - expected
+    actual = JuMP.build_constraint(error, source, SetProg.PowerSet(target); margin = 0.1)
+    reference = JuMP.build_constraint(error, expected - 0.1sum(x .^ 2)^2, SOSCone())
+    model = Model()
+    actual_ref = JuMP.add_constraint(model, actual)
+    reference_ref = JuMP.add_constraint(model, reference)
+    @test JuMP.constant.(constraint_object(actual_ref).func) ≈
+          JuMP.constant.(constraint_object(reference_ref).func)
+    @test_throws ArgumentError JuMP.build_constraint(
+        error,
+        source,
+        SetProg.PowerSet(target);
+        margin = -1,
+    )
+    @test_throws MethodError JuMP.build_constraint(
+        error,
+        source,
+        SetProg.PowerSet(PolarLpSum(BALL, source, 2)),
+    )
+    mixed = PolarLpSum(BALL, PolarLpSum(BALL, BALL, 2), 4)
+    @test_throws MethodError JuMP.build_constraint(error, source, SetProg.PowerSet(mixed))
+    convex = Sets.ConvexPolySet(4, gram, nothing)
+    @test ext._powered_gauge_polynomial(convex, x, 4) == MP.polynomial(source.p)
+    model = Model()
+    @variable(model, S, PolySet(symmetric = true, psd = false, degree = 4))
+    mapped = Sets.LinearPreImage(S, A)
+    expression = PolarLpSum(mapped, BALL, 4)
+    c = @constraint(model, source ⊆ expression)
+    d = SetProg.data(model)
+    SetProg.set_space(d, model)
+    @test d.space == SetProg.PrimalSpace
+    SetProg.clear_spaces(d)
+    SetProg.create_spaces(d)
+    @test SetProg.space_dimension(d.spaces, S.space_index) == 2
+    @test SetProg.needs_polyvars(mapped)
+    @test !SetProg.needs_polyvars(Sets.LinearPreImage(BALL, A))
+    SetProg.load(model, S)
+    @test !SetProg.need_variablify(SetProg.variablify(expression))
+    @test SetProg.variablify(constraint_object(c)) isa JuMP.AbstractConstraint
+    SetProg.clear_spaces(expression)
+    @test S.space_index === nothing
+end
+
 end
