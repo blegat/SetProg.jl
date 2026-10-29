@@ -85,3 +85,14 @@ needs_polyvars(set::Union{Sets.Polar,Sets.PerspectiveDual}) = needs_polyvars(set
 needs_polyvars(set::Sets.Piecewise) = any(needs_polyvars, set.sets)
 
 needs_polyvars(set::Sets.Intersection) = needs_polyvars(set.set)
+
+need_variablify(set::Sets.LinearPreImage) = need_variablify(set.set)
+variablify(set::Sets.LinearPreImage) = Sets.LinearPreImage(variablify(set.set), set.A)
+clear_spaces(set::Sets.LinearPreImage) = clear_spaces(set.set)
+function create_spaces(set::Sets.LinearPreImage, spaces::Spaces)
+    output = create_spaces(set.set, spaces)
+    merge_spaces(spaces, output, new_space(spaces, size(set.A, 1)))
+    return new_space(spaces, size(set.A, 2))
+end
+
+needs_polyvars(set::Sets.LinearPreImage) = needs_polyvars(set.set)

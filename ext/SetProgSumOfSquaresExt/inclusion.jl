@@ -83,3 +83,62 @@ function JuMP.add_constraint(
     end
     return cref
 end
+
+# These certificates use the defining homogeneous polynomials directly, so
+# polynomial set variables are represented in the primal space.
+const _PolynomialLpSource =
+    Union{SetProg.SetVariableRef{<:Any,<:SetProg.PolySet},Sets.PolySet,Sets.ConvexPolySet}
+function SetProg.set_space(
+    space::SetProg.Space,
+    ::InclusionConstraint{<:_PolynomialLpSource,<:Sets.PolarLpSum},
+)
+    return SetProg.set_space(space, SetProg.PrimalSpace)
+end
+
+function _integer_polynomial_power(poly, ::Val{true}, exponent)
+    return poly^Int(exponent)
+end
+function _homogeneous_polynomial_power(poly, degree::Int, p)
+    exponent = p / degree
+    return _integer_polynomial_power(poly, Val(isinteger(exponent)), exponent)
+end
+function _powered_gauge_polynomial(set::Union{Sets.PolySet,Sets.ConvexPolySet}, x, p)
+    poly = MP.polynomial(set.p)
+    return _homogeneous_polynomial_power(poly(MP.variables(poly) => x), set.degree, p)
+end
+function _powered_gauge_polynomial(set::Sets.Ellipsoid, x, p)
+    return _homogeneous_polynomial_power(dot(x, set.Q * x), 2, p)
+end
+function _powered_gauge_polynomial(set::Sets.LinearPreImage, x, p)
+    return _powered_gauge_polynomial(set.set, set.A * x, p)
+end
+function _powered_gauge_polynomial(set::Sets.PolarLpSum, x, p)
+    # A nested sum must use the same exponent to remain polynomial without
+    # taking roots of sums. Other cases need a different certificate.
+    return _nested_powered_gauge_polynomial(Val(set.p == p), set, x, p)
+end
+function _nested_powered_gauge_polynomial(::Val{true}, set, x, p)
+    return _powered_gauge_polynomial(set.first, x, p) +
+           _powered_gauge_polynomial(set.second, x, p)
+end
+
+function JuMP.build_constraint(
+    _error::Function,
+    subset::Union{Sets.PolySet,Sets.ConvexPolySet},
+    superset::PowerSet{<:Sets.PolarLpSum};
+    margin::Real = 0,
+)
+    margin >= 0 || throw(ArgumentError("margin must be nonnegative"))
+    if SetProg.need_variablify(superset.set)
+        return InclusionConstraint(subset, superset.set, (; margin))
+    end
+    x = Sets.space_variables(subset)
+    p = superset.set.p
+    residual =
+        _powered_gauge_polynomial(subset, x, p) -
+        _powered_gauge_polynomial(superset.set, x, p)
+    if !iszero(margin)
+        residual -= margin * _homogeneous_polynomial_power(sum(x .^ 2), 2, p)
+    end
+    return JuMP.build_constraint(_error, residual, SOSCone())
+end
