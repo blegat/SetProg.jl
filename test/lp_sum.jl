@@ -191,6 +191,64 @@ end
 end
 
 # Polynomial operands use the SOS extension; the tests above run without it.
+@testset "Polyhedral ray certificates" begin
+    for p in (1, 2)
+        model = Model(GLPK.Optimizer)
+        # GLPK handles the LP; for p=2 inspect the generated SOC model.
+        p == 2 && (model = Model())
+        S = @variable(model, variable_type = Polytope(symmetric = true, piecewise = BOX))
+        cost = linear_pieces(DIAMOND)
+        target = PolarLpSum(Sets.LinearPreImage(S, 0.5I(2)), cost, p)
+        edge = @constraint(model, S ⊆ target)
+        @objective(model, Max, L1_heuristic(volume(S)))
+        if p == 1
+            set_silent(model)
+            optimize!(model)
+            @test is_solved_and_feasible(model)
+            value_set = value(S)
+            @test minimum(eigvals(Symmetric(SetProg.certificate_matrix(edge)))) >= -1e-7
+            for x in ([1.0, 0.3], [-0.2, 1.0], [-1.0, -0.8])
+                @test SetProg.sublevel_eval(value_set, x) + 1e-7 >=
+                      SetProg.sublevel_eval(value(target), x)
+            end
+        else
+            d = SetProg.data(model)
+            SetProg.set_space(d, model)
+            SetProg.synchronize_perspective(d)
+            SetProg.clear_spaces(d)
+            SetProg.create_spaces(d)
+            SetProg.load(model, d)
+            @test num_constraints(model, Vector{AffExpr}, MOI.SecondOrderCone) > 0
+        end
+    end
+end
+
+@testset "Ray certificate margins and dispatch" begin
+    source = linear_pieces(BOX)
+    cost = linear_pieces(BOX)
+    for p in (1, 2)
+        model = Model()
+        constraints = @constraint(model, source ⊆ PolarLpSum(cost, cost, p), margin = 0.1)
+        @test !isempty(constraints)
+        @test_throws ArgumentError @constraint(
+            model,
+            source ⊆ PolarLpSum(cost, cost, p),
+            margin = -1
+        )
+    end
+    model = Model()
+    @test_throws MethodError @constraint(model, source ⊆ PolarLpSum(cost, cost, 1.5))
+    # Several variable terms use independent nonnegative gauge epigraphs.
+    a = @variable(model, [1:2])
+    terms = SetProg._ray_lp_terms(
+        PolarLpSum(Sets.PolarPoint(a), Sets.PolarPoint(-a), 1),
+        [1.0, 0.0],
+        1,
+    )
+    constraints = SetProg._add_ray_lp_constraint(model, Val(1), 2.0, terms, 0, [1.0, 0.0])
+    @test length(constraints) == 5
+end
+
 using SumOfSquares
 @testset "Defining polynomial degree and operation exponent are independent" begin
     x = SetProg.new_polyvars(2)
