@@ -106,3 +106,33 @@ the initial support and reduces the safe ellipsoid's Cholesky radius. A
 positive margin certifies strict separation in either representation.
 `certificate_matrix` assembles all conic parts for numerical checks; `dual`
 returns one dual vector per part when a constraint generates several cones.
+
+### Quadratic separation on conic partitions
+
+A piecewise ellipsoid supports initial-set inclusion and disjointness from a
+quadratic sublevel set, including the exterior of an ellipsoid:
+
+```julia
+using SetProg, SumOfSquares
+@variable(model, S, Ellipsoid(symmetric = true, piecewise = partition))
+@constraint(model, initial ⊆ S, margin = ε)
+@constraint(model, [S, unsafe] in Disjoint(), margin = ε)
+```
+
+The initial and unsafe sets are fixed `Ellipsoid` or `ShiftedEllipsoid`
+objects. Each piece uses an S-procedure certificate restricted to its cone.
+After homogenization, nonnegative products of the cone inequalities and a
+PSD remainder certify the quadratic inequality. These are sufficient SDP
+certificates; they do not require each quadratic piece to satisfy the
+inequality outside its cone. `margin` multiplies `1 + dot(x, x)`.
+
+The default uses an independent nonnegative scalar multiplier for each
+piece. `S_procedure_scaling` can also be a vector with one multiplier per
+piece, or a single multiplier shared by all pieces. `certificate_matrix`
+returns the block-diagonal matrix of the fitted PSD remainders, and `dual`
+returns one dual per piece.
+
+The same domain certificates apply directly to
+`Sets.Intersection(quadratic_set, cone)` as the subset in an inclusion or
+as either operand of `Disjoint()`. The domain must be a homogeneous
+polyhedral cone. This also supports shifted quadratic inequalities on cones.

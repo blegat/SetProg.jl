@@ -208,7 +208,7 @@ function _linspace(domain)
     end
     return LinearAlgebra.nullspace(L)
 end
-function psd_in_domain(model, Q::Symmetric, domain::Polyhedra.HRep)
+function _psd_in_domain_matrix(model, Q::Symmetric, domain::Polyhedra.HRep)
     domain = _preprocess_domain(domain)
     dim(domain) <= 0 && return
     A = Q - _quadratic_part(model, domain)
@@ -218,7 +218,11 @@ function psd_in_domain(model, Q::Symmetric, domain::Polyhedra.HRep)
         V = _linspace(domain)
         A = V' * A * V
     end
-    return psd_constraint(Symmetric(A))
+    return Symmetric(A)
+end
+function psd_in_domain(model, Q::Symmetric, domain::Polyhedra.HRep)
+    matrix = _psd_in_domain_matrix(model, Q, domain)
+    return matrix === nothing ? nothing : psd_constraint(matrix)
 end
 function lifted_psd_in_domain(model, Q::Symmetric, domain)
     # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from

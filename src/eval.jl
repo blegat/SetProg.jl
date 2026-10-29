@@ -36,3 +36,8 @@ end
 function sublevel_eval(set::Sets.Piecewise{<:Any,<:Sets.PolarPoint}, x::AbstractVector)
     return maximum(sublevel_eval(piece, x) for piece in set.sets)
 end
+
+function sublevel_eval(set::Sets.Piecewise{<:Any,<:Sets.Ellipsoid}, x::AbstractVector)
+    i = findfirst(cone -> x in cone, set.pieces)
+    return sublevel_eval(set.sets[i], x)
+end
