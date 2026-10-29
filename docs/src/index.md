@@ -157,10 +157,43 @@ destination = SetProg.Sets.LinearPreImage(polar(SetProg.Sets.Ellipsoid(D)), A)
 ```
 
 The optional `psd_margin` keyword subtracts a uniform diagonal margin from
-this certificate matrix; it defaults to zero. Other exponents and set
-families still need their own constraint certificates.
+this certificate matrix; it defaults to zero. Homogeneous polynomial gauges
+use the SOS certificates described below.
 
 See Section 5.5 of Gardner, Hug and Weil,
 [*Operations between sets in geometry*](https://doi.org/10.4171/JEMS/422).
 Their polar-addition convention uses parameter `-p`; these constructors take
 positive `p` for both operations.
+
+
+### Polynomial powered-gauge certificates
+
+For homogeneous polynomial gauges, SetProg certifies a `PolarLpSum`
+inclusion by requiring the difference of powered gauges to be SOS. For
+example, exponent four adds a quartic value polynomial and the square of a
+quadratic cost:
+
+```julia
+using SetProg, SumOfSquares, LinearAlgebra
+model = Model()
+@variable(model, V, PolySet(symmetric = true, convex = true,
+                          psd = false, degree = 4, dimension = 2))
+F = 0.5 * Matrix{Float64}(I, 2, 2)
+cost = SetProg.Sets.Ellipsoid(Symmetric(Matrix{Float64}(I, 2, 2)))
+next_value = SetProg.Sets.LinearPreImage(V, F)
+@constraint(model, V ⊆ PolarLpSum(next_value, cost, 4), margin = 1e-6)
+@objective(model, Max, L1_heuristic(volume(V), ones(2)))
+```
+
+This imposes `V(x) ≥ V(Fx) + (x'x)^2 + 1e-6 * (x'x)^2` and minimizes the
+integral of `V` over the unit box. The `convex = true` family supplies an
+SOS-convexity certificate. Homogeneity and convexity make `V(x)^(1/4)` a
+gauge, including when a separate PSD constraint on its defining Gram matrix
+is omitted with `psd = false`.
+
+The polynomial certificate requires integer powers of the defining
+polynomials. The exponent is shared by nested sums. Nonpolynomial cases,
+such as exponent two applied to a quartic defining polynomial, require other
+certificates. The inclusion is an SDP when the residual coefficients are
+affine in the optimization variables; maps containing feedback variables
+can make those coefficients nonlinear.
