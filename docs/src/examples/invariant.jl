@@ -77,14 +77,24 @@ plot!(maximal)
 
 # ## Quartic template
 #
-# We can also look for convex sublevel sets of a quartic polynomial.
+# We can also look for convex sublevel sets of a quartic polynomial. The
+# `basis` keyword selects the Gram basis exposed by SumOfSquares. Here we
+# use Chebyshev polynomials instead of the default monomials. SetProg keeps
+# the defining polynomial homogeneous of degree four in either basis.
+# Convexity and homogeneity ensure nonnegativity, so `psd = false` omits
+# the redundant SOS constraint on the defining polynomial.
 
 model = Model(sdp_solver)
-@variable(model, S, PolySet(degree=4, convex=true, symmetric=true))
+@variable(
+    model,
+    S,
+    PolySet(degree = 4, convex = true, symmetric = true, psd = false, basis = Chebyshev)
+)
 @constraint(model, S ⊆ □)
 @constraint(model, A * S ⊆ S)
 @objective(model, Max, nth_root(volume(S)))
 optimize!(model)
+@test is_solved_and_feasible(model; allow_almost = true) #src
 @show solve_time(model)
 @show termination_status(model)
 @show objective_value(model)
@@ -93,11 +103,16 @@ maximal_convex = value(S)
 # And the minimal containing the square:
 
 model = Model(sdp_solver)
-@variable(model, S, PolySet(degree=4, convex=true, symmetric=true))
+@variable(
+    model,
+    S,
+    PolySet(degree = 4, convex = true, symmetric = true, psd = false, basis = Chebyshev)
+)
 @constraint(model, □ ⊆ S)
 @constraint(model, A * S ⊆ S)
 @objective(model, Min, nth_root(volume(S)))
 optimize!(model)
+@test is_solved_and_feasible(model; allow_almost = true) #src
 @show solve_time(model)
 @show termination_status(model)
 @show objective_value(model)
@@ -105,7 +120,7 @@ minimal_convex = value(S)
 
 # We plot the two quartic sublevel sets together with the square.
 
-plot(ratio=:equal)
+plot(ratio = :equal)
 plot!(minimal_convex)
 plot!(□)
 plot!(maximal_convex)

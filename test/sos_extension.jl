@@ -28,6 +28,7 @@ end
         @polyvar x y
         triangle = polyhedron(convexhull([0.0, 0.0], [1.0, 0.0], [0.0, 1.0]))
         @test SetProg.integrate(x^2 + 2x*y + 3y^2, triangle) ≈ 5 / 12
+        @test SetProg.integrate(1.0 + 0*x, triangle) ≈ 1 / 2
         @test SetProg.integrate_monomials(monomials([x, y], 2), triangle) ≈
               [1/12, 1/24, 1/12]
     end
@@ -200,6 +201,61 @@ end
         @test Matrix(matrix.Q) ≈ Matrix(transformed.Q)
         @test minimum(eigvals(Symmetric(Matrix(matrix.Q)))) ≥ -1e-6
     end
+    @testset "Chebyshev Gram bases" begin
+        @polyvar x[1:2] y[1:3]
+        MB = SumOfSquares.MultivariateBases
+        basis = MB.explicit_basis_covering(
+            MB.FullBasis{Chebyshev}(x),
+            MB.SubBasis{Monomial}(monomials(x, 0:2)),
+        )
+        gram = GramMatrix(
+            ones(length(basis), length(basis)) + Diagonal(collect(1.0:length(basis))),
+            basis,
+        )
+        domain = polyhedron(convexhull([-1.0, 0.0], [1.0, 0.0], [0.0, -1.0], [0.0, 1.0]))
+        @test SetProg.l1_integral(Sets.PolySet(0:4, gram), domain) ≈
+              SetProg.integrate(MP.polynomial(gram), domain)
+        # Use actual Chebyshev polynomials, including their lower terms, for
+        # rectangular and singular maps. Indexing monomials are insufficient.
+        for A in ([1.0 0.5 -0.25; 0.0 0.5 0.0], zeros(2, 3))
+            mapped = SetProg.apply_matrix(gram, A, y, 2)
+            @test MP.polynomial(mapped) ≈ MP.polynomial(gram)(x => A*y)
+        end
+        sizes = Int[]
+        for B in (Monomial, Chebyshev)
+            family =
+                PolySet(degree = 4, symmetric = true, convex = true, psd = false, basis = B)
+            set = SetProg.variable_set(Model(), family, SetProg.PrimalSpace, 2, x)
+            push!(sizes, size(set.convexity_proof, 1))
+        end
+        @test sizes[1] == sizes[2]
+        for psd in (true, false)
+            model =
+                Model(optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true))
+            family = PolySet(degree = 4, symmetric = true, basis = Chebyshev, psd = psd)
+            set = SetProg.variable_set(model, family, SetProg.PrimalSpace, 2, x)
+            @test set.p.basis isa MB.SubBasis{Chebyshev}
+            p = MP.polynomial(set.p)
+            @constraint(model, p(x => [1.0, 0.0]) == 1)
+            @constraint(model, p(x => [0.0, 1.0]) == 1)
+            # Without homogeneity constraints this objective is unbounded:
+            # a multiple of (x1^2+x2^2-1)^2 vanishes at both sample points.
+            @objective(model, Max, MP.coefficient(p, monomial(x, [0, 0])))
+            optimize!(model)
+            @test is_solved_and_feasible(model; allow_almost = true)
+            @test abs(objective_value(model)) <= 1e-6
+            fitted = MP.polynomial(value(set.p))
+            domain =
+                polyhedron(convexhull([-1.0, 0.0], [1.0, 0.0], [0.0, -1.0], [0.0, 1.0]))
+            @test value(SetProg.l1_integral(set, domain)) ≈
+                  SetProg.integrate(fitted, domain) atol = 1e-6
+            @test all(
+                t -> MP.degree(t) == 4 || abs(MP.coefficient(t)) <= 1e-6,
+                MP.terms(fitted),
+            )
+        end
+    end
+
 end
 
 end

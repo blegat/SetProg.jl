@@ -132,6 +132,15 @@ function variable_set(
         Q = @variable(model, [1:length(basis), 1:length(basis)], Symmetric)
         SumOfSquares.GramMatrix(Q, basis)
     end
+    if !explicit_degrees && set.basis !== MultivariateBases.Monomial
+        # A nonhomogeneous basis, such as Chebyshev, introduces lower-degree
+        # terms even when covering only homogeneous monomials.
+        for term in MP.terms(MP.polynomial(p))
+            if MP.degree(term) != set.degree
+                @constraint(model, MP.coefficient(term) == 0)
+            end
+        end
+    end
     if explicit_degrees
         set.point === nothing || throw(
             ArgumentError("point hints are not supported with explicit degree ranges"),
@@ -157,7 +166,12 @@ function variable_set(
     if set.convex
         set.superset === nothing || error("superset not supported for convex PolySet")
         if set.symmetric
-            convexity_proof = constrain_convex(model, p, space_polyvars)
+            # Exclude lower-degree expressions already constrained to zero,
+            # so the Hessian certificate does not acquire forced zero rows.
+            convex_polynomial =
+                set.basis === MultivariateBases.Monomial ? p :
+                MP.filter_terms(t -> MP.degree(t) == set.degree, p)
+            convexity_proof = constrain_convex(model, convex_polynomial, space_polyvars)
             if space == PrimalSpace
                 return Sets.ConvexPolySet(set.degree, p, convexity_proof)
             else
