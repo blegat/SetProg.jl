@@ -25,7 +25,11 @@ end
 decompose(mono::MP.AbstractMonomial) = decompose(MP.exponents(mono))
 
 function all_exponents(set::Union{Sets.PolySet,Sets.ConvexPolySet})
-    return MP.exponents.(MP.monomials(Sets.space_variables(set), set.degree))
+    # Nonhomogeneous Gram bases introduce coefficient expressions of lower
+    # degree, even when constraints require those expressions to vanish.
+    selected = set.degree isa Int ? [set.degree] : set.degree
+    degrees = sort!(union(selected, MP.degree.(MP.monomials(MP.polynomial(set.p)))))
+    return MP.exponents.(MP.monomials(Sets.space_variables(set), degrees))
 end
 function evaluate_monomials(
     monomial_value::Function,

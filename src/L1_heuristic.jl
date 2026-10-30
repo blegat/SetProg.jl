@@ -29,6 +29,7 @@ using LinearAlgebra
 
 # See (6) of [BBDKV11]
 function _linear_simplex(l::PowerOfLinearForm, s)
+    iszero(l.power) && return 1
     ls = [l.coefficients'si for si in points(s)]
     sum(prod(i -> ls[i]^k[i], eachindex(ls)) for k in multiexponents(npoints(s), l.power))
 end
@@ -116,6 +117,9 @@ end
 function decompose(exps::Vector{Int})
     f(i) = 0:i
     d = sum(exps)
+    if iszero(d)
+        return Decomposition([1.0], [PowerOfLinearForm(zeros(Int, length(exps)), 0)])
+    end
     # `factorial` is limited to `d <= 20`.
     deno = prod(Float64, 1:d)
     coefficients = Float64[]
