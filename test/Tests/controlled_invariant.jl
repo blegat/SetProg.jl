@@ -95,7 +95,7 @@ function ci_piecewise_semiell_homogeneous_test(optimizer, config)
             _test_piece(◯, [-0.5, 0.5], Q2, config)
             _test_piece(◯, [0.5, 0.5], Q1, config)
         end,
-        24,
+        12,
     )
 end
 
@@ -123,7 +123,7 @@ function ci_piecewise_semiell_mci_homogeneous_test(optimizer, config)
             _test_piece(◯, [-1.5, -0.5], Q2, config)
             _test_piece(◯, [-1, -0.75], Q3, config)
         end,
-        25,
+        18,
     )
 end
 
