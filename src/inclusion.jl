@@ -120,16 +120,76 @@ end
 _add_constraint_or_not(model, ::Nothing) = nothing
 _add_constraint_or_not(model, con) = JuMP.add_constraint(model, con)
 
-function _preprocess_domain(domain)
-    # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from
-    #      `zero_eliminate` of `[1e-17, 0, 1]` so we remove duplicates to drop it
-    domain = polyhedron(
-        removeduplicates(hrep(domain), Polyhedra.default_solver(domain)),
-        library(domain)
-    )
-    detecthlinearity!(domain)
-    return domain
+# Indices of the halfspaces `⟨a_i, x⟩ ≤ 0` of the cone `{x | Bx = 0, Ax ≤ 0}`
+# that are implicit equalities. As the cone is closed under addition and
+# scaling, the optimal `t_i` of the following LP is 1 if there is a point of
+# the cone with `⟨a_i, x⟩ < 0` and 0 otherwise.
+function _implicit_equalities(A::Matrix, B::Matrix, solver)
+    m, n = size(A)
+    model = JuMP.Model(solver)
+    JuMP.set_silent(model)
+    @variable(model, x[1:n])
+    @variable(model, 0 <= t[1:m] <= 1)
+    @constraint(model, A * x + t .<= 0)
+    @constraint(model, B * x .== 0)
+    @objective(model, Max, sum(t))
+    JuMP.optimize!(model)
+    if JuMP.primal_status(model) != MOI.FEASIBLE_POINT
+        error("Failed to detect the implicit equalities of the domain: the solver terminated with status $(JuMP.termination_status(model)).")
+    end
+    return findall(i -> JuMP.value(t[i]) < 1 / 2, 1:m)
 end
+# Without solver, we only detect opposite halfspaces.
+function _implicit_equalities(A::Matrix, B::Matrix, ::Nothing)
+    tol = Base.rtoldefault(eltype(A))
+    m = size(A, 1)
+    return findall(1:m) do i
+        any(j -> norm(A[i, :] + A[j, :]) <= tol, 1:m)
+    end
+end
+_unit_rows(A::Matrix) = A ./ map(norm, eachrow(A))
+function _remove_duplicate_rows(A::Matrix, tol)
+    keep = filter(1:size(A, 1)) do i
+        !any(j -> norm(A[i, :] - A[j, :]) <= tol, 1:(i-1))
+    end
+    return A[keep, :]
+end
+# Return a representation of the cone `domain` that only depends on the
+# cone and not on the numerical noise of its representation. Each halfspace
+# gives a variable in the S-procedure so we remove the halfspaces that are
+# zero, duplicate or that are implied by the hyperplanes. The hyperplanes
+# form an orthonormal basis of the orthogonal complement of the linear hull
+# of the cone. The halfspaces have unit norm and are orthogonal to the
+# hyperplanes.
+function _preprocess_domain(domain)
+    h = hrep(domain)
+    if !all(h -> iszero(h.β), hyperplanes(h)) || !all(h -> iszero(h.β), halfspaces(h))
+        error("only cones are supported")
+    end
+    T = float(Polyhedra.coefficient_type(h))
+    tol = Base.rtoldefault(T)
+    n = fulldim(h)
+    _matrix(els) = Matrix{T}(reduce(vcat, [h.a' for h in els], init = zeros(T, 0, n)))
+    _nonzero_rows(A) = A[findall(a -> norm(a) > tol, collect(eachrow(A))), :]
+    A = _unit_rows(_nonzero_rows(_matrix(halfspaces(h))))
+    B = _unit_rows(_nonzero_rows(_matrix(hyperplanes(h))))
+    lin = _implicit_equalities(A, B, Polyhedra.default_solver(domain))
+    B = [B; A[lin, :]]
+    A = A[setdiff(1:size(A, 1), lin), :]
+    if !isempty(B)
+        F = svd(B)
+        B = F.Vt[findall(σ -> σ > tol * maximum(F.S), F.S), :]
+        A = A - A * B' * B
+    end
+    A = _remove_duplicate_rows(_unit_rows(_nonzero_rows(A)), tol)
+    return hrep(
+        HyperPlane{T,Vector{T}}[HyperPlane(B[i, :], zero(T)) for i in axes(B, 1)],
+        HalfSpace{T,Vector{T}}[HalfSpace(A[i, :], zero(T)) for i in axes(A, 1)],
+    )
+end
+# `domain` is a cone so it is never empty and `_preprocess_domain` gives
+# linearly independent hyperplanes.
+_dim(domain) = fulldim(domain) - nhyperplanes(domain)
 function _linear_part(model, domain)
     Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain)]
     for (i, h) in enumerate(halfspaces(domain))
@@ -141,7 +201,7 @@ function _linear_part(model, domain)
 end
 function lin_in_domain(model, h::Vector, domain::Polyhedra.HRep)
     domain = _preprocess_domain(domain)
-    dim(domain) <= 0 && return
+    _dim(domain) <= 0 && return
     a = h + _linear_part(model, domain)
     if hashyperplanes(domain)
         # If we are in lower dimension,
@@ -210,7 +270,7 @@ function _linspace(domain)
 end
 function psd_in_domain(model, Q::Symmetric, domain::Polyhedra.HRep)
     domain = _preprocess_domain(domain)
-    dim(domain) <= 0 && return
+    _dim(domain) <= 0 && return
     A = Q - _quadratic_part(model, domain)
     if hashyperplanes(domain)
         # If we are in lower dimension,
@@ -221,14 +281,8 @@ function psd_in_domain(model, Q::Symmetric, domain::Polyhedra.HRep)
     return psd_constraint(Symmetric(A))
 end
 function lifted_psd_in_domain(model, Q::Symmetric, domain)
-    # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from
-    #      `zero_eliminate` of `[1e-17, 0, 1]` so we remove duplicates to drop it
-    domain = polyhedron(
-        removeduplicates(hrep(domain), Polyhedra.default_solver(domain)),
-        library(domain)
-    )
-    detecthlinearity!(domain)
-    dim(domain) <= 0 && return
+    domain = _preprocess_domain(domain)
+    _dim(domain) <= 0 && return
     Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain)]
     for (i, hi) in enumerate(halfspaces(domain))
         λ = @variable(model, lower_bound = 0.0, base_name = "λ[$i]")

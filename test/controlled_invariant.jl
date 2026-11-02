@@ -47,7 +47,7 @@ using JuMP
                 Tests.ci_piecewise_semiell_homogeneous_test(
                     bridged_mock(mock -> MOI.Utilities.mock_optimize!(
                         mock,
-                        [Q1; Q2; Q2; Q1; collect(1:MOI.get(mock, MOI.NumberOfVariables()) - 12)])),
+                        [Q1; Q2; Q2; Q1])),
                     config)
             end
             @testset "mci" begin
@@ -59,7 +59,7 @@ using JuMP
                     Tests.ci_piecewise_semiell_mci_homogeneous_test(
                         bridged_mock(mock -> MOI.Utilities.mock_optimize!(
                             mock,
-                            [Q3; Q2; Q3; Q2; Q1; Q1; zeros(MOI.get(mock, MOI.NumberOfVariables()) - 18)],
+                            [Q3; Q2; Q3; Q2; Q1; Q1],
                         )),
                         config,
                     )
