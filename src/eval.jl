@@ -36,6 +36,10 @@ end
 function sublevel_eval(set::Sets.Piecewise{<:Any,<:Sets.PolarPoint}, x::AbstractVector)
     return maximum(sublevel_eval(piece, x) for piece in set.sets)
 end
+function sublevel_eval(set::Sets.Piecewise{<:Any,<:Sets.Ellipsoid}, x::AbstractVector)
+    i = findfirst(cone -> x in cone, set.pieces)
+    return sublevel_eval(set.sets[i], x)
+end
 
 # Unlike sublevel_eval, this always evaluates a power of the actual gauge.
 # The exponent of the operation need not equal the defining polynomial degree.
