@@ -1,4 +1,5 @@
 [deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 DynamicPolynomials = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 Hypatia = "b99e6be6-89ff-11e8-14f8-45c827f4f8f2"
@@ -11,3 +12,6 @@ RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 SetProg = "39881422-4b75-5582-a5c7-0feb14562a65"
 SumOfSquares = "4b9e565b-77fc-50a5-a571-1244f986bda1"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+Aqua = "0.8"

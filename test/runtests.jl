@@ -1,3 +1,4 @@
+include("aqua.jl")
 include("extensions.jl")
 include("sos_extension.jl")
 
