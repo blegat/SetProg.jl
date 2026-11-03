@@ -8,12 +8,13 @@ include("Sets/Sets.jl")
 import MutableArithmetics
 const MA = MutableArithmetics
 
-import Reexport
-Reexport.@reexport using JuMP
+using JuMP
+using Polyhedra
 const MOI = JuMP.MOI
-Reexport.@reexport using Polyhedra
-# JuMP also exports `simplify`; keep the Polyhedra binding unambiguous.
-import Polyhedra: simplify
+# Both packages export `simplify`; callers must qualify that name.
+for name in setdiff(union(names(JuMP), names(Polyhedra)), [:simplify])
+    @eval export $name
+end
 
 function sos_extension()
     ext = Base.get_extension(@__MODULE__, :SetProgSumOfSquaresExt)
