@@ -221,10 +221,11 @@ end
 function l1_integral(set::Sets.Polar, vertex)
     return l1_integral(Polyhedra.polar(set), _polar(vertex))
 end
-function l1_integral(set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
-                     vertex)
-    return l1_integral(Polyhedra.polar(Sets.Ellipsoid(set.set.set.Q)),
-                       vertex)
+function l1_integral(
+    set::Sets.HouseDualOf{<:Sets.AbstractEllipsoid},
+    vertex::AbstractVector,
+)
+    return l1_integral(Polyhedra.polar(Sets.Ellipsoid(set.set.set.Q)), vertex)
 end
 
 function invert_objective_sense(::Union{Sets.Polar,

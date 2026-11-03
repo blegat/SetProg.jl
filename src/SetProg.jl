@@ -1,6 +1,7 @@
 module SetProg
 
 using LinearAlgebra
+import SparseArrays
 
 include("Sets/Sets.jl")
 
@@ -11,6 +12,8 @@ import Reexport
 Reexport.@reexport using JuMP
 const MOI = JuMP.MOI
 Reexport.@reexport using Polyhedra
+# JuMP also exports `simplify`; keep the Polyhedra binding unambiguous.
+import Polyhedra: simplify
 
 function sos_extension()
     ext = Base.get_extension(@__MODULE__, :SetProgSumOfSquaresExt)

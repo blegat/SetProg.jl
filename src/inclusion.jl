@@ -316,13 +316,33 @@ function JuMP.build_constraint(_error::Function,
     JuMP.build_constraint(_error, Polyhedra.polar(T), PowerSet(Polyhedra.polar(S));
                           kws...)
 end
-function JuMP.build_constraint(_error::Function,
-                               subset::Sets.AbstractSet,
-                               sup_powerset::PowerSet{<:Sets.LinearPreImage{<:Sets.AbstractSet}};
-                               kws...)
+function JuMP.build_constraint(
+    _error::Function,
+    subset::Sets.AbstractSet,
+    sup_powerset::PowerSet{<:Sets.LinearPreImage{<:Sets.AbstractSet}};
+    kws...,
+)
+    return _build_preimage_constraint(_error, subset, sup_powerset; kws...)
+end
+function _build_preimage_constraint(_error, subset, sup_powerset; kws...)
     x = Sets.space_variables(subset)
-    JuMP.build_constraint(_error, subset,
-                          PowerSet(apply_map(sup_powerset.set, x)); kws...)
+    return JuMP.build_constraint(
+        _error,
+        subset,
+        PowerSet(apply_map(sup_powerset.set, x));
+        kws...,
+    )
+end
+# Evaluate the preimage first when both sides carry a linear map.
+for S in (Sets.AbstractSet, Union{Sets.Polar,Sets.PerspectiveDual})
+    @eval function JuMP.build_constraint(
+        _error::Function,
+        subset::Sets.LinearImage{<:$S},
+        sup_powerset::PowerSet{<:Sets.LinearPreImage{<:Sets.AbstractSet}};
+        kws...,
+    )
+        return _build_preimage_constraint(_error, subset, sup_powerset; kws...)
+    end
 end
 function JuMP.build_constraint(_error::Function,
                                subset::Sets.LinearImage{<:Sets.AbstractSet},

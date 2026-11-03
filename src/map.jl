@@ -76,8 +76,18 @@ end
 abstract type SymbolicVariable end
 
 # FIXME, for Sets.AbstractSet, we should apply it directly
-function Base.:(*)(A::AbstractMatrix, set::Union{SetVariableRef, Sets.AbstractSet, SymbolicVariable})
-    return Sets.LinearImage(set, A)
+for MatrixType in (
+    AbstractMatrix,
+    SparseArrays.SparseMatrixCSC,
+    Symmetric,
+    Symmetric{<:MA.AbstractMutable},
+)
+    @eval function Base.:(*)(
+        A::$MatrixType,
+        set::Union{SetVariableRef,Sets.AbstractSet,SymbolicVariable},
+    )
+        return Sets.LinearImage(set, A)
+    end
 end
 
 needs_polyvars(::Sets.AbstractSet) = true
