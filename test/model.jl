@@ -324,8 +324,8 @@ end
             "Polytope",
             Polytope(symmetric = true, piecewise = □),
             unit_polytope,
-            MOI.VectorAffineFunction{Float64},
-            MOI.Zeros,
+            MOI.ScalarAffineFunction{Float64},
+            MOI.GreaterThan{Float64},
         ),
     ]
         model = _mock_model()
@@ -384,5 +384,167 @@ end
             "Incompatible constraints/objective, some require to do the modeling in the primal space and some in the dual space.",
         )
         @test_throws err optimize!(model)
+    end
+end
+
+@testset "Piecewise linear inclusions use partition generators" begin
+    for n in (2, 3)
+        partition = _square(n)
+        unit = Sets.Piecewise(
+            [Sets.PolarPoint(h.a / h.β) for h in halfspaces(partition)],
+            partition,
+        )
+        @test unit.convex
+        A = 0.5 * Matrix{Float64}(I, n, n)
+        A[1:2, 1:2] = [0.3 -0.4; 0.4 0.3]
+        for rate in (0.8, 0.4)
+            model = Model(_lp_solver)
+            @variable(model, S, Polytope(symmetric = true, piecewise = partition))
+            @constraint(model, S ⊆ unit)
+            @constraint(model, (A / rate) * S ⊆ S)
+            optimize!(model)
+            @test termination_status(model) == (rate == 0.8 ? MOI.OPTIMAL : MOI.INFEASIBLE)
+            variable = S.variable
+            expected = n * length(variable.sets) + sum(length, variable.graph) ÷ 2
+            @test num_variables(model) == expected
+            if rate == 0.8
+                fitted = value(S)
+                @test fitted.convex
+                gauge(x) = maximum(dot(piece.a, x) for piece in fitted.sets)
+                # A source cone crosses destination cones; checking only the
+                # common partition generators must still certify its interior.
+                for x in Iterators.product(ntuple(_ -> -1.0:0.25:1.0, n)...)
+                    point = collect(x)
+                    @test gauge(A * point) <= rate * gauge(point) + 1e-7
+                end
+                @test SetProg.apply_map(Sets.LinearPreImage(fitted, A), nothing).convex
+            end
+        end
+    end
+
+    partition = _square(2)
+    unit = Sets.Piecewise(
+        [Sets.PolarPoint(h.a / h.β) for h in halfspaces(partition)],
+        partition,
+    )
+    nonconvex =
+        Sets.Piecewise([Sets.PolarPoint(-piece.a) for piece in unit.sets], partition)
+    @test !nonconvex.convex
+    explicit = Sets.Piecewise(unit.sets, partition, unit.pieces, unit.graph)
+    @test !explicit.convex
+    model = Model(_lp_solver)
+    @variable(model, S, Polytope(symmetric = true, piecewise = partition))
+    @constraint(model, S ⊆ explicit)
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+    @test num_variables(model) > 12 # Generic domain certificate is retained.
+
+    # Singular maps give an unbounded destination partition. Its convex
+    # gauge remains valid and does not require inverting the map.
+    for A in ([0.5 0.0; 0.0 0.0], zeros(2, 2))
+        model = Model(_lp_solver)
+        @variable(model, S, Polytope(symmetric = true, piecewise = partition))
+        @constraint(model, S ⊆ unit)
+        @constraint(model, (A / 0.6) * S ⊆ S)
+        optimize!(model)
+        @test termination_status(model) == MOI.OPTIMAL
+        @test num_variables(model) == 12
+    end
+
+    strip = polyhedron(hrep([1.0 0.0; -1.0 0.0], ones(2)), _lib)
+    wedge = polyhedron(hrep([1.0 0.0; 0.0 1.0], ones(2)), _lib)
+    @test !Sets._piecewise_is_convex(unit.sets, strip)
+    @test !Sets._piecewise_is_convex(unit.sets, wedge)
+end
+
+@testset "Piecewise restriction preserves convexity metadata" begin
+    partition = _square(3)
+    ell = Sets.Ellipsoid(Symmetric(Matrix{Float64}(I, 3, 3)))
+    set = Sets.Piecewise([ell for _ in halfspaces(partition)], partition)
+    @test !Sets.zero_eliminate(set, [3]).convex
+end
+
+@testset "Explicit and unbounded partitions keep the domain certificate" begin
+    partition = _square(2)
+    unit = Sets.Piecewise(
+        [Sets.PolarPoint(h.a / h.β) for h in halfspaces(partition)],
+        partition,
+    )
+    explicit = Sets.Piecewise(unit.sets, partition, unit.pieces, unit.graph)
+    for A in ([0.5 0.0; 0.0 0.0], [0.5 0.0; 0.0 0.25])
+        mapped = SetProg.apply_map(Sets.LinearPreImage(explicit, A), nothing)
+        @test !mapped.convex
+        model = Model(_lp_solver)
+        @constraint(model, mapped ⊆ unit)
+        optimize!(model)
+        @test termination_status(model) == MOI.INFEASIBLE
+    end
+    mapped = SetProg.apply_map(Sets.LinearPreImage(unit, [0.5 0.0; 0.0 0.0]), nothing)
+    model = Model(_lp_solver)
+    @constraint(model, mapped ⊆ mapped)
+    optimize!(model)
+    @test termination_status(model) == MOI.OPTIMAL
+end
+
+@testset "A nonconvex target needs checks inside source cones" begin
+    source_partition =
+        polyhedron(convexhull([1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]), _lib)
+    source = Sets.Piecewise(
+        [Sets.PolarPoint(h.a / h.β) for h in halfspaces(source_partition)],
+        source_partition,
+    )
+    target_partition = polyhedron(
+        vrep([
+            [2.0, 0.0],
+            [1.5, 1.5],
+            [0.0, 2.0],
+            [-1.5, 1.5],
+            [-2.0, 0.0],
+            [-1.5, -1.5],
+            [0.0, -2.0],
+            [1.5, -1.5],
+        ]),
+        _lib,
+    )
+    # max(|x₁|, |x₂|) + 2min(|x₁|, |x₂|) agrees with the source gauge
+    # on the axes but exceeds it on diagonals. Source vertices alone would
+    # incorrectly certify this inclusion without the convexity check.
+    pieces = [
+        Sets.PolarPoint(
+            reduce(hcat, rs)' \ [maximum(abs, r) + 2minimum(abs, r) for r in rs],
+        ) for rs in (
+            incidentpoints(target_partition, hidx) for
+            hidx in eachindex(halfspaces(target_partition))
+        )
+    ]
+    target = Sets.Piecewise(pieces, target_partition)
+    @test source.convex
+    @test !target.convex
+    model = Model(_lp_solver)
+    @constraint(model, source ⊆ target)
+    optimize!(model)
+    @test termination_status(model) == MOI.INFEASIBLE
+end
+
+@testset "Ray certificates preserve automatic dual modeling" begin
+    partition =
+        polyhedron(convexhull([1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]), _lib)
+    unit = Sets.Piecewise(
+        [Sets.PolarPoint(h.a / h.β) for h in halfspaces(partition)],
+        partition,
+    )
+    for rate in (0.6, 0.4)
+        model = Model(_lp_solver)
+        @variable(model, S, Polytope(symmetric = true, piecewise = partition))
+        @constraint(model, polar(unit) ⊆ S)
+        @constraint(model, (-Matrix{Float64}(I, 2, 2)) * S ⊆ S)
+        @constraint(model, ([0.5 -0.1; 0.0 0.25] / rate) * S ⊆ S)
+        optimize!(model)
+        @test SetProg.data(model).space == SetProg.DualSpace
+        @test termination_status(model) == (rate == 0.6 ? MOI.OPTIMAL : MOI.INFEASIBLE)
+        @test num_variables(model) == 12
+        if rate == 0.6
+            @test polar(value(S)).convex
+        end
     end
 end

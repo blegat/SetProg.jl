@@ -89,6 +89,7 @@ function variable_set(model::JuMP.AbstractModel, ell::Polytope, space::Space,
                     end
                 end
             end
+            set = Sets.Piecewise(set.sets, set.polytope, set.pieces, set.graph, true)
         end
         if space == PrimalSpace
             return set
@@ -267,7 +268,13 @@ function JuMP.value(set::Sets.ConvexPolynomialSet)
     return Sets.ConvexPolynomialSet(set.degree, JuMP.value(set.q), set.z, set.x)
 end
 function JuMP.value(set::Sets.Piecewise)
-    return Sets.Piecewise(JuMP.value.(set.sets), set.polytope, set.pieces, set.graph)
+    return Sets.Piecewise(
+        JuMP.value.(set.sets),
+        set.polytope,
+        set.pieces,
+        set.graph,
+        set.convex,
+    )
 end
 
 """

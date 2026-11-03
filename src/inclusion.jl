@@ -245,13 +245,42 @@ function JuMP.add_constraint(model::JuMP.Model,
                              constraint::InclusionConstraint{<:Sets.Piecewise,
                                                              <:Sets.Piecewise},
                              name::String = "")
-    subset = constraint.subset
-    supset = constraint.supset
+    return _add_piecewise_inclusion_domains(model, constraint.subset, constraint.supset)
+end
+
+function _add_piecewise_inclusion_domains(model, subset, supset)
     for (i, si) in enumerate(subset.sets)
         for (j, sj) in enumerate(supset.sets)
             add_constraint_inclusion_domain(model, si, sj, subset.pieces[i] ∩ supset.pieces[j])
         end
     end
+end
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    constraint::InclusionConstraint{
+        <:Sets.Piecewise{<:Any,<:Sets.PolarPoint},
+        <:Sets.Piecewise{<:Any,<:Sets.PolarPoint},
+    },
+    name::String = "",
+)
+    subset, supset = constraint.subset, constraint.supset
+    if !subset.convex ||
+       !supset.convex ||
+       hasrays(subset.polytope) ||
+       haslines(subset.polytope)
+        return _add_piecewise_inclusion_domains(model, subset, supset)
+    end
+    # The vertices generate every cone of the source partition. Its gauge
+    # is linear on each cone and the target gauge is convex, so checking
+    # these generators suffices even when a source cone crosses target cones.
+    # Continuity lets us check each shared generator only once.
+    for r in points(subset.polytope)
+        i = findfirst(cone -> r in cone, subset.pieces)
+        j = findfirst(cone -> r in cone, supset.pieces)
+        @constraint(model, dot(subset.sets[i].a, r) >= dot(supset.sets[j].a, r))
+    end
+    return nothing
 end
 
 # S ⊆ T <=> T* ⊇ S*

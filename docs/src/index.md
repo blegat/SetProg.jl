@@ -79,6 +79,19 @@ fixed multiplier, defaulting to one. The `Disjoint` constraint defaults to a
 margin of one, certifying strict disjointness. A zero-margin certificate alone
 can allow the sets to share boundary points.
 
+### Piecewise-linear inclusions
+
+For convex piecewise-linear gauges with a bounded source partition, inclusion
+is checked once at each vertex of that partition. These vertices generate
+the source cones: linearity on each source cone and convexity of the target
+extend the inequalities to the whole space, even when source cones cross
+target cones. No cone-intersection multipliers are introduced.
+
+SetProg's polytope families impose continuity and convexity. Fixed numeric
+pieces are checked for convexity before using this certificate. Sets without
+that guarantee, or with unbounded source partitions, retain the general
+cone-domain certificate.
+
 ### Polyhedral separation
 
 A polytope family with a fixed partition also supports ellipsoid containment

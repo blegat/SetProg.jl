@@ -48,7 +48,8 @@ function apply_map(li::Sets.LinearPreImage{<:Sets.Piecewise}, new_vars)
         [apply_map(Sets.LinearPreImage(set, li.A), new_vars) for set in li.set.sets],
         li.A \ li.set.polytope,
         [li.A \ piece for piece in li.set.pieces],
-        li.set.graph # /!\ FIXME The nij are now incorrect
+        li.set.graph, # /!\ FIXME The nij are now incorrect
+        li.set.convex,
     )
     return Sets.Ellipsoid(Symmetric(li.A' * li.set.Q * li.A))
 end

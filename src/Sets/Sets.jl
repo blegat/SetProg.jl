@@ -146,7 +146,12 @@ struct Piecewise{T, S<:AbstractSet{T}, U, Po <: Polyhedra.Polyhedron{U}, Pi} <: 
     pieces::Vector{Pi}
     # TODO add adjacency graph in Polyhedra
     graph::Vector{Vector{Tuple{Int, Vector{U}}}}
+    # A known convex gauge allows inclusion to be checked on partition rays.
+    convex::Bool
 end
+# Preserve the constructor for explicitly supplied cones and adjacency.
+Piecewise(sets, polytope, pieces, graph) = Piecewise(sets, polytope, pieces, graph, false)
+_piecewise_is_convex(sets, polytope) = false
 function Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron{U}) where U
     @assert length(sets) == nhalfspaces(polytope)
     points = [Set(incidentpointindices(polytope, hidx)) for hidx in eachindex(halfspaces(polytope))]
@@ -173,7 +178,7 @@ function Piecewise(sets::Vector{<:AbstractSet}, polytope::Polyhedra.Polyhedron{U
                                     Polyhedra.DefaultLibrary{U}(Polyhedra.default_solver(polytope)))
     end
     pieces = [piece(i, h) for (i, h) in enumerate(halfspaces(polytope))]
-    return Piecewise(sets, polytope, pieces, graph)
+    return Piecewise(sets, polytope, pieces, graph, _piecewise_is_convex(sets, polytope))
 end
 dimension(set::Piecewise) = Polyhedra.fulldim(set.polytope)
 space_variables(set::Piecewise) = space_variables(set.sets[1])
@@ -197,7 +202,8 @@ function zero_eliminate(set::Piecewise, I)
             map(adj) do iv
                 iv[1], iv[2][J]
             end
-        end
+        end,
+        set.convex,
     )
 end
 
