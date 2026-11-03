@@ -21,3 +21,21 @@ function _print_gauge_function(h::PolarPoint; digits=6)
     end
     println(x' * a)
 end
+
+# A linear piece defines the convex gauge on its cone exactly when it is
+# maximal there. Check the generating rays supplied by the partition facets.
+function _piecewise_is_convex(sets::Vector{<:PolarPoint{<:Number}}, polytope)
+    if hasrays(polytope) || haslines(polytope)
+        return false
+    end
+    for (i, hidx) in enumerate(eachindex(halfspaces(polytope)))
+        for r in incidentpoints(polytope, hidx), other in sets
+            value = dot(sets[i].a, r)
+            bound = dot(other.a, r)
+            if bound > value && !isapprox(bound, value)
+                return false
+            end
+        end
+    end
+    return true
+end
