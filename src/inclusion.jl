@@ -120,15 +120,10 @@ end
 _add_constraint_or_not(model, ::Nothing) = nothing
 _add_constraint_or_not(model, con) = JuMP.add_constraint(model, con)
 
+# Each halfspace gives a multiplier in the S-procedure so we detect the
+# hyperplanes and remove the duplicate halfspaces.
 function _preprocess_domain(domain)
-    # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from
-    #      `zero_eliminate` of `[1e-17, 0, 1]` so we remove duplicates to drop it
-    domain = polyhedron(
-        removeduplicates(hrep(domain), Polyhedra.default_solver(domain)),
-        library(domain)
-    )
-    detecthlinearity!(domain)
-    return domain
+    return removeduplicates(hrep(domain), Polyhedra.default_solver(domain))
 end
 function _linear_part(model, domain)
     Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain)]
@@ -141,7 +136,7 @@ function _linear_part(model, domain)
 end
 function lin_in_domain(model, h::Vector, domain::Polyhedra.HRep)
     domain = _preprocess_domain(domain)
-    dim(domain) <= 0 && return
+    dim(domain, true) <= 0 && return
     a = h + _linear_part(model, domain)
     if hashyperplanes(domain)
         # If we are in lower dimension,
@@ -210,7 +205,7 @@ function _linspace(domain)
 end
 function psd_in_domain(model, Q::Symmetric, domain::Polyhedra.HRep)
     domain = _preprocess_domain(domain)
-    dim(domain) <= 0 && return
+    dim(domain, true) <= 0 && return
     A = Q - _quadratic_part(model, domain)
     if hashyperplanes(domain)
         # If we are in lower dimension,
@@ -221,14 +216,8 @@ function psd_in_domain(model, Q::Symmetric, domain::Polyhedra.HRep)
     return psd_constraint(Symmetric(A))
 end
 function lifted_psd_in_domain(model, Q::Symmetric, domain)
-    # TODO `detecthlinearity!` fails to ignore `[1e-17, 0]` coming from
-    #      `zero_eliminate` of `[1e-17, 0, 1]` so we remove duplicates to drop it
-    domain = polyhedron(
-        removeduplicates(hrep(domain), Polyhedra.default_solver(domain)),
-        library(domain)
-    )
-    detecthlinearity!(domain)
-    dim(domain) <= 0 && return
+    domain = _preprocess_domain(domain)
+    dim(domain, true) <= 0 && return
     Λ = [zero(JuMP.AffExpr) for i in 1:fulldim(domain)]
     for (i, hi) in enumerate(halfspaces(domain))
         λ = @variable(model, lower_bound = 0.0, base_name = "λ[$i]")
