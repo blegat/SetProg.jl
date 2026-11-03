@@ -86,3 +86,8 @@ function _perspective_cat(set::Householder)
     H = _householder(set.h)
     return H * _perspective_cat(set.set) * H
 end
+
+# A preimage lives in the domain of its map, independently of the old coordinates.
+dimension(set::LinearPreImage) = size(set.A, 2)
+space_variables(::LinearPreImage) = nothing
+perspective_variable(set::LinearPreImage) = perspective_variable(set.set)

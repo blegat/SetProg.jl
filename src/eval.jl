@@ -70,3 +70,6 @@ end
 function _gauge_power(set::Sets.Intersection, x, p)
     return x in set.domain ? _gauge_power(set.set, x, p) : Inf
 end
+function _gauge_power(set::Sets.LinearPreImage, x, p)
+    return _gauge_power(set.set, set.A * x, p)
+end
