@@ -103,3 +103,81 @@ end
 function JuMP.value(set::Sets.LinearPreImage)
     return Sets.LinearPreImage(JuMP.value(set.set), JuMP.value.(set.A))
 end
+
+const _LinearLpSource = Sets.Piecewise{<:Any,<:Sets.PolarPoint}
+function set_space(
+    space::Space,
+    ::InclusionConstraint{<:SetVariableRef{<:Any,<:Polytope},<:PolarLpSum},
+)
+    return set_space(space, PrimalSpace)
+end
+
+# On a fixed source cone the source gauge is linear, while the target gauge
+# is sublinear. Dominance on its extreme rays therefore implies dominance
+# throughout the cone. No common refinement of the target cones is needed.
+function _ray_lp_terms(set::PolarLpSum, x, p)
+    return _ray_lp_terms(Val(set.p == p), set, x, p)
+end
+function _ray_lp_terms(::Val{true}, set::PolarLpSum, x, p)
+    return (_ray_lp_terms(set.first, x, p)..., _ray_lp_terms(set.second, x, p)...)
+end
+_ray_lp_terms(set::Sets.LinearPreImage, x, p) = _ray_lp_terms(set.set, set.A * x, p)
+function _ray_lp_terms(set::_LinearLpSource, x, p)
+    i = findfirst(cone -> x in cone, set.pieces)
+    return (dot(set.sets[i].a, x),)
+end
+_ray_lp_terms(set::Sets.PolarPoint, x, p) = (dot(set.a, x),)
+_ray_lp_terms(
+    set::Union{Sets.Ellipsoid{<:Number},Sets.PolarOf{<:Sets.Ellipsoid{<:Number}}},
+    x,
+    p,
+) = (_gauge_power(set, x, 1),)
+
+function _add_ray_lp_constraint(model, ::Val{1}, source, terms, margin, x)
+    # Each affine term represents max(0, term), the gauge of its halfspace.
+    # Epigraphs keep the LP linear even with several variable operands.
+    constraints = JuMP.ConstraintRef[]
+    values = map(terms) do term
+        term isa Real && return max(0, term)
+        t = JuMP.@variable(model)
+        push!(constraints, JuMP.@constraint(model, [t] in MOI.Nonnegatives(1)))
+        push!(constraints, JuMP.@constraint(model, term <= t))
+        return t
+    end
+    push!(constraints, JuMP.@constraint(model, sum(values) + margin * norm(x) <= source))
+    return constraints
+end
+function _add_ray_lp_constraint(model, ::Val{2}, source, terms, margin, x)
+    # Absolute values in the SOC agree with gauges for proper operands.
+    # For an unbounded operand they give a sufficient certificate as well.
+    vector = JuMP.AffExpr[source; terms...]
+    iszero(margin) || push!(vector, sqrt(margin) * norm(x))
+    return [JuMP.@constraint(model, vector in JuMP.SecondOrderCone())]
+end
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::InclusionConstraint{<:_LinearLpSource,<:PolarLpSum},
+    name::String = "",
+)
+    margin = get(c.kws, :margin, 0)
+    margin >= 0 || throw(ArgumentError("margin must be nonnegative"))
+    _check_normal_fan(c.subset)
+    constraints = JuMP.ConstraintRef[]
+    for (piece, cone) in zip(c.subset.sets, c.subset.pieces), ray in rays(cone)
+        x = Polyhedra.coord(ray)
+        terms = _ray_lp_terms(c.supset, x, c.supset.p)
+        append!(
+            constraints,
+            _add_ray_lp_constraint(
+                model,
+                Val(isinteger(c.supset.p) ? Int(c.supset.p) : c.supset.p),
+                dot(piece.a, x),
+                terms,
+                margin,
+                x,
+            ),
+        )
+    end
+    return constraints
+end
