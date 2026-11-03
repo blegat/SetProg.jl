@@ -1,16 +1,20 @@
 module SetProg
 
 using LinearAlgebra
+import SparseArrays
 
 include("Sets/Sets.jl")
 
 import MutableArithmetics
 const MA = MutableArithmetics
 
-import Reexport
-Reexport.@reexport using JuMP
+using JuMP
+using Polyhedra
 const MOI = JuMP.MOI
-Reexport.@reexport using Polyhedra
+# Both packages export `simplify`; callers must qualify that name.
+for name in setdiff(union(names(JuMP), names(Polyhedra)), [:simplify])
+    @eval export $name
+end
 
 function sos_extension()
     ext = Base.get_extension(@__MODULE__, :SetProgSumOfSquaresExt)

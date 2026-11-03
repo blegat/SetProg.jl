@@ -55,3 +55,12 @@ using Polyhedra
     ell = SetProg.Sets.Ellipsoid(Symmetric(Q))
     @test SetProg.l1_integral(ell, Δ) ≈ 1/96
 end
+
+@testset "Perspective-dual ellipsoid rectangle integral" begin
+    @polyvar z x[1:2]
+    ell = SetProg.Sets.Ellipsoid(Symmetric([2.0 0.0; 0.0 3.0]))
+    householder = SetProg.Sets.Householder(ell, dot(x, ell.Q * x) - z^2, zeros(2), z, x)
+    set = SetProg.Sets.perspective_dual(householder)
+    vertex = [1.0, 2.0]
+    @test SetProg.l1_integral(set, vertex) ≈ SetProg.l1_integral(polar(ell), vertex)
+end

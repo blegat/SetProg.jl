@@ -43,3 +43,36 @@ end
     @test constraint.set isa SumOfSquares.SOSPolynomialSet
     @test MultivariatePolynomials.nvariables(constraint.set.basis) == 1
 end
+
+@testset "Structured matrix images" begin
+    model = Model()
+    @variable(model, S, Ellipsoid(symmetric = true, dimension = 2))
+    @variable(model, Q[1:2, 1:2], Symmetric)
+    A = [2.0 1.0; 1.0 3.0]
+    for matrix in (A, SetProg.SparseArrays.sparse(A), Symmetric(A), Q)
+        for set in (S, SetProg.Sets.Ellipsoid(Symmetric(A)))
+            image = matrix * set
+            @test image isa SetProg.Sets.LinearImage
+            @test image.A === matrix
+            @test image.set === set
+        end
+    end
+end
+
+@testset "Image inclusion in a preimage" begin
+    A = [2.0 1.0; 0.0 1.0]
+    B = [1.0 0.0; 1.0 2.0]
+    ell = SetProg.Sets.Ellipsoid(Symmetric([3.0 1.0; 1.0 2.0]))
+    preimage = SetProg.Sets.LinearPreImage(ell, B)
+    model = Model()
+    @variable(model, Q[1:2, 1:2], Symmetric)
+    variable_ell = SetProg.Sets.Ellipsoid(Q)
+    for set in (variable_ell, polar(variable_ell))
+        image = A * set
+        constraint = JuMP.build_constraint(error, image, SetProg.PowerSet(preimage))
+        mapped = SetProg.apply_map(preimage, nothing)
+        expected = JuMP.build_constraint(error, image, SetProg.PowerSet(mapped))
+        @test constraint.constraint.func == expected.constraint.func
+        @test constraint.constraint.set == expected.constraint.set
+    end
+end

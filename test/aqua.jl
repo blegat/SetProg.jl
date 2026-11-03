@@ -3,6 +3,6 @@ using SetProg
 using Test
 
 @testset "Aqua" begin
-    # Also catches precompilation failures such as overwritten methods.
-    Aqua.test_persistent_tasks(SetProg)
+    # SetProg intentionally adds JuMP membership constraints for halfspaces.
+    Aqua.test_all(SetProg; piracies = (treat_as_own = [Polyhedra.HalfSpace],))
 end
