@@ -249,6 +249,10 @@ end
 function JuMP.value(set::Sets.ConvexPolySet)
     return Sets.ConvexPolySet(set.degree, JuMP.value(set.p), _value(set.convexity_proof))
 end
+# Numerical polynomial sets are already fitted, including fixed cost operands.
+function JuMP.value(set::Union{Sets.PolySet{<:Number},Sets.ConvexPolySet{<:Number}})
+    return set
+end
 function JuMP.value(set::Sets.Polar)
     return Polyhedra.polar(JuMP.value(Polyhedra.polar(set)))
 end

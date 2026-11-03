@@ -106,3 +106,42 @@ the initial support and reduces the safe ellipsoid's Cholesky radius. A
 positive margin certifies strict separation in either representation.
 `certificate_matrix` assembles all conic parts for numerical checks; `dual`
 returns one dual vector per part when a constraint generates several cones.
+
+## Lₚ sums and polar Lₚ sums
+
+`LpSum(C, S, p)` is the Firey sum, defined by its support function:
+`h(LpSum(C, S, p), x)^p = h(C, x)^p + h(S, x)^p`.
+`PolarLpSum(C, S, p)` is its polar counterpart:
+`polar(LpSum(polar(C), polar(S), p))`. Its gauge satisfies
+`g(PolarLpSum(C, S, p), x)^p = g(C, x)^p + g(S, x)^p`.
+The exponent must be finite and at least one. The operands must represent
+convex sets containing the origin with nonnegative gauges.
+
+The exponent belongs to the operation, independently of the set family.
+For example, exponent two adds squared polyhedral gauges or the quadratic
+gauges of ellipsoids; exponent four adds the defining polynomials of
+homogeneous quartic PolySets. Exponent one adds ordinary gauges, while
+`LpSum(C, S, 1)` is the Minkowski sum.
+
+```julia
+using SetProg, LinearAlgebra
+C = SetProg.Sets.Ellipsoid(Symmetric([1.0 0.0; 0.0 1.0]))
+S = SetProg.Sets.Ellipsoid(Symmetric([2.0 0.0; 0.0 2.0]))
+combined = PolarLpSum(C, S, 2)
+SetProg.sublevel_eval(combined, [1.0, 2.0]) # 15.0
+support_function([1.0, 2.0], LpSum(C, S, 2)) # √7.5
+```
+
+`sublevel_eval` for `PolarLpSum` evaluates the sum of the powered gauges;
+the represented set is where this sum is at most one. `support_function`
+for `LpSum` evaluates its ordinary, degree-one support function. Evaluating
+polynomial gauges requires loading SumOfSquares and homogeneous operands.
+
+These expressions support dimension inference, polynomial coordinates,
+set-variable loading, and `JuMP.value`. Constraint certificates and controller
+synthesis for these operations are not implemented yet.
+
+See Section 5.5 of Gardner, Hug and Weil,
+[*Operations between sets in geometry*](https://doi.org/10.4171/JEMS/422).
+Their polar-addition convention uses parameter `-p`; these constructors take
+positive `p` for both operations.
