@@ -2,6 +2,7 @@ module TestSeparation
 using Test
 using SetProg, JuMP, LinearAlgebra, SumOfSquares, DynamicPolynomials
 import GLPK
+import Hypatia
 include("utilities.jl")
 
 mock_model() = direct_model(bridged_mock(mock -> nothing))
@@ -187,6 +188,106 @@ end
     impossible = @constraint(model, [inner, unsafe] in Disjoint(), margin = 0.1)
     optimize!(model)
     @test eigmin(SetProg.certificate_matrix(impossible)) == -1
+end
+
+@testset "Quadratic separation on cones" begin
+    lib = Polyhedra.DefaultLibrary{Float64}(GLPK.Optimizer)
+    cone = polyhedron(hrep([-1.0;;], [0.0]), lib)
+    for sign in (-1, 1)
+        model = Model(Hypatia.Optimizer)
+        set_silent(model)
+        source = Shifted(Symmetric(zeros(1, 1)), zeros(1), 0.0)
+        target = Shifted(Symmetric(zeros(1, 1)), [sign / 2], 0.0)
+        constraint = @constraint(
+            model,
+            SetProg.Sets.Intersection(source, cone) ⊆ target,
+            S_procedure_scaling = 1
+        )
+        optimize!(model)
+        @test is_solved_and_feasible(model) == (sign == -1)
+        if sign == -1
+            @test eigmin(Symmetric(SetProg.certificate_matrix(constraint))) >= -1e-6
+        end
+    end
+end
+
+@testset "Quadratic domain interfaces" begin
+    lib = Polyhedra.DefaultLibrary{Float64}(GLPK.Optimizer)
+    cone = polyhedron(hrep([-1.0;;], [0.0]), lib)
+    zero = Shifted(Symmetric(zeros(1, 1)), zeros(1), 0.0)
+    source = SetProg.Sets.Intersection(zero, cone)
+    model = Model(Hypatia.Optimizer)
+    set_silent(model)
+    @variable(model, S, Ellipsoid(psd = false, dimension = 1))
+    c = @constraint(model, source ⊆ S, S_procedure_scaling = 1)
+    optimize!(model)
+    @test is_solved_and_feasible(model)
+    @test SetProg.data(model).space == SetProg.PrimalSpace
+    @test eigmin(Symmetric(SetProg.certificate_matrix(c))) >= -1e-6
+    unsafe = Shifted(Symmetric(zeros(1, 1)), [0.5], 1.0)
+    for sets in ([source, unsafe], [unsafe, source])
+        model = Model(Hypatia.Optimizer)
+        set_silent(model)
+        c = @constraint(model, sets in Disjoint(), margin = 0)
+        optimize!(model)
+        @test is_solved_and_feasible(model)
+        @test eigmin(Symmetric(SetProg.certificate_matrix(c))) >= -1e-6
+    end
+    translated = polyhedron(hrep([-1.0;;], [1.0]), lib)
+    model = Model()
+    @test_throws ArgumentError @constraint(
+        model,
+        SetProg.Sets.Intersection(zero, translated) ⊆ unsafe,
+        S_procedure_scaling = 1
+    )
+end
+
+@testset "Piecewise quadratic separation" begin
+    lib = Polyhedra.DefaultLibrary{Float64}(GLPK.Optimizer)
+    partition = polyhedron(hrep([1.0 1.0; 1 -1; -1 1; -1 -1], ones(4)), lib)
+    pieces = [
+        SetProg.Sets.Ellipsoid(Symmetric([h.a[1] > 0 ? 1.0 : 100.0 0.0; 0.0 1.0])) for
+        h in halfspaces(partition)
+    ]
+    set = SetProg.Sets.Piecewise(pieces, partition)
+    initial = Shifted(Symmetric(Matrix{Float64}(I, 2, 2)), [-0.5, 0.0], 0.24)
+    unsafe = Shifted(Symmetric(-Matrix{Float64}(I, 2, 2)), [0.45, 0.0], 1.2375)
+    for reverse in (false, true)
+        model = Model(Hypatia.Optimizer)
+        set_silent(model)
+        c0 = @constraint(model, initial ⊆ set, margin = 1e-3)
+        cu = @constraint(
+            model,
+            (reverse ? [unsafe, set] : [set, unsafe]) in Disjoint(),
+            margin = 1e-3
+        )
+        outer = Shifted(Symmetric(-Matrix{Float64}(I, 2, 2)), zeros(2), -1.0)
+        bound = @constraint(model, set ⊆ outer, S_procedure_scaling = ones(4))
+        optimize!(model)
+        @test is_solved_and_feasible(model)
+        @test length(c0) == length(cu) == length(bound) == 4
+        for constraint in (c0, cu, bound)
+            @test eigmin(Symmetric(SetProg.certificate_matrix(constraint))) >= -1e-6
+        end
+    end
+    # The inactive pieces fail these tests globally. Cone restrictions are
+    # essential, rather than simply imposing every quadratic everywhere.
+    for (source, target, disjoint) in
+        ((initial, pieces[end], false), (pieces[1], unsafe, true))
+        source, target = SetProg._as_shifted(source), SetProg._as_shifted(target)
+        model = Model(Hypatia.Optimizer)
+        set_silent(model)
+        if disjoint
+            @constraint(model, [source, target] in Disjoint(), margin = 1e-3)
+        else
+            @constraint(model, source ⊆ target, margin = 1e-3)
+        end
+        optimize!(model)
+        @test !is_solved_and_feasible(model)
+    end
+    @test SetProg.sublevel_eval(set, [0.5, 0.0]) ≈ 0.25
+    @test SetProg.sublevel_eval(set, [-0.5, 0.0]) ≈ 25.0
+    @test_throws DimensionMismatch SetProg._piecewise_scalings([1], 4)
 end
 
 end

@@ -41,6 +41,11 @@ function sublevel_eval(set::Sets.Piecewise{<:Any,<:Sets.Ellipsoid}, x::AbstractV
     return sublevel_eval(set.sets[i], x)
 end
 
+function sublevel_eval(set::Sets.Piecewise{<:Any,<:Sets.Ellipsoid}, x::AbstractVector)
+    i = findfirst(cone -> x in cone, set.pieces)
+    return sublevel_eval(set.sets[i], x)
+end
+
 # Unlike sublevel_eval, this always evaluates a power of the actual gauge.
 # The exponent of the operation need not equal the defining polynomial degree.
 function _gauge_power(set::Sets.Ellipsoid, x, p)

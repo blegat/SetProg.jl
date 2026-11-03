@@ -171,8 +171,11 @@ function _quadratic_separation(
     disjoint;
     S_procedure_scaling = nothing,
     margin = disjoint ? 1 : 0,
+    domain = nothing,
 )
-    if S_procedure_scaling isa SProcedureMultiplier && S_procedure_scaling.degree > 0
+    if domain === nothing &&
+       S_procedure_scaling isa SProcedureMultiplier &&
+       S_procedure_scaling.degree > 0
         return sos_extension()._polynomial_separation(
             model,
             first,
@@ -189,10 +192,20 @@ function _quadratic_separation(
     else
         fixed_first ? λ * A - B : A - λ * B
     end
-    return _matrix_certificate(
-        model,
-        matrix - margin * Matrix{Float64}(I, size(matrix, 1), size(matrix, 2)),
-    )
+    matrix -= margin * Matrix{Float64}(I, size(matrix, 1), size(matrix, 2))
+    if domain !== nothing
+        # Homogenize with t >= 0. Products of t and the cone inequalities
+        # provide the linear multipliers needed for affine quadratic forms.
+        n = fulldim(domain)
+        all(h -> iszero(h.β), halfspaces(domain)) &&
+        all(h -> iszero(h.β), hyperplanes(domain)) ||
+            throw(ArgumentError("quadratic separation domains must be cones"))
+        lifted = [zeros(n) Matrix{Float64}(I, n, n)] \ domain
+        intersect!(lifted, HalfSpace([-1.0; zeros(n)], 0.0))
+        matrix = _psd_in_domain_matrix(model, Symmetric(matrix), lifted)
+        matrix === nothing && return nothing
+    end
+    return _matrix_certificate(model, matrix)
 end
 
 _as_shifted(set::Sets.ShiftedEllipsoid) = set
@@ -416,4 +429,120 @@ function _gauge_disjoint(
         push!(residuals, dot(gauge.sets[piece].a, normal) - bound - margin * norm(normal))
     end
     return @constraint(model, residuals in MOI.Nonnegatives(length(residuals)))
+end
+
+
+const _QuadraticSet = Union{Sets.Ellipsoid,Sets.ShiftedEllipsoid}
+const _QuadraticIntersection = Sets.Intersection{<:Any,<:_QuadraticSet}
+const _QuadraticPiecewise = Sets.Piecewise{<:Any,<:Sets.Ellipsoid}
+
+function set_space(
+    space::Space,
+    ::InclusionConstraint{<:_QuadraticIntersection,<:SetVariableRef{<:Any,<:Ellipsoid}},
+)
+    return set_space(space, PrimalSpace)
+end
+
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::InclusionConstraint{<:_QuadraticIntersection,<:_QuadraticSet},
+    name::String = "",
+)
+    return _quadratic_separation(
+        model,
+        _as_shifted(c.subset.set),
+        _as_shifted(c.supset),
+        false;
+        domain = c.subset.domain,
+        c.kws...,
+    )
+end
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::DisjointConstraint{<:_QuadraticIntersection,<:_QuadraticSet},
+    name::String = "",
+)
+    return _quadratic_separation(
+        model,
+        _as_shifted(c.first.set),
+        _as_shifted(c.second),
+        true;
+        domain = c.first.domain,
+        c.kws...,
+    )
+end
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::DisjointConstraint{<:_QuadraticSet,<:_QuadraticIntersection},
+    name::String = "",
+)
+    return JuMP.add_constraint(model, DisjointConstraint(c.second, c.first, c.kws), name)
+end
+
+_piecewise_scalings(scaling, count) = fill(scaling, count)
+function _piecewise_scalings(scaling::AbstractVector, count)
+    length(scaling) == count ||
+        throw(DimensionMismatch("one multiplier is required per piece"))
+    return scaling
+end
+function _piecewise_quadratic_separation(
+    model,
+    piecewise,
+    other,
+    subset_is_piecewise,
+    disjoint;
+    S_procedure_scaling = nothing,
+    margin = disjoint ? 1 : 0,
+)
+    scalings = _piecewise_scalings(S_procedure_scaling, length(piecewise.sets))
+    constraints = JuMP.ConstraintRef[]
+    for (piece, cone, scaling) in zip(piecewise.sets, piecewise.pieces, scalings)
+        first, second = subset_is_piecewise ? (piece, other) : (other, piece)
+        constraint = _quadratic_separation(
+            model,
+            _as_shifted(first),
+            _as_shifted(second),
+            disjoint;
+            domain = cone,
+            S_procedure_scaling = scaling,
+            margin,
+        )
+        constraint === nothing || push!(constraints, constraint)
+    end
+    return constraints
+end
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::InclusionConstraint{<:_QuadraticSet,<:_QuadraticPiecewise},
+    name::String = "",
+)
+    return _piecewise_quadratic_separation(
+        model,
+        c.supset,
+        c.subset,
+        false,
+        false;
+        c.kws...,
+    )
+end
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::InclusionConstraint{<:_QuadraticPiecewise,<:_QuadraticSet},
+    name::String = "",
+)
+    return _piecewise_quadratic_separation(model, c.subset, c.supset, true, false; c.kws...)
+end
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::DisjointConstraint{<:_QuadraticPiecewise,<:_QuadraticSet},
+    name::String = "",
+)
+    return _piecewise_quadratic_separation(model, c.first, c.second, true, true; c.kws...)
+end
+function JuMP.add_constraint(
+    model::JuMP.Model,
+    c::DisjointConstraint{<:_QuadraticSet,<:_QuadraticPiecewise},
+    name::String = "",
+)
+    return _piecewise_quadratic_separation(model, c.second, c.first, true, true; c.kws...)
 end
