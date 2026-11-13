@@ -49,7 +49,14 @@ end
     @variable(model, S, Ellipsoid(symmetric = true, dimension = 2))
     @variable(model, Q[1:2, 1:2], Symmetric)
     A = [2.0 1.0; 1.0 3.0]
-    for matrix in (A, SetProg.SparseArrays.sparse(A), Symmetric(A), Q)
+    for matrix in (
+        A,
+        SetProg.SparseArrays.sparse(A),
+        Symmetric(A),
+        Q,
+        adjoint([2.0, 1.0]),
+        transpose([2.0, 1.0]),
+    )
         for set in (S, SetProg.Sets.Ellipsoid(Symmetric(A)))
             image = matrix * set
             @test image isa SetProg.Sets.LinearImage
