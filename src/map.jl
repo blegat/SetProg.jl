@@ -81,6 +81,7 @@ for MatrixType in (
     SparseArrays.SparseMatrixCSC,
     Symmetric,
     Symmetric{<:MA.AbstractMutable},
+    Union{Adjoint{<:Any,<:AbstractVector},Transpose{<:Any,<:AbstractVector}},
 )
     @eval function Base.:(*)(
         A::$MatrixType,
