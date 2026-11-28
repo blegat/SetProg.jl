@@ -13,6 +13,9 @@ end
 function rectangle_integrate(p::MP.AbstractPolynomialLike, vertex)
     return sum(rectangle_integrate(t, vertex) for t in MP.terms(p))
 end
+function rectangle_integrate(p::SumOfSquares.GramMatrix, vertex)
+    return rectangle_integrate(_monomial_polynomial(p), vertex)
+end
 function integrate_monomials(
     monos::AbstractVector{<:MP.AbstractMonomial},
     polytope::Polyhedron,
@@ -20,7 +23,8 @@ function integrate_monomials(
     return integrate_decompositions(decompose.(monos), polytope)
 end
 function integrate(p::MP.AbstractPolynomial, polytope::Polyhedron)
-    return MP.coefficients(p)'integrate_monomials(MP.monomials(p), polytope)
+    q = _monomial_polynomial(p)
+    return MP.coefficients(q)'integrate_monomials(MP.monomials(q), polytope)
 end
 decompose(mono::MP.AbstractMonomial) = decompose(MP.exponents(mono))
 
@@ -28,7 +32,7 @@ function all_exponents(set::Union{Sets.PolySet,Sets.ConvexPolySet})
     # Nonhomogeneous Gram bases introduce coefficient expressions of lower
     # degree, even when constraints require those expressions to vanish.
     selected = set.degree isa Int ? [set.degree] : set.degree
-    degrees = sort!(union(selected, MP.degree.(MP.monomials(MP.polynomial(set.p)))))
+    degrees = sort!(union(selected, MP.degree.(MP.monomials(_monomial_polynomial(set.p)))))
     return MP.exponents.(MP.monomials(Sets.space_variables(set), degrees))
 end
 function evaluate_monomials(
@@ -37,7 +41,7 @@ function evaluate_monomials(
 ) where {T}
     U = MA.promote_operation(*, Float64, T)
     total = zero(MA.promote_operation(+, U, U))
-    for t in MP.terms(set.p)
+    for t in MP.terms(_monomial_polynomial(set.p))
         total = MA.add_mul!!(
             total,
             monomial_value(MP.exponents(MP.monomial(t))),

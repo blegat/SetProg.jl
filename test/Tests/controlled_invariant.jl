@@ -155,7 +155,7 @@ function ci_quartic_homogeneous_test(optimizer, config)
                        @test ◯ isa Sets.Polar{Float64, <:Sets.ConvexPolySet{Float64, <:SubBasis{Monomial}, Float64}}
                        @test Sets.polar(◯).degree == 4
                        x, y = variables(Sets.polar(◯).p)
-                       α = MP.coefficient(Sets.polar(◯).p, x^3*y) / 2
+                       α = MP.coefficient(polynomial(Sets.polar(◯).p), x^3*y) / 2
                        q = x^4 + 2α*x^3*y + 6x^2*y^2 + 2α*x*y^3 + y^4
                        @test all(eigvals(Matrix(Sets.polar(◯).p.Q)) .≥ -config.atol)
                        @test polynomial(Sets.polar(◯).p) ≈ q atol=config.atol rtol=config.rtol

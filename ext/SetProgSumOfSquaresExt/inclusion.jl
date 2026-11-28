@@ -13,22 +13,23 @@ function JuMP.build_constraint(
        (
            !(subset.degree isa Int) ||
            !(supset.degree isa Int) ||
-           MP.mindegree(MP.polynomial(subset.p)) != subset.degree ||
-           MP.mindegree(MP.polynomial(supset.p)) != supset.degree
+           MP.mindegree(_monomial_polynomial(subset.p)) != subset.degree ||
+           MP.mindegree(_monomial_polynomial(supset.p)) != supset.degree
        )
         return InclusionConstraint(subset, supset, (; S_procedure_scaling, margin))
     end
     @assert iszero(margin)
     @assert S_procedure_scaling === nothing || isone(S_procedure_scaling)
-    q = subset.p
-    p = sup_powerset.set.p
+    # The Gram bases of `subset` and `supset` may be from different families
+    q = _monomial_polynomial(subset.p)
+    p = _monomial_polynomial(supset.p)
     JuMP.build_constraint(_error, q - p, SOSCone())
 end
 
 # S-procedure: Q ⊆ P <=> q - p is SOS
 function s_procedure(model, subset, supset; S_procedure_scaling = nothing)
-    q = subset.p
-    p = supset.p
+    q = _monomial_polynomial(subset.p)
+    p = _monomial_polynomial(supset.p)
     if S_procedure_scaling === nothing
         S_procedure_scaling = @variable(model)
         # We want to avoid creating a non-convex problem. If one of `p` and `q`
@@ -103,7 +104,7 @@ function _homogeneous_polynomial_power(poly, degree::Int, p)
     return _integer_polynomial_power(poly, Val(isinteger(exponent)), exponent)
 end
 function _powered_gauge_polynomial(set::Union{Sets.PolySet,Sets.ConvexPolySet}, x, p)
-    poly = MP.polynomial(set.p)
+    poly = _monomial_polynomial(set.p)
     return _homogeneous_polynomial_power(poly(MP.variables(poly) => x), set.degree, p)
 end
 function _powered_gauge_polynomial(set::Sets.Ellipsoid, x, p)

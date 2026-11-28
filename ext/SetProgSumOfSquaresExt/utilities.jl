@@ -106,7 +106,9 @@ end
 function apply_matrix(p::SumOfSquares.GramMatrix, A::AbstractMatrix, new_vars, d)
     mapped_vars = A * new_vars
     variables = MP.variables(p)
-    polynomials = [MP.polynomial(b)(variables => mapped_vars) for b in p.basis]
+    polynomials = [
+        _monomial_polynomial(MP.polynomial(b)(variables => mapped_vars)) for b in p.basis
+    ]
     monos = MP.monomials(new_vars, 0:d)
     matrix = [MP.coefficient(poly, mono) for poly in polynomials, mono in monos]
     return apply_transformation(p, GramTransformation(matrix, monos))

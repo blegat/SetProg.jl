@@ -56,6 +56,13 @@ import SetProg:
     transformed_constraint,
     variable_set
 
+# Polynomial bases such as Chebyshev are preserved by `MP.polynomial`; expand
+# into the monomial basis to reason about monomial degrees and exponents.
+function _monomial_polynomial(p)
+    q = MP.polynomial(p)
+    return MB.convert_basis(MB.FullBasis{MB.Monomial}(MP.variables(q)), q)
+end
+
 function new_polyvars(n::Int)
     DynamicPolynomials.@polyvar x[1:n]
     return x
@@ -84,7 +91,7 @@ using Polyhedra
 using SumOfSquares
 import MultivariatePolynomials as MP
 import MultivariateBases as MB
-import DynamicPolynomials
+import .._monomial_polynomial
 import SetProg.Sets:
     AbstractSet,
     ConvexPolySet,
@@ -120,11 +127,12 @@ function ConvexPolynomialSet(
 end
 function Householder(
     set::AbstractSet{T},
-    p::DynamicPolynomials.Polynomial{O,M,U},
+    p,
     h::Vector{Float64},
     z::V,
     x::Vector{V},
-) where {T,O,M,U,V}
+) where {T,V}
+    U = MP.coefficient_type(p)
     return Householder{T,typeof(set),U,typeof(p),V}(set, p, h, z, x)
 end
 include("Sets/polynomials.jl")

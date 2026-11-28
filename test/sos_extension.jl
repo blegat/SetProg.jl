@@ -204,6 +204,11 @@ end
     @testset "Chebyshev Gram bases" begin
         @polyvar x[1:2] y[1:3]
         MB = SumOfSquares.MultivariateBases
+        # `MP.polynomial` preserves the Chebyshev basis
+        function monomial_polynomial(p)
+            q = MP.polynomial(p)
+            return MB.convert_basis(MB.FullBasis{Monomial}(MP.variables(q)), q)
+        end
         basis = MB.explicit_basis_covering(
             MB.FullBasis{Chebyshev}(x),
             MB.SubBasis{Monomial}(monomials(x, 0:2)),
@@ -219,7 +224,8 @@ end
         # rectangular and singular maps. Indexing monomials are insufficient.
         for A in ([1.0 0.5 -0.25; 0.0 0.5 0.0], zeros(2, 3))
             mapped = SetProg.apply_matrix(gram, A, y, 2)
-            @test MP.polynomial(mapped) ≈ MP.polynomial(gram)(x => A*y)
+            @test MP.polynomial(mapped) ≈
+                  monomial_polynomial(MP.polynomial(gram)(x => A*y))
         end
         sizes = Int[]
         for B in (Monomial, Chebyshev)
@@ -235,7 +241,7 @@ end
             family = PolySet(degree = 4, symmetric = true, basis = Chebyshev, psd = psd)
             set = SetProg.variable_set(model, family, SetProg.PrimalSpace, 2, x)
             @test set.p.basis isa MB.SubBasis{Chebyshev}
-            p = MP.polynomial(set.p)
+            p = monomial_polynomial(set.p)
             @constraint(model, p(x => [1.0, 0.0]) == 1)
             @constraint(model, p(x => [0.0, 1.0]) == 1)
             # Without homogeneity constraints this objective is unbounded:
@@ -244,7 +250,7 @@ end
             optimize!(model)
             @test is_solved_and_feasible(model; allow_almost = true)
             @test abs(objective_value(model)) <= 1e-6
-            fitted = MP.polynomial(value(set.p))
+            fitted = monomial_polynomial(value(set.p))
             domain =
                 polyhedron(convexhull([-1.0, 0.0], [1.0, 0.0], [0.0, -1.0], [0.0, 1.0]))
             @test value(SetProg.l1_integral(set, domain)) ≈

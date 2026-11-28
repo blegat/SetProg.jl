@@ -93,7 +93,7 @@ function constrain_convex(model, p, vars)
         MOI.PositiveSemidefiniteConeTriangle,
         Float64,
     )
-    @constraint(model, q == s)
+    @constraint(model, q == MP.polynomial(s))
     return MultivariateMoments.value_matrix(s)
 end
 
@@ -135,7 +135,7 @@ function variable_set(
     if !explicit_degrees && set.basis !== MultivariateBases.Monomial
         # A nonhomogeneous basis, such as Chebyshev, introduces lower-degree
         # terms even when covering only homogeneous monomials.
-        for term in MP.terms(MP.polynomial(p))
+        for term in MP.terms(_monomial_polynomial(p))
             if MP.degree(term) != set.degree
                 @constraint(model, MP.coefficient(term) == 0)
             end
@@ -151,7 +151,7 @@ function variable_set(
         end
         # A Gram product may introduce degrees absent from the selection.
         # Symmetric sets also exclude odd-degree terms.
-        for term in MP.terms(MP.polynomial(p))
+        for term in MP.terms(_monomial_polynomial(p))
             degree = MP.degree(term)
             if degree ∉ set.degree || (set.symmetric && isodd(degree))
                 @constraint(model, MP.coefficient(term) == 0)
@@ -170,7 +170,10 @@ function variable_set(
             # so the Hessian certificate does not acquire forced zero rows.
             convex_polynomial =
                 set.basis === MultivariateBases.Monomial ? p :
-                MP.filter_terms(t -> MP.degree(t) == set.degree, p)
+                MP.filter_terms(
+                    t -> MP.degree(t) == set.degree,
+                    _monomial_polynomial(p),
+                )
             convexity_proof = constrain_convex(model, convex_polynomial, space_polyvars)
             if space == PrimalSpace
                 return Sets.ConvexPolySet(set.degree, p, convexity_proof)

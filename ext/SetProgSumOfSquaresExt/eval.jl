@@ -8,7 +8,7 @@ function poly_eval(p::MP.AbstractPolynomial{JuMP.AffExpr}, a::AbstractVector{Flo
     return aff
 end
 function sublevel_eval(set::Union{Sets.PolySet,Sets.ConvexPolySet}, a::AbstractVector)
-    return poly_eval(MP.polynomial(set.p), a)
+    return poly_eval(_monomial_polynomial(set.p), a)
 end
 
 function poly_eval(p::MP.AbstractPolynomial{<:Real}, a::AbstractVector{<:Real})

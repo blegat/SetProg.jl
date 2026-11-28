@@ -44,10 +44,9 @@ function zero_eliminate(set::ConvexPolySet, I)
     basis_monos = MB.keys_as_monomials(set.p.basis)
     K = findall(mono -> all(var -> iszero(MP.degree(mono, var)), vars), basis_monos)
     Q = SumOfSquares.square_getindex(set.p.Q, K)
-    monos = basis_monos[K]
     J = setdiff(1:dimension(set), I)
-    monos =
-        DynamicPolynomials.MonomialVector(monos.vars[J], Vector{Int}[z[J] for z in monos.Z])
+    remaining = space_variables(set)[J]
+    monos = [MP.monomial(remaining, MP.exponents(mono)[J]) for mono in basis_monos[K]]
     p = SumOfSquares.GramMatrix(Q, MB.SubBasis{MB.Monomial}(monos))
     return ConvexPolySet(set.degree, p, nothing)
 end
@@ -56,7 +55,7 @@ function scaling_function(set::Union{PolySet,ConvexPolySet})
     @assert dimension(set) == 2
     # We convert the GramMatrix to a polynomial to avoid having to do the
     # conversion for every substitution.
-    p = MP.polynomial(set.p)
+    p = _monomial_polynomial(set.p)
     vars = MP.variables(p)
     @assert length(vars) == 2
     vx, vy = vars
